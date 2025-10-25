@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Project Details</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+  <nav class="navbar navbar-dark bg-primary">
+    <div class="container-fluid">
+      <span class="navbar-brand mb-0 h1">Project Details</span>
+      <a href="{{ url_for('admin') }}" class="btn btn-light">Back</a>
+    </div>
+  </nav>
+
+  <div class="container mt-4">
+    <div class="bg-white p-4 rounded shadow-sm">
+      <h4>{{ project[1] }}</h4>
+      <p><strong>Creator:</strong> {{ project[2] }}</p>
+      <p><strong>Amount:</strong> {{ project[3] }}</p>
+      <p><strong>Start Date:</strong> {{ project[4] }}</p>
+      <p><strong>End Date:</strong> {{ project[5] }}</p>
+      <p><strong>Contract File:</strong> <a href="/{{ project[6] }}" target="_blank">Download</a></p>
+      <p><strong>Asset Files:</strong></p>
+      <ul>
+        {% for f in project[7].split(',') %}
+          <li><a href="/{{ f }}" target="_blank">{{ f.split('/')[-1] }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</body>
+</html>

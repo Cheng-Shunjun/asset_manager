@@ -1,41 +1,68 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Admin Dashboard</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body class="bg-gray-100 min-h-screen p-8">
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-3xl font-bold text-blue-600">Admin Dashboard</h1>
-    <a href="/logout" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg">Logout</a>
-  </div>
+<body class="bg-light">
+  <nav class="navbar navbar-dark bg-primary">
+    <div class="container-fluid">
+      <span class="navbar-brand mb-0 h1">Asset Management Dashboard</span>
+      <div>
+        <a href="{{ url_for('create_project') }}" class="btn btn-light me-2">Create Project</a>
+        <a href="{{ url_for('user_manager') }}" class="btn btn-light">Manage Users</a>
+      </div>
+    </div>
+  </nav>
 
-  <div class="bg-white rounded-xl shadow-lg p-6">
-    <table class="w-full border-collapse">
-      <thead>
-        <tr class="bg-blue-50 text-left text-gray-700">
-          <th class="p-3 border-b">ID</th>
-          <th class="p-3 border-b">Username</th>
-          <th class="p-3 border-b">Project ID</th>
-          <th class="p-3 border-b">File</th>
+  <div class="container mt-4">
+    <h4>Project List</h4>
+    <div class="row mb-3">
+      <div class="col-md-3">
+        <select id="yearFilter" class="form-select">
+          <option value="">All Years</option>
+          {% for y in range(2020, 2031) %}
+          <option>{{ y }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <table class="table table-hover bg-white rounded shadow-sm">
+      <thead class="table-primary">
+        <tr>
+          <th>Project Name</th>
+          <th>Creator</th>
+          <th>Amount</th>
+          <th>Start</th>
+          <th>End</th>
         </tr>
       </thead>
       <tbody>
-        {% for row in rows %}
-        <tr class="hover:bg-gray-50">
-          <td class="p-3 border-b">{{ row[0] }}</td>
-          <td class="p-3 border-b">{{ row[1] }}</td>
-          <td class="p-3 border-b">{{ row[2] }}</td>
-          <td class="p-3 border-b">
-            <a href="/static/uploads/{{ row[3] }}" class="text-blue-600 hover:underline">
-              {{ row[3] }}
-            </a>
-          </td>
+        {% for p in projects %}
+        <tr onclick="window.location.href='/project/{{ p[0] }}'">
+          <td>{{ p[1] }}</td>
+          <td>{{ p[2] }}</td>
+          <td>{{ p[3] }}</td>
+          <td>{{ p[4] }}</td>
+          <td>{{ p[5] }}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
+
+  <script>
+    const select = document.getElementById('yearFilter');
+    select.addEventListener('change', () => {
+      const year = select.value;
+      const rows = document.querySelectorAll('tbody tr');
+      rows.forEach(row => {
+        const date = row.children[4].innerText;
+        row.style.display = (!year || date.startsWith(year)) ? '' : 'none';
+      });
+    });
+  </script>
 </body>
 </html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Create Project</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+  <nav class="navbar navbar-dark bg-primary">
+    <div class="container-fluid">
+      <span class="navbar-brand mb-0 h1">Create Project</span>
+      <a href="{{ url_for('admin') }}" class="btn btn-light">Back</a>
+    </div>
+  </nav>
+
+  <div class="container mt-4">
+    <form method="POST" enctype="multipart/form-data" class="bg-white p-4 rounded shadow-sm">
+      <div class="mb-3">
+        <label class="form-label">Project Name</label>
+        <input type="text" name="name" class="form-control" required>
+      </div>
+      <div class="mb-3">
+      <label class="form-label">Creator</label>
+        <input type="text" name="creator" class="form-control" value="{{ username }}" readonly required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Amount</label>
+        <input type="number" name="amount" step="0.01" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Start Date</label>
+        <input type="date" name="start_date" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">End Date</label>
+        <input type="date" name="end_date" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Contract File</label>
+        <input type="file" name="contract_file" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Asset Files (multiple)</label>
+        <input type="file" name="asset_files" multiple class="form-control">
+      </div>
+      <button type="submit" class="btn btn-primary w-100">Create</button>
+    </form>
+  </div>
+</body>
+</html>
