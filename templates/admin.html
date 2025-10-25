@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-8">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold text-blue-600">Admin Dashboard</h1>
+    <a href="/logout" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg">Logout</a>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-lg p-6">
+    <table class="w-full border-collapse">
+      <thead>
+        <tr class="bg-blue-50 text-left text-gray-700">
+          <th class="p-3 border-b">ID</th>
+          <th class="p-3 border-b">Username</th>
+          <th class="p-3 border-b">Project ID</th>
+          <th class="p-3 border-b">File</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr class="hover:bg-gray-50">
+          <td class="p-3 border-b">{{ row[0] }}</td>
+          <td class="p-3 border-b">{{ row[1] }}</td>
+          <td class="p-3 border-b">{{ row[2] }}</td>
+          <td class="p-3 border-b">
+            <a href="/static/uploads/{{ row[3] }}" class="text-blue-600 hover:underline">
+              {{ row[3] }}
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>

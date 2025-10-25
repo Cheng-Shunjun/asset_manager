@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Project File Upload</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center">
+
+  <div class="bg-white shadow-lg rounded-2xl p-8 w-96">
+    <h1 class="text-2xl font-bold text-center mb-6 text-blue-600">📁 Project Upload</h1>
+    <form action="/upload" method="post" enctype="multipart/form-data" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Username</label>
+        <input type="text" name="username" required
+               class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-300">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Project ID</label>
+        <input type="text" name="project_id" required
+               class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-300">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Upload File</label>
+        <input type="file" name="file" required
+               class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-300">
+      </div>
+      <button type="submit"
+              class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-semibold">
+        Upload
+      </button>
+    </form>
+    <p class="text-center text-sm text-gray-500 mt-4">
+      Admin? <a href="/login" class="text-blue-600 hover:underline">Login here</a>
+    </p>
+  </div>
+
+</body>
+</html>

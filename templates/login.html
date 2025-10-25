@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>用户登录 - 资产管理系统</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
+
+    body {
+      /* 蓝色渐变背景 */
+      background: linear-gradient(135deg, #001f3f 0%, #004aad 40%, #007bff 100%);
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      background-size: cover;
+      font-family: "Microsoft YaHei", sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* 科技背景层 */
+    body::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: url('https://cdn.jsdelivr.net/gh/solstice23/static-assets/blue-tech-bg.jpg');
+      background-size: cover;
+      background-position: center;
+      opacity: 0.25;
+      z-index: 0;
+    }
+
+    .company-title {
+	  z-index: 1;
+	  font-size: 3.0rem;              /* 字体更大 */
+	  font-weight: bold;
+	  color: #e8f0ff;
+	  letter-spacing: 3px;
+	  text-shadow: 0 0 16px rgba(255, 255, 255, 0.5);
+	  position: absolute;             /* 固定在页面上方 */
+	  top: 15%;                        /* 距顶部更近 */
+	  text-align: center;
+	  width: 100%;
+	}
+
+
+    .login-box {
+      position: relative;
+      z-index: 1;
+      background: rgba(255, 255, 255, 0.92);
+      border-radius: 1rem;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.3);
+      padding: 2.5rem 3rem;
+      width: 380px;
+    }
+
+    .login-title {
+      font-size: 1.6rem;
+      font-weight: bold;
+      color: #0d47a1;
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .login-input {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 0.5rem;
+      padding: 0.6rem 0.8rem;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .login-input:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 6px rgba(59, 130, 246, 0.3);
+    }
+
+    .login-button {
+      width: 100%;
+      background: #2563eb;
+      color: white;
+      font-weight: 600;
+      padding: 0.6rem;
+      border-radius: 0.5rem;
+      margin-top: 1rem;
+      transition: background 0.2s;
+    }
+
+    .login-button:hover {
+      background: #1d4ed8;
+    }
+
+    .footer {
+      position: absolute;
+      bottom: 1rem;
+      color: #e0eaff;
+      font-size: 0.85rem;
+      text-align: center;
+      width: 100%;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+  <!-- 公司标题 -->
+  <div class="company-title">四川鼎丰房地产土地资产评估有限公司</div>
+
+  <!-- 登录框 -->
+  <div class="login-box">
+    <h1 class="login-title">用户登录</h1>
+
+    {% if error %}
+      <div class="bg-red-100 text-red-700 p-2 rounded-lg mb-4 text-center">
+        {{ error }}
+      </div>
+    {% endif %}
+
+    <form action="/login" method="post" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">用户名</label>
+        <input type="text" name="username" class="login-input" placeholder="请输入用户名" required>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">密码</label>
+        <input type="password" name="password" class="login-input" placeholder="请输入密码" required>
+      </div>
+
+      <button type="submit" class="login-button">登 录</button>
+    </form>
+
+    <div class="text-center text-sm text-gray-600 mt-4">
+      <a href="/" class="text-blue-600 hover:underline">← 返回首页</a>
+    </div>
+  </div>
+
+  <!-- 页脚 -->
+  <div class="footer">
+    中国资产评估行业管理统一信息平台 ©2025<br>
+    版权所有 | 技术支持：信息中心
+  </div>
+</body>
+</html>
