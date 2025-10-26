@@ -67,7 +67,8 @@ class Database:
                         end_date TEXT,
                         contract_file TEXT,
                         asset_files TEXT,
-                        status TEXT)''')
+                        status TEXT,
+                        additional_contracts, TEXT)''')
         conn.commit()
     
     @contextmanager
@@ -328,6 +329,8 @@ async def project_info(
         'end_date': project[5],
         'contract_file': project[6],
         'asset_files': project[7],
+        'status': project[8],
+        'additional_contracts': project[9] if len(project) > 9 else ""  # 新增字段
     }
     
     return templates.TemplateResponse("project_info.html", {
@@ -335,6 +338,150 @@ async def project_info(
         "project": project_dict,
         "user": user
     })
+
+# 暂停项目
+@app.post("/project/{project_id}/pause")
+async def pause_project(
+    project_id: int,
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    c = db.cursor()
+    c.execute("UPDATE projects SET status = 'paused' WHERE id = ?", (project_id,))
+    db.commit()
+    return RedirectResponse(url=f"/project/{project_id}", status_code=303)
+
+# 继续项目（从暂停状态恢复）
+@app.post("/project/{project_id}/resume")
+async def resume_project(
+    project_id: int,
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    c = db.cursor()
+    c.execute("UPDATE projects SET status = 'active' WHERE id = ?", (project_id,))
+    db.commit()
+    return RedirectResponse(url=f"/project/{project_id}", status_code=303)
+
+# 结束项目
+@app.post("/project/{project_id}/complete")
+async def complete_project(
+    project_id: int,
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    c = db.cursor()
+    c.execute("UPDATE projects SET status = 'completed' WHERE id = ?", (project_id,))
+    db.commit()
+    return RedirectResponse(url=f"/project/{project_id}", status_code=303)
+
+# 重新开启项目（从已完成或已取消状态恢复）
+@app.post("/project/{project_id}/reopen")
+async def reopen_project(
+    project_id: int,
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    c = db.cursor()
+    c.execute("UPDATE projects SET status = 'active' WHERE id = ?", (project_id,))
+    db.commit()
+    return RedirectResponse(url=f"/project/{project_id}", status_code=303)
+
+# 添加合同文件（支持多文件）
+@app.post("/project/{project_id}/add_contract")
+async def add_contract_files(
+    project_id: int,
+    contract_files: List[UploadFile] = File(...),
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    # 检查项目状态
+    c = db.cursor()
+    c.execute("SELECT status FROM projects WHERE id = ?", (project_id,))
+    result = c.fetchone()
+    
+    if not result:
+        raise HTTPException(status_code=404, detail="项目不存在")
+    
+    status = result[0]
+    if status in ['completed', 'paused', 'cancelled']:
+        raise HTTPException(status_code=400, detail=f"项目状态为{status}，无法添加文件")
+    
+    # 保存文件
+    contract_paths = []
+    for contract_file in contract_files:
+        if contract_file.filename:
+            contract_filename = secure_filename(contract_file.filename)
+            contract_path = os.path.join(UPLOAD_FOLDER, contract_filename)
+            with open(contract_path, "wb") as f:
+                content = await contract_file.read()
+                f.write(content)
+            contract_paths.append(contract_path)
+    
+    if contract_paths:
+        # 获取现有的合同文件
+        c.execute("SELECT contract_file FROM projects WHERE id = ?", (project_id,))
+        result = c.fetchone()
+        existing_files = result[0] if result and result[0] else ""
+        
+        # 更新数据库
+        if existing_files:
+            new_files = existing_files + "," + ",".join(contract_paths)
+        else:
+            new_files = ",".join(contract_paths)
+        
+        c.execute("UPDATE projects SET contract_file = ? WHERE id = ?", (new_files, project_id))
+        db.commit()
+    
+    return RedirectResponse(url=f"/project/{project_id}", status_code=303)
+
+# 添加资产文件（支持多文件）
+@app.post("/project/{project_id}/add_asset")
+async def add_asset_files(
+    project_id: int,
+    asset_files: List[UploadFile] = File(...),
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    # 检查项目状态
+    c = db.cursor()
+    c.execute("SELECT status FROM projects WHERE id = ?", (project_id,))
+    result = c.fetchone()
+    
+    if not result:
+        raise HTTPException(status_code=404, detail="项目不存在")
+    
+    status = result[0]
+    if status in ['completed', 'paused', 'cancelled']:
+        raise HTTPException(status_code=400, detail=f"项目状态为{status}，无法添加文件")
+    
+    # 保存文件
+    asset_paths = []
+    for asset_file in asset_files:
+        if asset_file.filename:
+            asset_filename = secure_filename(asset_file.filename)
+            asset_path = os.path.join(UPLOAD_FOLDER, asset_filename)
+            with open(asset_path, "wb") as f:
+                content = await asset_file.read()
+                f.write(content)
+            asset_paths.append(asset_path)
+    
+    if asset_paths:
+        # 获取现有的资产文件
+        c.execute("SELECT asset_files FROM projects WHERE id = ?", (project_id,))
+        result = c.fetchone()
+        existing_files = result[0] if result and result[0] else ""
+        
+        # 更新数据库
+        if existing_files:
+            new_files = existing_files + "," + ",".join(asset_paths)
+        else:
+            new_files = ",".join(asset_paths)
+        
+        c.execute("UPDATE projects SET asset_files = ? WHERE id = ?", (new_files, project_id))
+        db.commit()
+    
+    return RedirectResponse(url=f"/project/{project_id}", status_code=303)
 
 @app.get("/logout")
 async def logout(request: Request):
