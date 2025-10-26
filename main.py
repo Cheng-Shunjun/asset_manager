@@ -9,12 +9,15 @@ from typing import List, Optional
 import secrets
 from contextlib import contextmanager
 import threading
+from starlette.middleware.sessions import SessionMiddleware
+from starlette.status import HTTP_303_SEE_OTHER
 
 app = FastAPI(title="项目管理系统")
 
 # 静态文件和模板配置
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+#app.add_middleware(SessionMiddleware, secret_key="supersecretkey123")  # ✅ 添加这一行
 
 # 上传文件夹配置
 UPLOAD_FOLDER = 'static/uploads'
@@ -64,7 +67,7 @@ class Database:
                         end_date TEXT,
                         contract_file TEXT,
                         asset_files TEXT,
-                        created_at TEXT)''')
+                        status TEXT)''')
         conn.commit()
     
     @contextmanager
@@ -97,11 +100,20 @@ def get_current_user(request: Request):
             return sessions[session_id]
     return None
 
-def login_required(user = Depends(get_current_user)):
-    """登录保护"""
-    if not user:
-        raise HTTPException(status_code=401, detail="需要登录")
-    return user
+
+def login_required(request: Request):
+    """检查登录状态"""
+    session_id = request.cookies.get("session_id")
+    with session_lock:
+        if not session_id or session_id not in sessions:
+            # 未登录时跳转登录页面
+            raise HTTPException(
+                status_code=HTTP_303_SEE_OTHER,
+                detail="Redirect to login",
+                headers={"Location": "/login"}
+            )
+        return sessions[session_id]
+
 
 # --- 工具函数 ---
 def secure_filename(filename: str) -> str:
@@ -112,6 +124,10 @@ def secure_filename(filename: str) -> str:
 
 # --- 路由 ---
 @app.get("/", response_class=HTMLResponse)
+async def login_page(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
+
+@app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
@@ -152,13 +168,15 @@ async def admin(
     db: sqlite3.Connection = Depends(get_db)
 ):
     c = db.cursor()
-    c.execute("SELECT * FROM projects ORDER BY created_at DESC")
+    c.execute("SELECT * FROM projects ORDER BY start_date DESC")
     projects = c.fetchall()
     
     # 转换为列表便于模板使用
     projects_list = []
+    years = set()  # 用于存储有项目的年份
+    
     for project in projects:
-        projects_list.append({
+        project_dict = {
             'id': project[0],
             'name': project[1],
             'creator': project[2],
@@ -167,12 +185,26 @@ async def admin(
             'end_date': project[5],
             'contract_file': project[6],
             'asset_files': project[7],
-            'created_at': project[8]
-        })
+            'status': project[8] if len(project) > 8 else 'active',  # 默认状态为进行中
+        }
+        projects_list.append(project_dict)
+        
+        # 从开始日期提取年份
+        if project_dict['start_date']:
+            try:
+                year = project_dict['start_date'][:4]  # 提取前4位作为年份
+                if year.isdigit() and len(year) == 4:
+                    years.add(int(year))
+            except (ValueError, IndexError, AttributeError):
+                pass
+    
+    # 按年份降序排列
+    years_sorted = sorted(years, reverse=True) if years else []
     
     return templates.TemplateResponse("admin.html", {
         "request": request,
         "projects": projects_list,
+        "years": years_sorted,
         "user": user
     })
 
@@ -212,6 +244,15 @@ async def create_project_page(
         "username": user["username"]  # 显式传递用户名
     })
 
+# from typing import Optional, List
+# from fastapi import File, Form, UploadFile, HTTPException
+# from datetime import datetime
+# from starlette.responses import RedirectResponse
+# import os, sqlite3
+# from werkzeug.utils import secure_filename
+
+# UPLOAD_FOLDER = "uploads"
+
 @app.post("/create_project")
 async def create_project(
     request: Request,
@@ -220,48 +261,49 @@ async def create_project(
     amount: float = Form(...),
     start_date: str = Form(...),
     end_date: str = Form(...),
-    contract_file: UploadFile = File(...),
-    asset_files: List[UploadFile] = File([]),
+    contract_file: Optional[UploadFile] = File(None),
+    asset_files: Optional[List[UploadFile]] = File(None),
     user: dict = Depends(login_required),
     db: sqlite3.Connection = Depends(get_db)
 ):
     try:
-        # 保存合同文件
-        contract_filename = secure_filename(contract_file.filename)
-        contract_path = os.path.join(UPLOAD_FOLDER, contract_filename)
-        with open(contract_path, "wb") as f:
-            content = await contract_file.read()
-            f.write(content)
-        
-        # 保存资产文件
+        # 1️⃣ 保存合同文件（可选）
+        contract_path = None
+        if contract_file and contract_file.filename:
+            contract_filename = secure_filename(contract_file.filename)
+            contract_path = os.path.join(UPLOAD_FOLDER, contract_filename)
+            with open(contract_path, "wb") as f:
+                f.write(await contract_file.read())
+
+        # 2️⃣ 保存资产文件（可选）
         asset_paths = []
-        for asset_file in asset_files:
-            if asset_file.filename:
-                asset_filename = secure_filename(asset_file.filename)
-                asset_path = os.path.join(UPLOAD_FOLDER, asset_filename)
-                with open(asset_path, "wb") as f:
-                    content = await asset_file.read()
-                    f.write(content)
-                asset_paths.append(asset_path)
-        
-        # 插入数据库
+        if asset_files:
+            for asset_file in asset_files:
+                if asset_file.filename:
+                    asset_filename = secure_filename(asset_file.filename)
+                    asset_path = os.path.join(UPLOAD_FOLDER, asset_filename)
+                    with open(asset_path, "wb") as f:
+                        f.write(await asset_file.read())
+                    asset_paths.append(asset_path)
+
+        # 3️⃣ 插入数据库
         c = db.cursor()
         c.execute("""
             INSERT INTO projects 
-            (name, creator, amount, start_date, end_date, contract_file, asset_files, created_at) 
+            (name, creator, amount, start_date, end_date, contract_file, asset_files) 
             VALUES (?,?,?,?,?,?,?,?)
         """, (
-            name, creator, amount, start_date, end_date, 
-            contract_path, ','.join(asset_paths), 
-            datetime.now().strftime("%Y-%m-%d")
+            name, creator, amount, start_date, end_date,
+            contract_path or "", ','.join(asset_paths) or "",
         ))
         db.commit()
-        
+
         return RedirectResponse(url="/admin", status_code=303)
-    
+
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"创建项目失败: {str(e)}")
+
 
 @app.get("/project/{project_id}", response_class=HTMLResponse)
 async def project_info(
@@ -286,7 +328,6 @@ async def project_info(
         'end_date': project[5],
         'contract_file': project[6],
         'asset_files': project[7],
-        'created_at': project[8]
     }
     
     return templates.TemplateResponse("project_info.html", {

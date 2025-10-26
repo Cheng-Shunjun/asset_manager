@@ -22,6 +22,15 @@ def create_admin_user():
         print(f"用户类型: {user_type}")
     except sqlite3.IntegrityError:
         print("管理员用户已存在！")
+    
+    try:
+        c.execute(
+            "INSERT INTO projects (name, creator, amount, start_date, end_date, contract_file, asset_files, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            ("中和拆迁", "admin", 1200000, "2025-12-26", "", "", "", "active")
+        )
+        conn.commit()
+    except sqlite3.IntegrityError:
+        print("创建项目失败！")
     finally:
         conn.close()
 

@@ -1,68 +1,150 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>Admin Dashboard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    table.table tbody tr {
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    table.table tbody tr:hover {
+      background-color: #f0f8ff;
+      box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.1);
+      font-weight: 500;
+    }
+    
+    .year-filter-container {
+      max-width: 200px;
+    }
+    
+    .status-badge {
+      font-size: 0.75rem;
+      padding: 0.35em 0.65em;
+    }
+    
+    .status-active {
+      background-color: #198754;
+      color: white;
+    }
+    
+    .status-completed {
+      background-color: #0d6efd;
+      color: white;
+    }
+    
+    .status-paused {
+      background-color: #6c757d;
+      color: white;
+    }
+    
+    .status-cancelled {
+      background-color: #dc3545;
+      color: white;
+    }
+  </style>
 </head>
+
 <body class="bg-light">
   <nav class="navbar navbar-dark bg-primary">
     <div class="container-fluid">
       <span class="navbar-brand mb-0 h1">Asset Management Dashboard</span>
       <div>
-        <a href="{{ url_for('create_project') }}" class="btn btn-light me-2">Create Project</a>
-        <a href="{{ url_for('user_manager') }}" class="btn btn-light">Manage Users</a>
+        <a href="/create_project" class="btn btn-light me-2">Create Project</a>
+        <a href="/user_manager" class="btn btn-light">Manage Users</a>
       </div>
     </div>
   </nav>
 
   <div class="container mt-4">
-    <h4>Project List</h4>
-    <div class="row mb-3">
-      <div class="col-md-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h4 class="mb-0">Project List</h4>
+      {% if years %}
+      <div class="year-filter-container">
         <select id="yearFilter" class="form-select">
           <option value="">All Years</option>
-          {% for y in range(2020, 2031) %}
-          <option>{{ y }}</option>
+          {% for year in years %}
+          <option value="{{ year }}">{{ year }}</option>
           {% endfor %}
         </select>
       </div>
+      {% endif %}
     </div>
 
-    <table class="table table-hover bg-white rounded shadow-sm">
-      <thead class="table-primary">
-        <tr>
-          <th>Project Name</th>
-          <th>Creator</th>
-          <th>Amount</th>
-          <th>Start</th>
-          <th>End</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for p in projects %}
-        <tr onclick="window.location.href='/project/{{ p[0] }}'">
-          <td>{{ p[1] }}</td>
-          <td>{{ p[2] }}</td>
-          <td>{{ p[3] }}</td>
-          <td>{{ p[4] }}</td>
-          <td>{{ p[5] }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    {% if projects %}
+    <div class="table-responsive">
+      <table class="table table-hover bg-white rounded shadow-sm">
+        <thead class="table-primary">
+          <tr>
+            <th>Project Name</th>
+            <th>Creator</th>
+            <th>Amount</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in projects %}
+          <tr onclick="window.location.href='/project/{{ p.id }}'">
+            <td>{{ p.name }}</td>
+            <td>{{ p.creator }}</td>
+            <td>¥{{ p.amount }}</td>
+            <td>{{ p.start_date }}</td>
+            <td>{{ p.end_date }}</td>
+            <td>
+              {% if p.status == 'active' %}
+                <span class="badge status-badge status-active">Active</span>
+              {% elif p.status == 'completed' %}
+                <span class="badge status-badge status-completed">Completed</span>
+              {% elif p.status == 'paused' %}
+                <span class="badge status-badge status-paused">Paused</span>
+              {% elif p.status == 'cancelled' %}
+                <span class="badge status-badge status-cancelled">Cancelled</span>
+              {% else %}
+                <span class="badge status-badge status-active">Active</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center">
+      <h5>No Projects Found</h5>
+      <p class="mb-0">There are no projects in the system yet. <a href="/create_project" class="alert-link">Create your first project</a>.</p>
+    </div>
+    {% endif %}
   </div>
 
+  {% if years %}
   <script>
-    const select = document.getElementById('yearFilter');
-    select.addEventListener('change', () => {
-      const year = select.value;
+    document.getElementById('yearFilter').addEventListener('change', function() {
+      const selectedYear = this.value;
       const rows = document.querySelectorAll('tbody tr');
+      
       rows.forEach(row => {
-        const date = row.children[4].innerText;
-        row.style.display = (!year || date.startsWith(year)) ? '' : 'none';
+        const startDateCell = row.cells[3]; // 开始日期在第4列 (索引3)
+        const endDateCell = row.cells[4];   // 结束日期在第5列 (索引4)
+        const startDate = startDateCell.textContent.trim();
+        const endDate = endDateCell.textContent.trim();
+        
+        const startYear = startDate.substring(0, 4);
+        const endYear = endDate.substring(0, 4);
+        
+        // 如果选择的年份与开始年份或结束年份匹配，则显示该行
+        if (!selectedYear || startYear === selectedYear || endYear === selectedYear) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
       });
     });
   </script>
+  {% endif %}
 </body>
 </html>
