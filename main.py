@@ -60,15 +60,40 @@ class Database:
                         password TEXT)''')
         c.execute('''CREATE TABLE IF NOT EXISTS projects (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        name TEXT,
-                        creator TEXT,
-                        amount REAL,
-                        start_date TEXT,
-                        end_date TEXT,
+                        project_no TEXT,                 -- ① 项目序号
+                        name TEXT,                       -- ② 项目名称
+                        project_type TEXT,               -- ③ 项目类型
+                        client_name TEXT,                -- ④ 甲方名称
+                        market_leader TEXT,              -- ⑤ 市场部负责人
+                        project_leader TEXT,             -- ⑥ 项目负责人
+                        progress TEXT,                   -- ⑦ 项目进度
+                        report_numbers TEXT,             -- ⑧ 报告号（多个以逗号分隔）
+                        amount REAL,                     -- ⑨ 合同金额
+                        is_paid TEXT,                    -- ⑩ 是否收费（是/否）
+                        creator TEXT,                    -- ⑪ 项目创建人
+                        start_date TEXT,                 -- ⑫ 开始日期
+                        end_date TEXT,                   -- ⑬ 结束日期
+                        status TEXT,                     -- ⑭ 状态
                         contract_file TEXT,
-                        asset_files TEXT,
-                        status TEXT,
-                        additional_contracts, TEXT)''')
+                        create_date TEXT
+                    )''')
+        
+        # 修改报告表，添加复核人和签字人字段
+        c.execute('''CREATE TABLE IF NOT EXISTS reports (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        report_no TEXT NOT NULL,         -- 报告号
+                        project_id INTEGER,              -- 关联的项目ID
+                        file_paths TEXT,                 -- 文件路径（多个以逗号分隔）
+                        creator TEXT,                    -- 创建人
+                        create_date TEXT,                -- 创建日期
+                        reviewer1 TEXT,                  -- 复核人1
+                        reviewer2 TEXT,                  -- 复核人2
+                        reviewer3 TEXT,                  -- 复核人3
+                        signer1 TEXT,                    -- 签字人1
+                        signer2 TEXT,                    -- 签字人2
+                        FOREIGN KEY (project_id) REFERENCES projects (id)
+                    )''')
+        
         conn.commit()
     
     @contextmanager
@@ -171,43 +196,42 @@ async def admin(
     c = db.cursor()
     c.execute("SELECT * FROM projects ORDER BY start_date DESC")
     projects = c.fetchall()
-    
-    # 转换为列表便于模板使用
+
     projects_list = []
-    years = set()  # 用于存储有项目的年份
-    
-    for project in projects:
+    years = set()
+
+    for p in projects:
         project_dict = {
-            'id': project[0],
-            'name': project[1],
-            'creator': project[2],
-            'amount': project[3],
-            'start_date': project[4],
-            'end_date': project[5],
-            'contract_file': project[6],
-            'asset_files': project[7],
-            'status': project[8] if len(project) > 8 else 'active',  # 默认状态为进行中
+            "id": p["id"],
+            "project_no": p["project_no"],
+            "name": p["name"],
+            "project_type": p["project_type"],
+            "client_name": p["client_name"],
+            "market_leader": p["market_leader"],
+            "project_leader": p["project_leader"],
+            "progress": p["progress"],
+            "report_numbers": p["report_numbers"],
+            "amount": p["amount"],
+            "is_paid": p["is_paid"],
+            "creator": p["creator"],
+            "start_date": p["start_date"],
+            "end_date": p["end_date"],
+            "status": p["status"],
+            "create_Date": p["create_date"]
         }
         projects_list.append(project_dict)
-        
-        # 从开始日期提取年份
-        if project_dict['start_date']:
-            try:
-                year = project_dict['start_date'][:4]  # 提取前4位作为年份
-                if year.isdigit() and len(year) == 4:
-                    years.add(int(year))
-            except (ValueError, IndexError, AttributeError):
-                pass
-    
-    # 按年份降序排列
-    years_sorted = sorted(years, reverse=True) if years else []
-    
+        if p["start_date"]:
+            years.add(int(p["start_date"][:4]))
+
+    years_sorted = sorted(years, reverse=True)
+
     return templates.TemplateResponse("admin.html", {
         "request": request,
         "projects": projects_list,
         "years": years_sorted,
         "user": user
     })
+
 
 @app.get("/user_manager", response_class=HTMLResponse)
 async def user_manager(
@@ -234,68 +258,96 @@ async def user_manager(
         "user": user
     })
 
-@app.get("/create_project", response_class=HTMLResponse)
+@app.get("/create_project")
 async def create_project_page(
     request: Request,
-    user: dict = Depends(login_required)
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
 ):
+    # 获取所有用户列表用于负责人选择
+    c = db.cursor()
+    c.execute("SELECT username FROM users")
+    users = [{"username": row[0]} for row in c.fetchall()]
+    
     return templates.TemplateResponse("create_project.html", {
         "request": request,
-        "user": user,
-        "username": user["username"]  # 显式传递用户名
+        "username": user["username"],
+        "users": users
     })
 
-# from typing import Optional, List
-# from fastapi import File, Form, UploadFile, HTTPException
-# from datetime import datetime
-# from starlette.responses import RedirectResponse
-# import os, sqlite3
-# from werkzeug.utils import secure_filename
+def generate_project_no(db: sqlite3.Connection) -> str:
+    """生成项目编号：P2025_031 格式"""
+    current_year = datetime.now().year
+    
+    # 查询今年已有的项目数量
+    c = db.cursor()
+    c.execute("""
+        SELECT COUNT(*) FROM projects 
+        WHERE project_no LIKE ?
+    """, (f"P{current_year}_%",))
+    
+    current_count = c.fetchone()[0]
+    next_number = current_count + 1
+    
+    # 格式化为三位数，如 001, 031, 125
+    project_no = f"P{current_year}_{next_number:03d}"
+    return project_no
 
-# UPLOAD_FOLDER = "uploads"
+from datetime import datetime
 
 @app.post("/create_project")
 async def create_project(
     request: Request,
     name: str = Form(...),
+    project_type: str = Form(...),
+    client_name: str = Form(...),
+    market_leader: str = Form(...),
+    project_leader: str = Form(...),
+    amount: float = Form(0.0),
     creator: str = Form(...),
-    amount: float = Form(...),
     start_date: str = Form(...),
-    end_date: str = Form(...),
-    contract_file: Optional[UploadFile] = File(None),
-    asset_files: Optional[List[UploadFile]] = File(None),
     user: dict = Depends(login_required),
     db: sqlite3.Connection = Depends(get_db)
 ):
     try:
-        # 1️⃣ 保存合同文件（可选）
-        contract_path = None
-        if contract_file and contract_file.filename:
-            contract_filename = secure_filename(contract_file.filename)
-            contract_path = os.path.join(UPLOAD_FOLDER, contract_filename)
-            with open(contract_path, "wb") as f:
-                f.write(await contract_file.read())
-
-        # 2️⃣ 保存资产文件（可选）
-        asset_paths = []
-        if asset_files:
-            for asset_file in asset_files:
-                if asset_file.filename:
-                    asset_filename = secure_filename(asset_file.filename)
-                    asset_path = os.path.join(UPLOAD_FOLDER, asset_filename)
-                    with open(asset_path, "wb") as f:
-                        f.write(await asset_file.read())
-                    asset_paths.append(asset_path)
-
-        # 3️⃣ 插入数据库
+        # 生成项目编号
+        project_no = generate_project_no(db)
+        
+        # 获取当前时间作为创建日期
+        create_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        # 设置默认值
+        progress = "洽谈中"
+        report_numbers = ""
+        is_paid = "否"
+        end_date = start_date
+        status = "active"
+        
+        # 插入数据库
         c = db.cursor()
         c.execute("""
-            INSERT INTO projects 
-            (name, creator, amount, start_date, end_date, contract_file, asset_files) 
-            VALUES (?,?,?,?,?,?,?,?)
+            INSERT INTO projects (
+                project_no, name, project_type, client_name, market_leader, 
+                project_leader, progress, report_numbers, amount, is_paid, 
+                creator, start_date, end_date, status, contract_file, create_date
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
-            name, creator, amount, start_date, end_date,
-            contract_path or "", ','.join(asset_paths) or "",
+            project_no,
+            name, 
+            project_type,
+            client_name, 
+            market_leader,
+            project_leader,
+            progress, 
+            report_numbers, 
+            amount, 
+            is_paid, 
+            creator, 
+            start_date, 
+            end_date, 
+            status,
+            "",  # 合同文件默认为空
+            create_date,
         ))
         db.commit()
 
@@ -314,28 +366,60 @@ async def project_info(
     db: sqlite3.Connection = Depends(get_db)
 ):
     c = db.cursor()
-    c.execute("SELECT * FROM projects WHERE id=?", (project_id,))
+    
+    # 使用列名来查询，包含 create_date，移除 report_files
+    c.execute("""
+        SELECT 
+            id, project_no, name, project_type, client_name, 
+            market_leader, project_leader, progress, report_numbers, 
+            amount, is_paid, creator, start_date, end_date, 
+            status, contract_file, create_date
+        FROM projects WHERE id=?
+    """, (project_id,))
+    
     project = c.fetchone()
     
     if not project:
         raise HTTPException(status_code=404, detail="项目不存在")
     
-    project_dict = {
-        'id': project[0],
-        'name': project[1],
-        'creator': project[2],
-        'amount': project[3],
-        'start_date': project[4],
-        'end_date': project[5],
-        'contract_file': project[6],
-        'asset_files': project[7],
-        'status': project[8],
-        'additional_contracts': project[9] if len(project) > 9 else ""  # 新增字段
-    }
+    # 获取列名
+    columns = [description[0] for description in c.description]
+    
+    # 创建字典映射
+    project_dict = dict(zip(columns, project))
+    
+    # 获取该项目的所有报告（包含复核人和签字人信息）
+    c.execute("""
+        SELECT report_no, file_paths, creator, create_date, 
+               reviewer1, reviewer2, reviewer3, signer1, signer2
+        FROM reports WHERE project_id = ? ORDER BY create_date DESC
+    """, (project_id,))
+    
+    reports = []
+    for row in c.fetchall():
+        reports.append({
+            "report_no": row[0],
+            "file_paths": row[1],
+            "creator": row[2],
+            "create_date": row[3],
+            "reviewer1": row[4],
+            "reviewer2": row[5],
+            "reviewer3": row[6],
+            "signer1": row[7],
+            "signer2": row[8]
+        })
+    
+    # 获取所有用户列表用于选择复核人和签字人（包含真实姓名）
+    c.execute("SELECT username, realname FROM users")
+    users_data = c.fetchall()
+    # 创建包含用户名和真实姓名的用户列表
+    users = [{"username": row[0], "realname": row[1] or row[0]} for row in users_data]
     
     return templates.TemplateResponse("project_info.html", {
         "request": request,
         "project": project_dict,
+        "reports": reports,
+        "users": users,  # 传递包含真实姓名的用户列表
         "user": user
     })
 
@@ -435,11 +519,18 @@ async def add_contract_files(
     
     return RedirectResponse(url=f"/project/{project_id}", status_code=303)
 
-# 添加资产文件（支持多文件）
-@app.post("/project/{project_id}/add_asset")
-async def add_asset_files(
+# 添加报告文件
+# 更新报告信息
+@app.post("/project/{project_id}/update_report/{report_no}")
+async def update_report(
     project_id: int,
-    asset_files: List[UploadFile] = File(...),
+    report_no: str,
+    reviewer1: str = Form(None),
+    reviewer2: str = Form(None),
+    reviewer3: str = Form(None),
+    signer1: str = Form(None),
+    signer2: str = Form(None),
+    report_files: List[UploadFile] = File([]),
     user: dict = Depends(login_required),
     db: sqlite3.Connection = Depends(get_db)
 ):
@@ -453,35 +544,52 @@ async def add_asset_files(
     
     status = result[0]
     if status in ['completed', 'paused', 'cancelled']:
-        raise HTTPException(status_code=400, detail=f"项目状态为{status}，无法添加文件")
+        raise HTTPException(status_code=400, detail=f"项目状态为{status}，无法更新报告")
     
-    # 保存文件
-    asset_paths = []
-    for asset_file in asset_files:
-        if asset_file.filename:
-            asset_filename = secure_filename(asset_file.filename)
-            asset_path = os.path.join(UPLOAD_FOLDER, asset_filename)
-            with open(asset_path, "wb") as f:
-                content = await asset_file.read()
+    # 保存新上传的文件
+    file_paths = []
+    for report_file in report_files:
+        if report_file.filename:
+            report_filename = secure_filename(report_file.filename)
+            report_path = os.path.join(UPLOAD_FOLDER, report_filename)
+            with open(report_path, "wb") as f:
+                content = await report_file.read()
                 f.write(content)
-            asset_paths.append(asset_path)
+            file_paths.append(report_path)
     
-    if asset_paths:
-        # 获取现有的资产文件
-        c.execute("SELECT asset_files FROM projects WHERE id = ?", (project_id,))
-        result = c.fetchone()
-        existing_files = result[0] if result and result[0] else ""
-        
-        # 更新数据库
+    # 获取现有的文件路径
+    c.execute("SELECT file_paths FROM reports WHERE report_no = ? AND project_id = ?", (report_no, project_id))
+    result = c.fetchone()
+    
+    if not result:
+        raise HTTPException(status_code=404, detail="报告不存在")
+    
+    existing_files = result[0] if result[0] else ""
+    
+    # 合并文件路径
+    if file_paths:
         if existing_files:
-            new_files = existing_files + "," + ",".join(asset_paths)
+            all_files = existing_files + "," + ",".join(file_paths)
         else:
-            new_files = ",".join(asset_paths)
-        
-        c.execute("UPDATE projects SET asset_files = ? WHERE id = ?", (new_files, project_id))
-        db.commit()
+            all_files = ",".join(file_paths)
+    else:
+        all_files = existing_files
     
+    # 更新报告信息
+    c.execute("""
+        UPDATE reports 
+        SET reviewer1 = ?, reviewer2 = ?, reviewer3 = ?, 
+            signer1 = ?, signer2 = ?, file_paths = ?
+        WHERE report_no = ? AND project_id = ?
+    """, (
+        reviewer1, reviewer2, reviewer3,
+        signer1, signer2, all_files,
+        report_no, project_id
+    ))
+    
+    db.commit()
     return RedirectResponse(url=f"/project/{project_id}", status_code=303)
+
 
 @app.get("/logout")
 async def logout(request: Request):

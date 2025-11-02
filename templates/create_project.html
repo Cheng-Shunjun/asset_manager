@@ -8,39 +8,93 @@
 <body class="bg-light">
   <nav class="navbar navbar-dark bg-primary">
     <div class="container-fluid">
-      <span class="navbar-brand mb-0 h1">Create Project</span>
-      <a href="{{ url_for('admin') }}" class="btn btn-light">Back</a>
+      <span class="navbar-brand mb-0 h1">创建项目</span>
+      <a href="/admin" class="btn btn-light">返回</a>
     </div>
   </nav>
 
   <div class="container mt-4">
     <form action="/create_project" method="POST" enctype="multipart/form-data" class="bg-white p-4 rounded shadow-sm">
-      <div class="mb-3">
-        <label class="form-label">Project Name</label>
-        <input type="text" name="name" class="form-control" required>
+      <h4 class="mb-3">项目信息</h4>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">项目名称 <span class="text-danger">*</span></label>
+          <input type="text" name="name" class="form-control" required>
+        </div>
+
+        <div class="col-md-6 mb-3">
+          <label class="form-label">项目类型 <span class="text-danger">*</span></label>
+          <select name="project_type" class="form-select" required>
+            <option value="">请选择项目类型</option>
+            <option value="资产">资产</option>
+            <option value="房地产">房地产</option>
+            <option value="土地">土地</option>
+          </select>
+        </div>
       </div>
-      <div class="mb-3">
-      <label class="form-label">Creator</label>
-        <input type="text" name="creator" class="form-control" value="{{ username }}" readonly required>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">甲方名称 <span class="text-danger">*</span></label>
+          <input type="text" name="client_name" class="form-control" required>
+        </div>
+
+        <div class="col-md-6 mb-3">
+          <label class="form-label">市场部负责人 <span class="text-danger">*</span></label>
+          <select name="market_leader" class="form-select" required>
+            <option value="">请选择市场部负责人</option>
+            {% for user in users %}
+            <option value="{{ user.username }}">{{ user.username }}</option>
+            {% endfor %}
+          </select>
+        </div>
       </div>
-      <div class="mb-3">
-        <label class="form-label">Amount</label>
-        <input type="number" name="amount" step="0.01" class="form-control" required>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">项目负责人 <span class="text-danger">*</span></label>
+          <select name="project_leader" class="form-select" required>
+            <option value="">请选择项目负责人</option>
+            {% for user in users %}
+            <option value="{{ user.username }}">{{ user.username }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-6 mb-3">
+          <label class="form-label">合同金额</label>
+          <input type="number" name="amount" step="0.01" class="form-control" value="0">
+        </div>
       </div>
-      <div class="mb-3">
-        <label class="form-label">End Date</label>
-        <input type="date" name="end_date" class="form-control" required>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">开始日期 <span class="text-danger">*</span></label>
+          <input type="date" name="start_date" class="form-control" id="start_date" required>
+        </div>
+
+        <div class="col-md-6 mb-3">
+          <label class="form-label">项目创建人</label>
+          <input type="text" name="creator" class="form-control" value="{{ username }}" readonly>
+        </div>
       </div>
-      <div class="mb-3">
-        <label class="form-label">Contract File</label>
-        <input type="file" name="contract_file" class="form-control">
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Asset Files (multiple)</label>
-        <input type="file" name="asset_files" multiple class="form-control">
-      </div>
-      <button type="submit" class="btn btn-primary w-100">Create</button>
+
+      <button type="submit" class="btn btn-primary w-100">创建项目</button>
     </form>
   </div>
+
+  <script>
+    // 设置开始日期默认值为今天
+    document.addEventListener('DOMContentLoaded', function() {
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      const todayStr = `${yyyy}-${mm}-${dd}`;
+      
+      document.getElementById('start_date').value = todayStr;
+    });
+  </script>
 </body>
 </html>
