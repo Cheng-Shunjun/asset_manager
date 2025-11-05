@@ -841,9 +841,10 @@
   </div>
 
   <!-- 报告取号模态框 -->
+  <!-- 报告取号模态框 -->
   <div class="modal fade" id="generateReportModal" tabindex="-1" aria-labelledby="generateReportModalLabel"
     aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="generateReportModalLabel">报告取号</h5>
@@ -852,8 +853,9 @@
         <div class="modal-body">
           <form id="generateReportForm">
             <div class="mb-3">
-              <label class="form-label">报告类型</label>
-              <select name="report_type" class="form-select" id="reportTypeSelect" onchange="toggleFilingSelect()">
+              <label class="form-label">报告类型 <span class="text-danger">*</span></label>
+              <select name="report_type" class="form-select" id="reportTypeSelect" onchange="toggleFilingSelect()"
+                required>
                 <option value="">请选择报告类型</option>
                 <option value="房地产咨询报告">房地产咨询报告</option>
                 <option value="房地产估价报告">房地产估价报告</option>
@@ -864,13 +866,68 @@
               </select>
             </div>
             <div class="mb-3" id="filingSection" style="display: none;">
-              <label class="form-label">是否备案</label>
-              <select name="is_filing" class="form-select" id="filingSelect">
+              <label class="form-label">是否备案 <span class="text-danger">*</span></label>
+              <select name="is_filing" class="form-select" id="filingSelect" required>
                 <option value="">请选择是否备案</option>
                 <option value="是">是</option>
                 <option value="否">否</option>
               </select>
             </div>
+
+            <!-- 复核人选择 -->
+            <div class="mb-3">
+              <label class="form-label">复核人 <span class="text-danger">*</span></label>
+              <div class="row">
+                <div class="col-md-4">
+                  <select name="reviewer1" class="form-select" id="modalReviewer1" required>
+                    <option value="">请选择复核人1</option>
+                    {% for user in users %}
+                    <option value="{{ user.username }}">{{ user.realname }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <select name="reviewer2" class="form-select" id="modalReviewer2" required>
+                    <option value="">请选择复核人2</option>
+                    {% for user in users %}
+                    <option value="{{ user.username }}">{{ user.realname }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <select name="reviewer3" class="form-select" id="modalReviewer3" required>
+                    <option value="">请选择复核人3</option>
+                    {% for user in users %}
+                    <option value="{{ user.username }}">{{ user.realname }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- 签字人选择 -->
+            <div class="mb-3">
+              <label class="form-label">签字人 <span class="text-danger">*</span></label>
+              <div class="row">
+                <div class="col-md-6">
+                  <select name="signer1" class="form-select" id="modalSigner1" required>
+                    <option value="">请选择签字人1</option>
+                    {% for user in users %}
+                    <option value="{{ user.username }}">{{ user.realname }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <select name="signer2" class="form-select" id="modalSigner2" required>
+                    <option value="">请选择签字人2</option>
+                    {% for user in users %}
+                    <option value="{{ user.username }}">{{ user.realname }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+
             <div class="mb-3" id="resultSection" style="display: none;">
               <label class="form-label">生成的报告号</label>
               <input type="text" class="form-control" id="generatedReportNo" readonly>
@@ -1133,24 +1190,49 @@
     }
 
     // 生成报告号
-    // 生成报告号
     async function generateReportNo() {
       const reportType = document.getElementById('reportTypeSelect').value;
       const filingSelect = document.getElementById('filingSelect');
       const isFiling = filingSelect.value;
-      const generateButton = document.getElementById('generateButton');
-      const copyButton = document.getElementById('copyButton');
+      const reviewer1 = document.getElementById('modalReviewer1').value;
+      const reviewer2 = document.getElementById('modalReviewer2').value;
+      const reviewer3 = document.getElementById('modalReviewer3').value;
+      const signer1 = document.getElementById('modalSigner1').value;
+      const signer2 = document.getElementById('modalSigner2').value;
 
-      // 验证输入
+      // 验证报告类型
       if (!reportType) {
         alert('请选择报告类型');
         return;
       }
 
-      // 需要备案的报告类型
+      // 验证备案选择
       const filingRequiredTypes = ["房地产估价报告", "资产评估报告", "土地报告"];
       if (filingRequiredTypes.includes(reportType) && !isFiling) {
         alert('请选择是否备案');
+        return;
+      }
+
+      // 验证复核人：必须3个都有且不能重复
+      if (!reviewer1 || !reviewer2 || !reviewer3) {
+        alert('必须设置3个复核人，不能有空缺');
+        return;
+      }
+
+      const reviewers = [reviewer1, reviewer2, reviewer3];
+      if (reviewers.length !== new Set(reviewers).size) {
+        alert('复核人不能重复，请选择3个不同的复核人');
+        return;
+      }
+
+      // 验证签字人：必须2个都有且不能重复
+      if (!signer1 || !signer2) {
+        alert('必须设置2个签字人，不能有空缺');
+        return;
+      }
+
+      if (signer1 === signer2) {
+        alert('签字人不能重复，请选择2个不同的签字人');
         return;
       }
 
@@ -1160,6 +1242,11 @@
         if (isFiling) {
           formData.append('is_filing', isFiling);
         }
+        formData.append('reviewer1', reviewer1);
+        formData.append('reviewer2', reviewer2);
+        formData.append('reviewer3', reviewer3);
+        formData.append('signer1', signer1);
+        formData.append('signer2', signer2);
 
         const response = await fetch(`/project/{{ project.id }}/generate_report_no`, {
           method: 'POST',
@@ -1172,8 +1259,8 @@
           document.getElementById('resultSection').style.display = 'block';
 
           // 隐藏生成按钮，显示复制按钮
-          generateButton.style.display = 'none';
-          copyButton.style.display = 'inline-block';
+          document.getElementById('generateButton').style.display = 'none';
+          document.getElementById('copyButton').style.display = 'inline-block';
         } else {
           const error = await response.json();
           alert('生成报告号失败: ' + error.detail);
@@ -1193,6 +1280,11 @@
       // 关闭模态框
       const modal = bootstrap.Modal.getInstance(document.getElementById('generateReportModal'));
       modal.hide();
+
+      // 刷新页面以显示新添加的报告
+      setTimeout(() => {
+        location.reload();
+      }, 500);
     }
 
     // 模态框关闭时重置表单和按钮

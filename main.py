@@ -603,12 +603,16 @@ async def update_report(
     return RedirectResponse(url=f"/project/{project_id}", status_code=303)
 
 # 报告取号
-# 报告取号
 @app.post("/project/{project_id}/generate_report_no")
 async def generate_report_no(
     project_id: int,
     report_type: str = Form(...),
     is_filing: str = Form(None),
+    reviewer1: str = Form(...),
+    reviewer2: str = Form(...),
+    reviewer3: str = Form(...),
+    signer1: str = Form(...),
+    signer2: str = Form(...),
     user: dict = Depends(login_required),
     db: sqlite3.Connection = Depends(get_db)
 ):
@@ -624,6 +628,16 @@ async def generate_report_no(
         status = result[0]
         if status != 'active':
             raise HTTPException(status_code=400, detail="只有进行中的项目可以生成报告号")
+        
+        # 验证复核人重复
+        reviewers = [reviewer1, reviewer2, reviewer3]
+        if len(reviewers) != len(set(reviewers)):
+            raise HTTPException(status_code=400, detail="复核人不能重复，请选择3个不同的复核人")
+        
+        # 验证签字人重复
+        signers = [signer1, signer2]
+        if len(signers) != len(set(signers)):
+            raise HTTPException(status_code=400, detail="签字人不能重复，请选择2个不同的签字人")
         
         # 获取当前日期
         now = datetime.now()
@@ -651,34 +665,106 @@ async def generate_report_no(
         if report_type in filing_required_types and not is_filing:
             raise HTTPException(status_code=400, detail=f"{report_type}需要选择是否备案")
         
-        # 计算当前类型报告的序号
-        # 查询当月同类型报告的数量
-        c.execute("""
-            SELECT COUNT(*) FROM reports 
-            WHERE report_no LIKE ? AND project_id = ?
-        """, (f"%{report_type_prefixes[report_type]}[{current_year}]字第{current_month}%", project_id))
+        # 构建查询条件
+        report_prefix = report_type_prefixes[report_type]
+        year_pattern = f"[{current_year}]字第"
         
-        current_count = c.fetchone()[0]
-        next_number = current_count + 1
+        # 查询当月同类型报告的所有序号
+        if report_type in filing_required_types and is_filing == "是":
+            # 备案的报告：查找 A月份XXX 格式的序号
+            pattern = f"%{report_prefix}{year_pattern}A{current_month}%"
+        else:
+            # 未备案的报告：查找 月份XXX 格式的序号
+            pattern = f"%{report_prefix}{year_pattern}{current_month}%"
+        
+        c.execute("""
+            SELECT report_no FROM reports 
+            WHERE report_no LIKE ? AND project_id = ?
+        """, (pattern, project_id))
+        
+        existing_reports = c.fetchall()
+        
+        # 提取现有的序号
+        existing_numbers = []
+        for report in existing_reports:
+            report_no = report[0]
+            # 提取序号部分
+            if report_type in filing_required_types and is_filing == "是":
+                # 备案报告格式：川鼎土估[2025]字第A11001号
+                # 提取 A11 后面的数字部分
+                prefix_len = len(f"川鼎{report_prefix}{year_pattern}A{current_month}")
+                number_part = report_no[prefix_len:-1]  # 去掉最后的"号"
+            else:
+                # 未备案报告格式：川鼎土估[2025]字第11001号
+                # 提取 11 后面的数字部分
+                prefix_len = len(f"川鼎{report_prefix}{year_pattern}{current_month}")
+                number_part = report_no[prefix_len:-1]  # 去掉最后的"号"
+            
+            if number_part.isdigit():
+                existing_numbers.append(int(number_part))
+        
+        # 查找最小的可用序号（从1开始，查找缺失的编号）
+        next_number = 1
+        while next_number in existing_numbers:
+            next_number += 1
         
         # 格式化序号为三位数
         sequence_no = f"{next_number:03d}"
         
         # 生成报告号
         prefix = "川鼎"
-        middle = f"[{current_year}]字第{current_month}"  # 包含月份
+        middle = f"[{current_year}]字第"
         
         if report_type in filing_required_types and is_filing == "是":
-            suffix = f"A{sequence_no}号"
+            # 备案的报告号格式：第A11001号
+            suffix = f"A{current_month}{sequence_no}号"
         else:
-            suffix = f"{sequence_no}号"
+            # 未备案的报告号格式：第11001号
+            suffix = f"{current_month}{sequence_no}号"
         
         report_no = f"{prefix}{report_type_prefixes[report_type]}{middle}{suffix}"
+        
+        # 保存报告号到数据库
+        create_date = now.strftime("%Y-%m-%d %H:%M:%S")
+        
+        # 插入报告记录（包含复核人和签字人）
+        c.execute("""
+            INSERT INTO reports (
+                report_no, project_id, file_paths, creator, create_date,
+                reviewer1, reviewer2, reviewer3, signer1, signer2
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            report_no,
+            project_id,
+            "",  # 文件路径为空
+            user["username"],
+            create_date,
+            reviewer1,
+            reviewer2,
+            reviewer3,
+            signer1,
+            signer2
+        ))
+        
+        # 更新项目的报告号列表
+        c.execute("SELECT report_numbers FROM projects WHERE id = ?", (project_id,))
+        result = c.fetchone()
+        existing_report_numbers = result[0] if result and result[0] else ""
+        
+        if existing_report_numbers:
+            new_report_numbers = existing_report_numbers + "," + report_no
+        else:
+            new_report_numbers = report_no
+        
+        c.execute("UPDATE projects SET report_numbers = ? WHERE id = ?", (new_report_numbers, project_id))
+        
+        db.commit()
         
         # 返回报告号
         return {"report_no": report_no}
         
     except Exception as e:
+        db.rollback()
         raise HTTPException(status_code=500, detail=f"生成报告号失败: {str(e)}")
 
 @app.get("/logout")
