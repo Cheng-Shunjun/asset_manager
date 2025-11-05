@@ -519,7 +519,6 @@ async def add_contract_files(
     
     return RedirectResponse(url=f"/project/{project_id}", status_code=303)
 
-# 添加报告文件
 # 更新报告信息
 @app.post("/project/{project_id}/update_report/{report_no}")
 async def update_report(
@@ -557,14 +556,19 @@ async def update_report(
                 f.write(content)
             file_paths.append(report_path)
     
-    # 获取现有的文件路径
-    c.execute("SELECT file_paths FROM reports WHERE report_no = ? AND project_id = ?", (report_no, project_id))
+    # 获取现有的报告信息
+    c.execute("SELECT file_paths, reviewer1, reviewer2, reviewer3, signer1, signer2 FROM reports WHERE report_no = ? AND project_id = ?", (report_no, project_id))
     result = c.fetchone()
     
     if not result:
         raise HTTPException(status_code=404, detail="报告不存在")
     
     existing_files = result[0] if result[0] else ""
+    existing_reviewer1 = result[1]
+    existing_reviewer2 = result[2]
+    existing_reviewer3 = result[3]
+    existing_signer1 = result[4]
+    existing_signer2 = result[5]
     
     # 合并文件路径
     if file_paths:
@@ -575,6 +579,14 @@ async def update_report(
     else:
         all_files = existing_files
     
+    # 确定要更新的字段值
+    # 如果表单没有提交某个字段（值为None），则保持原有值
+    final_reviewer1 = reviewer1 if reviewer1 is not None else existing_reviewer1
+    final_reviewer2 = reviewer2 if reviewer2 is not None else existing_reviewer2
+    final_reviewer3 = reviewer3 if reviewer3 is not None else existing_reviewer3
+    final_signer1 = signer1 if signer1 is not None else existing_signer1
+    final_signer2 = signer2 if signer2 is not None else existing_signer2
+    
     # 更新报告信息
     c.execute("""
         UPDATE reports 
@@ -582,14 +594,92 @@ async def update_report(
             signer1 = ?, signer2 = ?, file_paths = ?
         WHERE report_no = ? AND project_id = ?
     """, (
-        reviewer1, reviewer2, reviewer3,
-        signer1, signer2, all_files,
+        final_reviewer1, final_reviewer2, final_reviewer3,
+        final_signer1, final_signer2, all_files,
         report_no, project_id
     ))
     
     db.commit()
     return RedirectResponse(url=f"/project/{project_id}", status_code=303)
 
+# 报告取号
+# 报告取号
+@app.post("/project/{project_id}/generate_report_no")
+async def generate_report_no(
+    project_id: int,
+    report_type: str = Form(...),
+    is_filing: str = Form(None),
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    try:
+        # 检查项目状态
+        c = db.cursor()
+        c.execute("SELECT status FROM projects WHERE id = ?", (project_id,))
+        result = c.fetchone()
+        
+        if not result:
+            raise HTTPException(status_code=404, detail="项目不存在")
+        
+        status = result[0]
+        if status != 'active':
+            raise HTTPException(status_code=400, detail="只有进行中的项目可以生成报告号")
+        
+        # 获取当前日期
+        now = datetime.now()
+        current_year = now.year
+        current_month = now.strftime("%m")  # 两位数的月份
+        
+        # 报告类型映射
+        report_type_prefixes = {
+            "房地产咨询报告": "房咨",
+            "房地产估价报告": "房估",
+            "资产评估报告": "评报",
+            "资产估值报告": "估评",
+            "资产咨询报告": "咨评",
+            "土地报告": "土估"
+        }
+        
+        # 需要备案的报告类型
+        filing_required_types = ["房地产估价报告", "资产评估报告", "土地报告"]
+        
+        # 验证报告类型
+        if report_type not in report_type_prefixes:
+            raise HTTPException(status_code=400, detail="无效的报告类型")
+        
+        # 验证备案选择
+        if report_type in filing_required_types and not is_filing:
+            raise HTTPException(status_code=400, detail=f"{report_type}需要选择是否备案")
+        
+        # 计算当前类型报告的序号
+        # 查询当月同类型报告的数量
+        c.execute("""
+            SELECT COUNT(*) FROM reports 
+            WHERE report_no LIKE ? AND project_id = ?
+        """, (f"%{report_type_prefixes[report_type]}[{current_year}]字第{current_month}%", project_id))
+        
+        current_count = c.fetchone()[0]
+        next_number = current_count + 1
+        
+        # 格式化序号为三位数
+        sequence_no = f"{next_number:03d}"
+        
+        # 生成报告号
+        prefix = "川鼎"
+        middle = f"[{current_year}]字第{current_month}"  # 包含月份
+        
+        if report_type in filing_required_types and is_filing == "是":
+            suffix = f"A{sequence_no}号"
+        else:
+            suffix = f"{sequence_no}号"
+        
+        report_no = f"{prefix}{report_type_prefixes[report_type]}{middle}{suffix}"
+        
+        # 返回报告号
+        return {"report_no": report_no}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"生成报告号失败: {str(e)}")
 
 @app.get("/logout")
 async def logout(request: Request):

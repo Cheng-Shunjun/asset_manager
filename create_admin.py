@@ -99,40 +99,41 @@ def init_database():
     print("✅ 测试用户创建完成。")
 
     # ========= 插入测试项目数据 =========
+    current_year = datetime.now().year
     projects = [
         (
-            "P2025-001", "中和拆迁项目", "土地", "中和市城市建设局",
-            "张三", "李四", "前期规划阶段", "ZH-2025-001,ZH-2025-002",
+            f"P{current_year}_001", "中和拆迁项目", "土地", "中和市城市建设局",
+            "张三", "李四", "前期规划阶段", "",
             1200000.00, "是", "admin", "2025-01-10", "",
-            "active", "contracts/zh_contract.pdf", "2025-01-10 15:32:21"
+            "active", "", "2025-01-10 15:32:21"
         ),
         (
-            "P2024-002", "智慧城市基础设施建设", "房地产", "中和市智慧城市办",
-            "王五", "赵六", "验收阶段", "SC-2024-002",
+            f"P{current_year}_002", "智慧城市基础设施建设", "房地产", "中和市智慧城市办",
+            "王五", "赵六", "验收阶段", "",
             2800000.00, "是", "admin", "2024-03-01", "2024-06-01",
             "completed", "", "2024-03-01 09:15:30"
         ),
         (
-            "P2023-003", "学校翻新工程", "资产", "中和市教育局",
-            "孙七", "周八", "暂停中", "EDU-2023-003",
+            f"P{current_year}_003", "学校翻新工程", "资产", "中和市教育局",
+            "孙七", "周八", "暂停中", "",
             800000.00, "否", "admin", "2023-09-01", "2024-09-01",
             "paused", "", "2023-09-01 14:20:45"
         ),
         (
-            "P2025-004", "新能源车站项目", "资产", "中和交通投资集团",
-            "吴九", "郑十", "执行中", "EV-2025-004",
+            f"P{current_year}_004", "新能源车站项目", "资产", "中和交通投资集团",
+            "吴九", "郑十", "执行中", "",
             10000000.00, "是", "admin", "2025-06-01", "",
             "active", "", "2025-06-01 10:05:18"
         ),
         (
-            "P2022-005", "旧城区道路改造", "房地产", "中和市市政建设局",
-            "张三", "王五", "已取消", "RD-2022-005",
+            f"P{current_year}_005", "旧城区道路改造", "房地产", "中和市市政建设局",
+            "张三", "王五", "已取消", "",
             15000000.00, "否", "admin", "2022-05-10", "",
-            "cancelled", "contracts/road.pdf", "2022-05-10 16:45:22"
+            "cancelled", "", "2022-05-10 16:45:22"
         ),
         (
-            "P2025-006", "污水处理厂升级项目", "资产", "中和市环保局",
-            "李四", "赵六", "施工阶段", "WP-2025-006",
+            f"P{current_year}_006", "污水处理厂升级项目", "资产", "中和市环保局",
+            "李四", "赵六", "施工阶段", "",
             4200000.00, "是", "admin", "2025-02-01", "",
             "active", "", "2025-02-01 11:30:15"
         )
@@ -150,51 +151,52 @@ def init_database():
     print("✅ 所有示例项目数据已添加。")
 
     # ========= 插入测试报告数据 =========
+    # 使用新的报告号格式
     reports = [
-        # 项目1的报告
+        # 项目1的报告 - 土地报告
         (
-            "ZH-2025-001", 1, "static/uploads/zh_report1.pdf,static/uploads/zh_attachment1.docx",
+            f"川鼎土估[{current_year}]字第01001号", 1, "static/uploads/zh_report1.pdf,static/uploads/zh_attachment1.docx",
             "admin", "2025-01-15 10:30:00", "张三", "李四", "王五", "赵六", "孙七"
         ),
         (
-            "ZH-2025-002", 1, "static/uploads/zh_report2.pdf",
+            f"川鼎土估[{current_year}]字第01002号", 1, "static/uploads/zh_report2.pdf",
             "admin", "2025-01-20 14:15:00", "王五", "赵六", "孙七", "周八", "吴九"
         ),
-        # 项目2的报告
+        # 项目2的报告 - 房地产估价报告
         (
-            "SC-2024-002", 2, "static/uploads/sc_report.pdf,static/uploads/sc_data.xlsx,static/uploads/sc_charts.pdf",
+            f"川鼎房估[{current_year}]字第02001号", 2, "static/uploads/sc_report.pdf,static/uploads/sc_data.xlsx,static/uploads/sc_charts.pdf",
             "admin", "2024-05-20 09:45:00", "李四", "王五", "赵六", "孙七", "周八"
         ),
-        # 项目3的报告
+        # 项目3的报告 - 资产评估报告
         (
-            "EDU-2023-003", 3, "static/uploads/edu_report.pdf",
+            f"川鼎评报[{current_year}]字第03001号", 3, "static/uploads/edu_report.pdf",
             "admin", "2023-10-10 16:20:00", "张三", "李四", "王五", "赵六", "孙七"
         ),
-        # 项目4的报告
+        # 项目4的报告 - 资产估值报告
         (
-            "EV-2025-004", 4, "static/uploads/ev_report1.pdf,static/uploads/ev_design.docx",
+            f"川鼎估评[{current_year}]字第04001号", 4, "static/uploads/ev_report1.pdf,static/uploads/ev_design.docx",
             "admin", "2025-06-15 11:00:00", "赵六", "孙七", "周八", "吴九", "郑十"
         ),
         (
-            "EV-2025-005", 4, "static/uploads/ev_report2.pdf",
+            f"川鼎估评[{current_year}]字第04002号", 4, "static/uploads/ev_report2.pdf",
             "admin", "2025-07-01 15:30:00", "孙七", "周八", "吴九", "郑十", "张三"
         ),
-        # 项目5的报告
+        # 项目5的报告 - 房地产咨询报告
         (
-            "RD-2022-005", 5, "static/uploads/rd_report.pdf",
+            f"川鼎房咨[{current_year}]字第05001号", 5, "static/uploads/rd_report.pdf",
             "admin", "2022-06-01 13:45:00", "张三", "李四", "王五", "赵六", "孙七"
         ),
-        # 项目6的报告
+        # 项目6的报告 - 资产咨询报告
         (
-            "WP-2025-006", 6, "static/uploads/wp_report1.pdf,static/uploads/wp_analysis.xlsx",
+            f"川鼎咨评[{current_year}]字第06001号", 6, "static/uploads/wp_report1.pdf,static/uploads/wp_analysis.xlsx",
             "admin", "2025-02-15 10:15:00", "李四", "赵六", "孙七", "周八", "吴九"
         ),
         (
-            "WP-2025-007", 6, "static/uploads/wp_report2.pdf",
+            f"川鼎咨评[{current_year}]字第06002号", 6, "static/uploads/wp_report2.pdf",
             "admin", "2025-03-01 14:50:00", "王五", "孙七", "周八", "吴九", "郑十"
         ),
         (
-            "WP-2025-008", 6, "static/uploads/wp_report3.pdf,static/uploads/wp_final.docx",
+            f"川鼎咨评[{current_year}]字第06003号", 6, "static/uploads/wp_report3.pdf,static/uploads/wp_final.docx",
             "admin", "2025-03-20 16:10:00", "赵六", "周八", "吴九", "郑十", "张三"
         )
     ]
@@ -207,6 +209,16 @@ def init_database():
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, reports)
     print("✅ 所有示例报告数据已添加。")
+
+    # 更新项目的 report_numbers 字段
+    for project_id in range(1, 7):  # 假设有6个项目
+        c.execute("SELECT report_no FROM reports WHERE project_id = ?", (project_id,))
+        project_reports = c.fetchall()
+        if project_reports:
+            report_numbers = ",".join([report[0] for report in project_reports])
+            c.execute("UPDATE projects SET report_numbers = ? WHERE id = ?", (report_numbers, project_id))
+    
+    print("✅ 项目报告号已更新。")
 
     conn.commit()
     conn.close()
