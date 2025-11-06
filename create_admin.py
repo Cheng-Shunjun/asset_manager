@@ -68,6 +68,22 @@ def init_database():
     """)
     print("✅ reports 表创建完成。")
 
+    # ========= 创建 report_files 表 =========
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS report_files (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        report_id INTEGER,               -- 关联的报告ID
+        file_path TEXT NOT NULL,         -- 文件路径
+        file_name TEXT NOT NULL,         -- 原文件名
+        uploader_username TEXT NOT NULL, -- 上传者用户名
+        uploader_realname TEXT NOT NULL, -- 上传者真实姓名
+        upload_time TEXT NOT NULL,       -- 上传时间
+        file_size INTEGER,               -- 文件大小（字节）
+        FOREIGN KEY (report_id) REFERENCES reports (id)
+    )
+    """)
+    print("✅ report_files 表创建完成。")
+
     # ========= 插入管理员用户 =========
     username = "admin"
     realname = "系统管理员"
@@ -210,6 +226,55 @@ def init_database():
     """, reports)
     print("✅ 所有示例报告数据已添加。")
 
+    # ========= 插入测试文件数据 =========
+    report_files_data = []
+    
+    # 为每个报告的文件创建详细记录
+    file_records = [
+        # 报告1的文件
+        (1, "static/uploads/zh_report1.pdf", "zh_report1.pdf", "admin", "系统管理员", "2025-01-15 10:30:00", 1024000),
+        (1, "static/uploads/zh_attachment1.docx", "zh_attachment1.docx", "admin", "系统管理员", "2025-01-15 10:30:00", 512000),
+        
+        # 报告2的文件
+        (2, "static/uploads/zh_report2.pdf", "zh_report2.pdf", "admin", "系统管理员", "2025-01-20 14:15:00", 1536000),
+        
+        # 报告3的文件
+        (3, "static/uploads/sc_report.pdf", "sc_report.pdf", "admin", "系统管理员", "2024-05-20 09:45:00", 2048000),
+        (3, "static/uploads/sc_data.xlsx", "sc_data.xlsx", "admin", "系统管理员", "2024-05-20 09:45:00", 256000),
+        (3, "static/uploads/sc_charts.pdf", "sc_charts.pdf", "admin", "系统管理员", "2024-05-20 09:45:00", 768000),
+        
+        # 报告4的文件
+        (4, "static/uploads/edu_report.pdf", "edu_report.pdf", "admin", "系统管理员", "2023-10-10 16:20:00", 896000),
+        
+        # 报告5的文件
+        (5, "static/uploads/ev_report1.pdf", "ev_report1.pdf", "admin", "系统管理员", "2025-06-15 11:00:00", 1280000),
+        (5, "static/uploads/ev_design.docx", "ev_design.docx", "admin", "系统管理员", "2025-06-15 11:00:00", 384000),
+        
+        # 报告6的文件
+        (6, "static/uploads/ev_report2.pdf", "ev_report2.pdf", "admin", "系统管理员", "2025-07-01 15:30:00", 1152000),
+        
+        # 报告7的文件
+        (7, "static/uploads/rd_report.pdf", "rd_report.pdf", "admin", "系统管理员", "2022-06-01 13:45:00", 960000),
+        
+        # 报告8的文件
+        (8, "static/uploads/wp_report1.pdf", "wp_report1.pdf", "admin", "系统管理员", "2025-02-15 10:15:00", 1408000),
+        (8, "static/uploads/wp_analysis.xlsx", "wp_analysis.xlsx", "admin", "系统管理员", "2025-02-15 10:15:00", 320000),
+        
+        # 报告9的文件
+        (9, "static/uploads/wp_report2.pdf", "wp_report2.pdf", "admin", "系统管理员", "2025-03-01 14:50:00", 1664000),
+        
+        # 报告10的文件
+        (10, "static/uploads/wp_report3.pdf", "wp_report3.pdf", "admin", "系统管理员", "2025-03-20 16:10:00", 1920000),
+        (10, "static/uploads/wp_final.docx", "wp_final.docx", "admin", "系统管理员", "2025-03-20 16:10:00", 448000),
+    ]
+
+    c.executemany("""
+        INSERT INTO report_files 
+        (report_id, file_path, file_name, uploader_username, uploader_realname, upload_time, file_size)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, file_records)
+    print("✅ 所有示例文件数据已添加。")
+
     # 更新项目的 report_numbers 字段
     for project_id in range(1, 7):  # 假设有6个项目
         c.execute("SELECT report_no FROM reports WHERE project_id = ?", (project_id,))
@@ -227,6 +292,7 @@ def init_database():
     print(f"   - 用户数量: {len(test_users) + 1}")  # +1 管理员
     print(f"   - 项目数量: {len(projects)}")
     print(f"   - 报告数量: {len(reports)}")
+    print(f"   - 文件记录数量: {len(file_records)}")
 
 if __name__ == "__main__":
     init_database()

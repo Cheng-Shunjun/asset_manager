@@ -1,16 +1,15 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
   <meta charset="UTF-8">
   <title>项目详情</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
+    /* 原有的CSS样式保持不变 */
     .card-header {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
     }
-
     .file-item {
       display: flex;
       align-items: center;
@@ -21,11 +20,9 @@
       background-color: #f8f9fa;
       transition: background-color 0.2s ease;
     }
-
     .file-item:hover {
       background-color: #e9ecef;
     }
-
     .file-item a {
       text-decoration: none;
       color: #495057;
@@ -33,68 +30,55 @@
       display: flex;
       align-items: center;
     }
-
     .file-item a:hover {
       color: #0d6efd;
     }
-
     .info-card {
       border-left: 4px solid #0d6efd;
       border-radius: 0.375rem;
     }
-
     .table-details th {
       width: 30%;
       background-color: #f8f9fa;
     }
-
     .status-badge {
       font-size: 0.75rem;
       padding: 0.35em 0.65em;
     }
-
     .status-active {
       background-color: #198754;
       color: white;
     }
-
     .status-completed {
       background-color: #0d6efd;
       color: white;
     }
-
     .status-paused {
       background-color: #6c757d;
       color: white;
     }
-
     .status-cancelled {
       background-color: #dc3545;
       color: white;
     }
-
     .action-buttons {
       position: sticky;
       bottom: 20px;
       z-index: 100;
     }
-
     .btn-action {
       min-width: 140px;
       margin: 0 5px;
     }
-
     .upload-section {
       border-top: 1px solid #dee2e6;
       padding-top: 1rem;
       margin-top: 1rem;
     }
-
     .disabled-upload {
       opacity: 0.6;
       pointer-events: none;
     }
-
     .upload-disabled-message {
       background-color: #f8f9fa;
       border: 1px dashed #dee2e6;
@@ -103,28 +87,23 @@
       text-align: center;
       color: #6c757d;
     }
-
     .file-icon {
       margin-right: 0.5rem;
       flex-shrink: 0;
     }
-
     .project-no-badge {
       background-color: #6f42c1;
       color: white;
       font-size: 0.8rem;
     }
-
     .report-card {
       border-left: 4px solid #0dcaf0;
       transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
-
     .report-card:hover {
       transform: translateY(-2px);
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
-
     .person-badge {
       background-color: #e9ecef;
       color: #495057;
@@ -132,14 +111,12 @@
       padding: 0.25em 0.5em;
       margin: 0.1rem;
     }
-
     .update-form {
       background-color: #f8f9fa;
       border-radius: 0.375rem;
       padding: 1rem;
       margin-top: 1rem;
     }
-
     .edit-link {
       color: #6c757d;
       text-decoration: none;
@@ -147,32 +124,45 @@
       margin-left: 0.5rem;
       cursor: pointer;
     }
-
     .edit-link:hover {
       color: #0d6efd;
       text-decoration: underline;
     }
-
     .person-item {
       display: flex;
       align-items: center;
       margin-bottom: 0.25rem;
     }
-
-    /* 在现有的style部分添加 */
     .btn-outline-danger {
       border-color: #dc3545;
       color: #dc3545;
     }
-
     .btn-outline-danger:hover {
       background-color: #dc3545;
       color: white;
+    }
+    .file-info {
+      font-size: 0.75rem;
+    }
+    .uploader {
+      color: #495057;
+      font-weight: 500;
+    }
+    .upload-time {
+      color: #6c757d;
+    }
+    .file-size {
+      color: #6c757d;
+      background-color: #e9ecef;
+      padding: 0.1rem 0.3rem;
+      border-radius: 0.2rem;
+      font-size: 0.7rem;
     }
   </style>
 </head>
 
 <body class="bg-light">
+  <!-- 导航栏和其他HTML内容保持不变 -->
   <nav class="navbar navbar-dark bg-primary shadow-sm">
     <div class="container-fluid">
       <span class="navbar-brand mb-0 h1">
@@ -209,7 +199,7 @@
 
     <div class="row">
       <div class="col-lg-10 mx-auto">
-        <!-- Project Header Card -->
+        <!-- 项目头部卡片 -->
         <div class="card shadow-sm mb-4">
           <div class="card-header py-3">
             <div class="d-flex justify-content-between align-items-center">
@@ -236,7 +226,7 @@
           </div>
         </div>
 
-        <!-- Project Details Card -->
+        <!-- 项目详情卡片 -->
         <div class="card shadow-sm mb-4">
           <div class="card-header">
             <h5 class="mb-0">
@@ -253,6 +243,7 @@
             <div class="table-responsive">
               <table class="table table-bordered table-hover table-details">
                 <tbody>
+                  <!-- 项目信息表格内容保持不变 -->
                   <tr>
                     <th>项目序号</th>
                     <td>
@@ -325,7 +316,6 @@
                       {% endif %}
                     </td>
                   </tr>
-                  <!-- 在项目信息表格中找到报告号这一行 -->
                   <tr>
                     <th>报告号</th>
                     <td>
@@ -425,7 +415,6 @@
                       {% endif %}
                     </td>
                   </tr>
-                  <!-- 添加创建日期 -->
                   <tr>
                     <th>创建日期</th>
                     <td>
@@ -475,7 +464,7 @@
           </div>
         </div>
 
-        <!-- Contract File Card -->
+        <!-- 合同文件卡片 -->
         <div class="card shadow-sm mb-4">
           <div class="card-header">
             <h5 class="mb-0">
@@ -561,7 +550,7 @@
           </div>
         </div>
 
-        <!-- Reports Section -->
+        <!-- 报告管理部分 -->
         <div class="card shadow-sm mb-4">
           <div class="card-header">
             <h5 class="mb-0">
@@ -582,11 +571,10 @@
               <h6 class="mb-3">现有报告</h6>
               <div class="row">
                 {% for report in reports %}
-                <div class="col-md-6 mb-4">
+                <div class="col-12 mb-4">
                   <div class="card report-card h-100">
                     <div class="card-body">
                       <!-- 报告头部信息 -->
-                      <!-- 在报告头部信息部分添加删除按钮 -->
                       <div class="d-flex justify-content-between align-items-start mb-3">
                         <h6 class="card-title text-primary mb-0">{{ report.report_no }}</h6>
                         <div class="d-flex align-items-center">
@@ -610,7 +598,6 @@
                         </div>
                       </div>
 
-                      <!-- 复核人信息 -->
                       <!-- 复核人信息 -->
                       <div class="mb-2">
                         <div class="d-flex justify-content-between align-items-center mb-1">
@@ -713,31 +700,36 @@
                       </div>
 
                       <!-- 报告文件 -->
-                      {% if report.file_paths %}
+                      {% if report.files %}
                       <div class="mb-3">
                         <small class="text-muted fw-bold">报告文件:</small>
-                        {% for file_path in report.file_paths.split(',') %}
-                        {% if file_path.strip() %}
-                        {% set filename = file_path.replace('static/', '').replace('uploads\\', '').replace('uploads/',
-                        '').split('/')[-1].split('\\')[-1] %}
+                        {% for file in report.files %}
                         <div class="file-item">
-                          <a href="/{{ file_path.strip() }}" target="_blank">
+                          <a href="/{{ file.file_path }}" target="_blank">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
                               class="bi bi-paperclip file-icon" viewBox="0 0 16 16">
                               <path
                                 d="M4.5 3a2.5 2.5 0 0 1 5 0v9a1.5 1.5 0 0 1-3 0V5a.5.5 0 0 1 1 0v7a.5.5 0 0 0 1 0V3a1.5 1.5 0 1 0-3 0v9a2.5 2.5 0 0 0 5 0V5a.5.5 0 0 1 1 0v7a3.5 3.5 0 1 1-7 0V3z" />
                             </svg>
-                            {{ filename }}
+                            {{ file.file_name }}
                           </a>
+                          <div class="ms-auto file-info">
+                            <small class="text-muted">
+                              <span class="uploader">{{ file.uploader_realname }}</span>
+                              <span class="upload-time ms-2">{{ file.upload_time }}</span>
+                              {% if file.file_size %}
+                              <span class="file-size ms-2">{{ (file.file_size / 1024) | round(1) }} KB</span>
+                              {% endif %}
+                            </small>
+                          </div>
                         </div>
-                        {% endif %}
                         {% endfor %}
                       </div>
                       {% else %}
                       <p class="text-muted mb-3">暂无文件</p>
                       {% endif %}
 
-                      <!-- 文件上传表单（保留） -->
+                      <!-- 文件上传表单 -->
                       {% if project.status == 'active' %}
                       <div class="update-form">
                         <h6 class="mb-3">添加报告文件</h6>
@@ -772,7 +764,7 @@
           </div>
         </div>
 
-        <!-- Action Buttons -->
+        <!-- 操作按钮 -->
         <div class="action-buttons mt-4">
           <div class="card shadow-sm">
             <div class="card-body text-center">
@@ -981,10 +973,12 @@
           </form>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+          <button type="button" class="btn btn-secondary" id="cancelButton" data-bs-dismiss="modal">取消</button>
           <button type="button" class="btn btn-primary" id="generateButton" onclick="generateReportNo()">生成报告号</button>
           <button type="button" class="btn btn-success" id="copyButton" style="display: none;"
             onclick="copyReportNo()">复制到粘贴板</button>
+          <button type="button" class="btn btn-primary" id="doneButton" style="display: none;"
+            onclick="closeAndRefresh()">完成</button>
         </div>
       </div>
     </div>
@@ -1076,6 +1070,7 @@
       </div>
     </div>
   </div>
+  
   <!-- 编辑进度模态框 -->
   <div class="modal fade" id="updateProgressModal" tabindex="-1" aria-labelledby="updateProgressModalLabel"
     aria-hidden="true">
@@ -1208,7 +1203,6 @@
     }
 
     // 为所有表单添加确认对话框（排除文件上传表单）
-    // 删除原来的通用表单拦截代码，改为只为特定按钮添加确认
     document.querySelectorAll('form').forEach(form => {
       const submitButton = form.querySelector('button[type="submit"]');
       if (submitButton) {
@@ -1240,6 +1234,7 @@
         }
       }
     });
+
     // 切换备案选择框的显示
     function toggleFilingSelect() {
       const reportType = document.getElementById('reportTypeSelect').value;
@@ -1334,9 +1329,16 @@
           document.getElementById('generatedReportNo').value = result.report_no;
           document.getElementById('resultSection').style.display = 'block';
 
-          // 隐藏生成按钮，显示复制按钮
+          // 隐藏生成按钮，显示复制按钮和完成按钮
           document.getElementById('generateButton').style.display = 'none';
           document.getElementById('copyButton').style.display = 'inline-block';
+          document.getElementById('doneButton').style.display = 'inline-block';
+          
+          // 将取消按钮改为完成按钮
+          document.getElementById('cancelButton').textContent = '完成';
+          document.getElementById('cancelButton').classList.remove('btn-secondary');
+          document.getElementById('cancelButton').classList.add('btn-primary');
+          document.getElementById('cancelButton').setAttribute('onclick', 'closeAndRefresh()');
         } else {
           const error = await response.json();
           alert('生成报告号失败: ' + error.detail);
@@ -1352,11 +1354,13 @@
       reportNoInput.select();
       document.execCommand('copy');
       alert('报告号已复制到剪贴板');
+    }
 
-      // 关闭模态框
+    // 关闭模态框并刷新页面
+    function closeAndRefresh() {
       const modal = bootstrap.Modal.getInstance(document.getElementById('generateReportModal'));
       modal.hide();
-
+      
       // 刷新页面以显示新添加的报告
       setTimeout(() => {
         location.reload();
@@ -1372,6 +1376,14 @@
       // 重置按钮状态
       document.getElementById('generateButton').style.display = 'inline-block';
       document.getElementById('copyButton').style.display = 'none';
+      document.getElementById('doneButton').style.display = 'none';
+      
+      // 重置取消按钮
+      document.getElementById('cancelButton').textContent = '取消';
+      document.getElementById('cancelButton').classList.remove('btn-primary');
+      document.getElementById('cancelButton').classList.add('btn-secondary');
+      document.getElementById('cancelButton').setAttribute('onclick', '');
+      document.getElementById('cancelButton').setAttribute('data-bs-dismiss', 'modal');
     });
 
     // 模态框显示时重置表单和按钮
@@ -1383,7 +1395,16 @@
       // 确保按钮状态正确
       document.getElementById('generateButton').style.display = 'inline-block';
       document.getElementById('copyButton').style.display = 'none';
+      document.getElementById('doneButton').style.display = 'none';
+      
+      // 确保取消按钮状态正确
+      document.getElementById('cancelButton').textContent = '取消';
+      document.getElementById('cancelButton').classList.remove('btn-primary');
+      document.getElementById('cancelButton').classList.add('btn-secondary');
+      document.getElementById('cancelButton').setAttribute('onclick', '');
+      document.getElementById('cancelButton').setAttribute('data-bs-dismiss', 'modal');
     });
+
     // 确认删除报告
     function confirmDeleteReport(reportNo) {
       if (confirm(`确定要删除报告 "${reportNo}" 吗？\n\n此操作将永久删除报告及其所有文件，且无法恢复！`)) {
@@ -1403,6 +1424,7 @@
         form.submit();
       }
     }
+
     // 字符计数功能
     document.getElementById('progressInput').addEventListener('input', function () {
       const charCount = this.value.length;
@@ -1428,6 +1450,7 @@
         document.getElementById('charCount').classList.remove('text-danger');
       }
     });
+
     // 修改进度表单验证，只做提示不阻止提交
     document.getElementById('updateProgressForm').addEventListener('submit', function (e) {
       const progressInput = document.getElementById('progressInput');
@@ -1439,5 +1462,4 @@
     });
   </script>
 </body>
-
 </html>

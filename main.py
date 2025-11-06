@@ -93,7 +93,17 @@ class Database:
                         signer2 TEXT,                    -- 签字人2
                         FOREIGN KEY (project_id) REFERENCES projects (id)
                     )''')
-        
+        c.execute('''CREATE TABLE IF NOT EXISTS report_files (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        report_id INTEGER,                    -- 关联的报告ID
+                        file_path TEXT NOT NULL,              -- 文件路径
+                        file_name TEXT NOT NULL,              -- 原文件名
+                        uploader_username TEXT NOT NULL,      -- 上传者用户名
+                        uploader_realname TEXT NOT NULL,      -- 上传者真实姓名
+                        upload_time TEXT NOT NULL,            -- 上传时间
+                        file_size INTEGER,                    -- 文件大小（字节）
+                        FOREIGN KEY (report_id) REFERENCES reports (id)
+                    )''')
         conn.commit()
     
     @contextmanager
@@ -390,24 +400,49 @@ async def project_info(
     
     # 获取该项目的所有报告（包含复核人和签字人信息）
     c.execute("""
-        SELECT report_no, file_paths, creator, create_date, 
+        SELECT id, report_no, file_paths, creator, create_date, 
                reviewer1, reviewer2, reviewer3, signer1, signer2
         FROM reports WHERE project_id = ? ORDER BY create_date DESC
     """, (project_id,))
     
     reports = []
     for row in c.fetchall():
-        reports.append({
-            "report_no": row[0],
-            "file_paths": row[1],
-            "creator": row[2],
-            "create_date": row[3],
-            "reviewer1": row[4],
-            "reviewer2": row[5],
-            "reviewer3": row[6],
-            "signer1": row[7],
-            "signer2": row[8]
-        })
+        report_data = {
+            "id": row[0],
+            "report_no": row[1],
+            "file_paths": row[2],
+            "creator": row[3],
+            "create_date": row[4],
+            "reviewer1": row[5],
+            "reviewer2": row[6],
+            "reviewer3": row[7],
+            "signer1": row[8],
+            "signer2": row[9],
+            "files": []  # 添加文件详细信息
+        }
+        
+        # 获取该报告的详细文件信息
+        c.execute("""
+            SELECT rf.id, rf.file_path, rf.file_name, rf.uploader_username, 
+                   rf.uploader_realname, rf.upload_time, rf.file_size
+            FROM report_files rf
+            WHERE rf.report_id = ?
+            ORDER BY rf.upload_time DESC
+        """, (row[0],))
+        
+        file_info = c.fetchall()
+        for file_row in file_info:
+            report_data["files"].append({
+                "id": file_row[0],
+                "file_path": file_row[1],
+                "file_name": file_row[2],
+                "uploader_username": file_row[3],
+                "uploader_realname": file_row[4],
+                "upload_time": file_row[5],
+                "file_size": file_row[6]
+            })
+        
+        reports.append(report_data)
     
     # 获取所有用户列表用于选择复核人和签字人（包含真实姓名）
     c.execute("SELECT username, realname FROM users")
@@ -533,74 +568,132 @@ async def update_report(
     user: dict = Depends(login_required),
     db: sqlite3.Connection = Depends(get_db)
 ):
-    # 检查项目状态
-    c = db.cursor()
-    c.execute("SELECT status FROM projects WHERE id = ?", (project_id,))
-    result = c.fetchone()
-    
-    if not result:
-        raise HTTPException(status_code=404, detail="项目不存在")
-    
-    status = result[0]
-    if status in ['completed', 'paused', 'cancelled']:
-        raise HTTPException(status_code=400, detail=f"项目状态为{status}，无法更新报告")
-    
-    # 保存新上传的文件
-    file_paths = []
-    for report_file in report_files:
-        if report_file.filename:
-            report_filename = secure_filename(report_file.filename)
-            report_path = os.path.join(UPLOAD_FOLDER, report_filename)
-            with open(report_path, "wb") as f:
-                content = await report_file.read()
-                f.write(content)
-            file_paths.append(report_path)
-    
-    # 获取现有的报告信息
-    c.execute("SELECT file_paths, reviewer1, reviewer2, reviewer3, signer1, signer2 FROM reports WHERE report_no = ? AND project_id = ?", (report_no, project_id))
-    result = c.fetchone()
-    
-    if not result:
-        raise HTTPException(status_code=404, detail="报告不存在")
-    
-    existing_files = result[0] if result[0] else ""
-    existing_reviewer1 = result[1]
-    existing_reviewer2 = result[2]
-    existing_reviewer3 = result[3]
-    existing_signer1 = result[4]
-    existing_signer2 = result[5]
-    
-    # 合并文件路径
-    if file_paths:
-        if existing_files:
-            all_files = existing_files + "," + ",".join(file_paths)
+    try:
+        # 检查项目状态
+        c = db.cursor()
+        c.execute("SELECT status FROM projects WHERE id = ?", (project_id,))
+        result = c.fetchone()
+        
+        if not result:
+            raise HTTPException(status_code=404, detail="项目不存在")
+        
+        status = result[0]
+        if status in ['completed', 'paused', 'cancelled']:
+            raise HTTPException(status_code=400, detail=f"项目状态为{status}，无法更新报告")
+        
+        # 获取现有的报告信息
+        c.execute("SELECT id, file_paths, reviewer1, reviewer2, reviewer3, signer1, signer2 FROM reports WHERE report_no = ? AND project_id = ?", (report_no, project_id))
+        result = c.fetchone()
+        
+        if not result:
+            raise HTTPException(status_code=404, detail="报告不存在")
+        
+        report_id = result[0]
+        existing_files = result[1] if result[1] else ""
+        existing_reviewer1 = result[2]
+        existing_reviewer2 = result[3]
+        existing_reviewer3 = result[4]
+        existing_signer1 = result[5]
+        existing_signer2 = result[6]
+        
+        # 保存新上传的文件并记录信息
+        file_paths = []
+        for report_file in report_files:
+            if report_file.filename:
+                report_filename = secure_filename(report_file.filename)
+                report_path = os.path.join(UPLOAD_FOLDER, report_filename)
+                
+                # 保存文件
+                with open(report_path, "wb") as f:
+                    content = await report_file.read()
+                    f.write(content)
+                
+                file_paths.append(report_path)
+                
+                # 获取文件大小
+                file_size = os.path.getsize(report_path)
+                
+                # 获取上传者真实姓名
+                c.execute("SELECT realname FROM users WHERE username = ?", (user["username"],))
+                uploader_realname_result = c.fetchone()
+                uploader_realname = uploader_realname_result[0] if uploader_realname_result else user["username"]
+                
+                # 记录文件信息到数据库
+                upload_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                c.execute("""
+                    INSERT INTO report_files 
+                    (report_id, file_path, file_name, uploader_username, uploader_realname, upload_time, file_size)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    report_id,
+                    report_path,
+                    report_file.filename,
+                    user["username"],
+                    uploader_realname,
+                    upload_time,
+                    file_size
+                ))
+        
+        # 合并文件路径
+        if file_paths:
+            if existing_files:
+                all_files = existing_files + "," + ",".join(file_paths)
+            else:
+                all_files = ",".join(file_paths)
         else:
-            all_files = ",".join(file_paths)
-    else:
-        all_files = existing_files
-    
-    # 确定要更新的字段值
-    # 如果表单没有提交某个字段（值为None），则保持原有值
-    final_reviewer1 = reviewer1 if reviewer1 is not None else existing_reviewer1
-    final_reviewer2 = reviewer2 if reviewer2 is not None else existing_reviewer2
-    final_reviewer3 = reviewer3 if reviewer3 is not None else existing_reviewer3
-    final_signer1 = signer1 if signer1 is not None else existing_signer1
-    final_signer2 = signer2 if signer2 is not None else existing_signer2
-    
-    # 更新报告信息
-    c.execute("""
-        UPDATE reports 
-        SET reviewer1 = ?, reviewer2 = ?, reviewer3 = ?, 
-            signer1 = ?, signer2 = ?, file_paths = ?
-        WHERE report_no = ? AND project_id = ?
-    """, (
-        final_reviewer1, final_reviewer2, final_reviewer3,
-        final_signer1, final_signer2, all_files,
-        report_no, project_id
-    ))
-    
-    db.commit()
-    return RedirectResponse(url=f"/project/{project_id}", status_code=303)
+            all_files = existing_files
+        
+        # 确定要更新的字段值
+        # 如果表单没有提交某个字段（值为None），则保持原有值
+        final_reviewer1 = reviewer1 if reviewer1 is not None else existing_reviewer1
+        final_reviewer2 = reviewer2 if reviewer2 is not None else existing_reviewer2
+        final_reviewer3 = reviewer3 if reviewer3 is not None else existing_reviewer3
+        final_signer1 = signer1 if signer1 is not None else existing_signer1
+        final_signer2 = signer2 if signer2 is not None else existing_signer2
+        
+        # 验证复核人：必须3个都有且不能重复
+        reviewers = [final_reviewer1, final_reviewer2, final_reviewer3]
+        
+        # 检查是否有空值
+        if not all(reviewers):
+            raise HTTPException(status_code=400, detail="必须设置3个复核人，不能有空缺")
+        
+        # 检查是否有重复
+        if len(reviewers) != len(set(reviewers)):
+            raise HTTPException(status_code=400, detail="复核人不能重复，请选择3个不同的复核人")
+        
+        # 验证签字人：必须2个都有且不能重复
+        signers = [final_signer1, final_signer2]
+        
+        # 检查是否有空值
+        if not all(signers):
+            raise HTTPException(status_code=400, detail="必须设置2个签字人，不能有空缺")
+        
+        # 检查是否有重复
+        if len(signers) != len(set(signers)):
+            raise HTTPException(status_code=400, detail="签字人不能重复，请选择2个不同的签字人")
+        
+        # 更新报告信息
+        c.execute("""
+            UPDATE reports 
+            SET reviewer1 = ?, reviewer2 = ?, reviewer3 = ?, 
+                signer1 = ?, signer2 = ?, file_paths = ?
+            WHERE report_no = ? AND project_id = ?
+        """, (
+            final_reviewer1, final_reviewer2, final_reviewer3,
+            final_signer1, final_signer2, all_files,
+            report_no, project_id
+        ))
+        
+        db.commit()
+        return RedirectResponse(url=f"/project/{project_id}", status_code=303)
+        
+    except HTTPException:
+        # 重新抛出HTTP异常
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"更新报告失败: {str(e)}")
 
 # 报告取号
 @app.post("/project/{project_id}/generate_report_no")
@@ -789,15 +882,31 @@ async def delete_report(
         if status != 'active':
             raise HTTPException(status_code=400, detail="只有进行中的项目可以删除报告")
         
-        # 获取报告的文件路径
-        c.execute("SELECT file_paths FROM reports WHERE report_no = ? AND project_id = ?", (report_no, project_id))
+        # 获取报告ID和文件路径
+        c.execute("SELECT id, file_paths FROM reports WHERE report_no = ? AND project_id = ?", (report_no, project_id))
         result = c.fetchone()
         
         if not result:
             raise HTTPException(status_code=404, detail="报告不存在")
         
-        # 删除物理文件
-        file_paths = result[0]
+        report_id = result[0]
+        file_paths = result[1]
+        
+        # 获取报告的所有文件信息（从 report_files 表）
+        c.execute("SELECT file_path FROM report_files WHERE report_id = ?", (report_id,))
+        file_records = c.fetchall()
+        
+        # 删除物理文件（从 report_files 表获取的文件路径）
+        for file_record in file_records:
+            file_path = file_record[0]
+            if file_path and os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                    print(f"🗑️ 已删除文件: {file_path}")
+                except Exception as e:
+                    print(f"⚠️ 删除文件失败 {file_path}: {e}")
+        
+        # 同时删除原有的文件路径中的文件（为了兼容性）
         if file_paths:
             for file_path in file_paths.split(','):
                 if file_path.strip() and os.path.exists(file_path.strip()):
@@ -806,6 +915,9 @@ async def delete_report(
                         print(f"🗑️ 已删除文件: {file_path.strip()}")
                     except Exception as e:
                         print(f"⚠️ 删除文件失败 {file_path.strip()}: {e}")
+        
+        # 删除 report_files 表中的文件记录
+        c.execute("DELETE FROM report_files WHERE report_id = ?", (report_id,))
         
         # 从 reports 表中删除报告记录
         c.execute("DELETE FROM reports WHERE report_no = ? AND project_id = ?", (report_no, project_id))
