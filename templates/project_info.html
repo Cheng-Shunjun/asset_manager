@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="UTF-8">
   <title>项目详情</title>
@@ -10,6 +11,7 @@
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
     }
+
     .file-item {
       display: flex;
       align-items: center;
@@ -20,9 +22,11 @@
       background-color: #f8f9fa;
       transition: background-color 0.2s ease;
     }
+
     .file-item:hover {
       background-color: #e9ecef;
     }
+
     .file-item a {
       text-decoration: none;
       color: #495057;
@@ -30,55 +34,68 @@
       display: flex;
       align-items: center;
     }
+
     .file-item a:hover {
       color: #0d6efd;
     }
+
     .info-card {
       border-left: 4px solid #0d6efd;
       border-radius: 0.375rem;
     }
+
     .table-details th {
       width: 30%;
       background-color: #f8f9fa;
     }
+
     .status-badge {
       font-size: 0.75rem;
       padding: 0.35em 0.65em;
     }
+
     .status-active {
       background-color: #198754;
       color: white;
     }
+
     .status-completed {
       background-color: #0d6efd;
       color: white;
     }
+
     .status-paused {
       background-color: #6c757d;
       color: white;
     }
+
     .status-cancelled {
       background-color: #dc3545;
       color: white;
     }
+
     .action-buttons {
       position: sticky;
       bottom: 20px;
       z-index: 100;
     }
+
     .btn-action {
       min-width: 140px;
       margin: 0 5px;
     }
+
     .upload-section {
       border-top: 1px solid #dee2e6;
       padding-top: 1rem;
       margin-top: 1rem;
     }
+
     .disabled-upload {
       opacity: 0.6;
       pointer-events: none;
     }
+
     .upload-disabled-message {
       background-color: #f8f9fa;
       border: 1px dashed #dee2e6;
@@ -87,23 +104,28 @@
       text-align: center;
       color: #6c757d;
     }
+
     .file-icon {
       margin-right: 0.5rem;
       flex-shrink: 0;
     }
+
     .project-no-badge {
       background-color: #6f42c1;
       color: white;
       font-size: 0.8rem;
     }
+
     .report-card {
       border-left: 4px solid #0dcaf0;
       transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
+
     .report-card:hover {
       transform: translateY(-2px);
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
+
     .person-badge {
       background-color: #e9ecef;
       color: #495057;
@@ -111,12 +133,14 @@
       padding: 0.25em 0.5em;
       margin: 0.1rem;
     }
+
     .update-form {
       background-color: #f8f9fa;
       border-radius: 0.375rem;
       padding: 1rem;
       margin-top: 1rem;
     }
+
     .edit-link {
       color: #6c757d;
       text-decoration: none;
@@ -124,33 +148,41 @@
       margin-left: 0.5rem;
       cursor: pointer;
     }
+
     .edit-link:hover {
       color: #0d6efd;
       text-decoration: underline;
     }
+
     .person-item {
       display: flex;
       align-items: center;
       margin-bottom: 0.25rem;
     }
+
     .btn-outline-danger {
       border-color: #dc3545;
       color: #dc3545;
     }
+
     .btn-outline-danger:hover {
       background-color: #dc3545;
       color: white;
     }
+
     .file-info {
       font-size: 0.75rem;
     }
+
     .uploader {
       color: #495057;
       font-weight: 500;
     }
+
     .upload-time {
       color: #6c757d;
     }
+
     .file-size {
       color: #6c757d;
       background-color: #e9ecef;
@@ -977,8 +1009,7 @@
           <button type="button" class="btn btn-primary" id="generateButton" onclick="generateReportNo()">生成报告号</button>
           <button type="button" class="btn btn-success" id="copyButton" style="display: none;"
             onclick="copyReportNo()">复制到粘贴板</button>
-          <button type="button" class="btn btn-primary" id="doneButton" style="display: none;"
-            onclick="closeAndRefresh()">完成</button>
+          <!-- 移除单独的完成按钮 -->
         </div>
       </div>
     </div>
@@ -1070,7 +1101,7 @@
       </div>
     </div>
   </div>
-  
+
   <!-- 编辑进度模态框 -->
   <div class="modal fade" id="updateProgressModal" tabindex="-1" aria-labelledby="updateProgressModalLabel"
     aria-hidden="true">
@@ -1261,6 +1292,7 @@
     }
 
     // 生成报告号
+    // 生成报告号
     async function generateReportNo() {
       const reportType = document.getElementById('reportTypeSelect').value;
       const filingSelect = document.getElementById('filingSelect');
@@ -1329,15 +1361,15 @@
           document.getElementById('generatedReportNo').value = result.report_no;
           document.getElementById('resultSection').style.display = 'block';
 
-          // 隐藏生成按钮，显示复制按钮和完成按钮
+          // 隐藏生成按钮，显示复制按钮
           document.getElementById('generateButton').style.display = 'none';
           document.getElementById('copyButton').style.display = 'inline-block';
-          document.getElementById('doneButton').style.display = 'inline-block';
-          
+
           // 将取消按钮改为完成按钮
           document.getElementById('cancelButton').textContent = '完成';
           document.getElementById('cancelButton').classList.remove('btn-secondary');
           document.getElementById('cancelButton').classList.add('btn-primary');
+          document.getElementById('cancelButton').removeAttribute('data-bs-dismiss');
           document.getElementById('cancelButton').setAttribute('onclick', 'closeAndRefresh()');
         } else {
           const error = await response.json();
@@ -1360,7 +1392,7 @@
     function closeAndRefresh() {
       const modal = bootstrap.Modal.getInstance(document.getElementById('generateReportModal'));
       modal.hide();
-      
+
       // 刷新页面以显示新添加的报告
       setTimeout(() => {
         location.reload();
@@ -1376,8 +1408,7 @@
       // 重置按钮状态
       document.getElementById('generateButton').style.display = 'inline-block';
       document.getElementById('copyButton').style.display = 'none';
-      document.getElementById('doneButton').style.display = 'none';
-      
+
       // 重置取消按钮
       document.getElementById('cancelButton').textContent = '取消';
       document.getElementById('cancelButton').classList.remove('btn-primary');
@@ -1395,8 +1426,7 @@
       // 确保按钮状态正确
       document.getElementById('generateButton').style.display = 'inline-block';
       document.getElementById('copyButton').style.display = 'none';
-      document.getElementById('doneButton').style.display = 'none';
-      
+
       // 确保取消按钮状态正确
       document.getElementById('cancelButton').textContent = '取消';
       document.getElementById('cancelButton').classList.remove('btn-primary');
@@ -1462,4 +1492,5 @@
     });
   </script>
 </body>
+
 </html>
