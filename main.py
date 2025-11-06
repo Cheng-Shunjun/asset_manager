@@ -767,6 +767,105 @@ async def generate_report_no(
         db.rollback()
         raise HTTPException(status_code=500, detail=f"生成报告号失败: {str(e)}")
 
+# 删除报告
+@app.post("/project/{project_id}/delete_report/{report_no}")
+async def delete_report(
+    project_id: int,
+    report_no: str,
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    try:
+        c = db.cursor()
+        
+        # 检查项目状态
+        c.execute("SELECT status FROM projects WHERE id = ?", (project_id,))
+        result = c.fetchone()
+        
+        if not result:
+            raise HTTPException(status_code=404, detail="项目不存在")
+        
+        status = result[0]
+        if status != 'active':
+            raise HTTPException(status_code=400, detail="只有进行中的项目可以删除报告")
+        
+        # 获取报告的文件路径
+        c.execute("SELECT file_paths FROM reports WHERE report_no = ? AND project_id = ?", (report_no, project_id))
+        result = c.fetchone()
+        
+        if not result:
+            raise HTTPException(status_code=404, detail="报告不存在")
+        
+        # 删除物理文件
+        file_paths = result[0]
+        if file_paths:
+            for file_path in file_paths.split(','):
+                if file_path.strip() and os.path.exists(file_path.strip()):
+                    try:
+                        os.remove(file_path.strip())
+                        print(f"🗑️ 已删除文件: {file_path.strip()}")
+                    except Exception as e:
+                        print(f"⚠️ 删除文件失败 {file_path.strip()}: {e}")
+        
+        # 从 reports 表中删除报告记录
+        c.execute("DELETE FROM reports WHERE report_no = ? AND project_id = ?", (report_no, project_id))
+        
+        # 更新项目的 report_numbers 字段
+        c.execute("SELECT report_numbers FROM projects WHERE id = ?", (project_id,))
+        result = c.fetchone()
+        
+        if result and result[0]:
+            existing_report_numbers = result[0]
+            # 从报告号列表中移除被删除的报告号
+            report_list = existing_report_numbers.split(',')
+            if report_no in report_list:
+                report_list.remove(report_no)
+                new_report_numbers = ','.join(report_list) if report_list else ""
+                c.execute("UPDATE projects SET report_numbers = ? WHERE id = ?", (new_report_numbers, project_id))
+        
+        db.commit()
+        
+        return RedirectResponse(url=f"/project/{project_id}", status_code=303)
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"删除报告失败: {str(e)}")
+    
+# 更新项目进度
+@app.post("/project/{project_id}/update_progress")
+async def update_progress(
+    project_id: int,
+    progress: str = Form(...),
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    try:
+        # 检查项目状态
+        c = db.cursor()
+        c.execute("SELECT status FROM projects WHERE id = ?", (project_id,))
+        result = c.fetchone()
+        
+        if not result:
+            raise HTTPException(status_code=404, detail="项目不存在")
+        
+        status = result[0]
+        if status != 'active':
+            raise HTTPException(status_code=400, detail="只有进行中的项目可以更新进度")
+        
+        # 验证进度描述长度
+        if len(progress) > 50:
+            raise HTTPException(status_code=400, detail="进度描述不能超过50字")
+        
+        # 更新项目进度
+        c.execute("UPDATE projects SET progress = ? WHERE id = ?", (progress, project_id))
+        db.commit()
+        
+        return RedirectResponse(url=f"/project/{project_id}", status_code=303)
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"更新进度失败: {str(e)}")
+
 @app.get("/logout")
 async def logout(request: Request):
     session_id = request.cookies.get("session_id")
