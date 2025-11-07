@@ -39,10 +39,11 @@ def init_database():
         report_numbers TEXT,             -- ⑧ 报告号（多个以逗号分隔）
         amount REAL,                     -- ⑨ 合同金额
         is_paid TEXT,                    -- ⑩ 是否收费（是/否）
-        creator TEXT,                    -- ⑪ 项目创建人
-        start_date TEXT,                 -- ⑫ 开始日期
-        end_date TEXT,                   -- ⑬ 结束日期
-        status TEXT,                     -- ⑭ 状态
+        creator TEXT,                    -- ⑪ 项目创建人用户名
+        creator_realname TEXT,           -- ⑫ 项目创建人真实姓名（新增字段）
+        start_date TEXT,                 -- ⑬ 开始日期
+        end_date TEXT,                   -- ⑭ 结束日期
+        status TEXT,                     -- ⑮ 状态
         contract_file TEXT,
         create_date TEXT
     )
@@ -56,7 +57,8 @@ def init_database():
         report_no TEXT NOT NULL,         -- 报告号
         project_id INTEGER,              -- 关联的项目ID
         file_paths TEXT,                 -- 文件路径（多个以逗号分隔）
-        creator TEXT,                    -- 创建人
+        creator TEXT,                    -- 创建人用户名
+        creator_realname TEXT,           -- 创建人真实姓名
         create_date TEXT,                -- 创建日期
         reviewer1 TEXT,                  -- 复核人1
         reviewer2 TEXT,                  -- 复核人2
@@ -120,37 +122,37 @@ def init_database():
         (
             f"P{current_year}_001", "中和拆迁项目", "土地", "中和市城市建设局",
             "张三", "李四", "前期规划阶段", "",
-            1200000.00, "是", "admin", "2025-01-10", "",
+            1200000.00, "是", "admin", "系统管理员", "2025-01-10", "",
             "active", "", "2025-01-10 15:32:21"
         ),
         (
             f"P{current_year}_002", "智慧城市基础设施建设", "房地产", "中和市智慧城市办",
             "王五", "赵六", "验收阶段", "",
-            2800000.00, "是", "admin", "2024-03-01", "2024-06-01",
+            2800000.00, "是", "admin", "系统管理员", "2024-03-01", "2024-06-01",
             "completed", "", "2024-03-01 09:15:30"
         ),
         (
             f"P{current_year}_003", "学校翻新工程", "资产", "中和市教育局",
             "孙七", "周八", "暂停中", "",
-            800000.00, "否", "admin", "2023-09-01", "2024-09-01",
+            800000.00, "否", "admin", "系统管理员", "2023-09-01", "2024-09-01",
             "paused", "", "2023-09-01 14:20:45"
         ),
         (
             f"P{current_year}_004", "新能源车站项目", "资产", "中和交通投资集团",
             "吴九", "郑十", "执行中", "",
-            10000000.00, "是", "admin", "2025-06-01", "",
+            10000000.00, "是", "admin", "系统管理员", "2025-06-01", "",
             "active", "", "2025-06-01 10:05:18"
         ),
         (
             f"P{current_year}_005", "旧城区道路改造", "房地产", "中和市市政建设局",
             "张三", "王五", "已取消", "",
-            15000000.00, "否", "admin", "2022-05-10", "",
+            15000000.00, "否", "admin", "系统管理员", "2022-05-10", "",
             "cancelled", "", "2022-05-10 16:45:22"
         ),
         (
             f"P{current_year}_006", "污水处理厂升级项目", "资产", "中和市环保局",
             "李四", "赵六", "施工阶段", "",
-            4200000.00, "是", "admin", "2025-02-01", "",
+            4200000.00, "是", "admin", "系统管理员", "2025-02-01", "",
             "active", "", "2025-02-01 11:30:15"
         )
     ]
@@ -159,70 +161,70 @@ def init_database():
         INSERT INTO projects (
             project_no, name, project_type, client_name, 
             market_leader, project_leader, progress, report_numbers, 
-            amount, is_paid, creator, start_date, end_date, 
+            amount, is_paid, creator, creator_realname, start_date, end_date, 
             status, contract_file, create_date
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, projects)
     print("✅ 所有示例项目数据已添加。")
 
     # ========= 插入测试报告数据 =========
-    # 使用新的报告号格式
+    # 使用新的报告号格式，包含 creator_realname 字段
     reports = [
         # 项目1的报告 - 土地报告
         (
             f"川鼎土估[{current_year}]字第01001号", 1, "static/uploads/zh_report1.pdf,static/uploads/zh_attachment1.docx",
-            "admin", "2025-01-15 10:30:00", "张三", "李四", "王五", "赵六", "孙七"
+            "admin", "系统管理员", "2025-01-15 10:30:00", "张三", "李四", "王五", "赵六", "孙七"
         ),
         (
             f"川鼎土估[{current_year}]字第01002号", 1, "static/uploads/zh_report2.pdf",
-            "admin", "2025-01-20 14:15:00", "王五", "赵六", "孙七", "周八", "吴九"
+            "admin", "系统管理员", "2025-01-20 14:15:00", "王五", "赵六", "孙七", "周八", "吴九"
         ),
         # 项目2的报告 - 房地产估价报告
         (
             f"川鼎房估[{current_year}]字第02001号", 2, "static/uploads/sc_report.pdf,static/uploads/sc_data.xlsx,static/uploads/sc_charts.pdf",
-            "admin", "2024-05-20 09:45:00", "李四", "王五", "赵六", "孙七", "周八"
+            "admin", "系统管理员", "2024-05-20 09:45:00", "李四", "王五", "赵六", "孙七", "周八"
         ),
         # 项目3的报告 - 资产评估报告
         (
             f"川鼎评报[{current_year}]字第03001号", 3, "static/uploads/edu_report.pdf",
-            "admin", "2023-10-10 16:20:00", "张三", "李四", "王五", "赵六", "孙七"
+            "admin", "系统管理员", "2023-10-10 16:20:00", "张三", "李四", "王五", "赵六", "孙七"
         ),
         # 项目4的报告 - 资产估值报告
         (
             f"川鼎估评[{current_year}]字第04001号", 4, "static/uploads/ev_report1.pdf,static/uploads/ev_design.docx",
-            "admin", "2025-06-15 11:00:00", "赵六", "孙七", "周八", "吴九", "郑十"
+            "admin", "系统管理员", "2025-06-15 11:00:00", "赵六", "孙七", "周八", "吴九", "郑十"
         ),
         (
             f"川鼎估评[{current_year}]字第04002号", 4, "static/uploads/ev_report2.pdf",
-            "admin", "2025-07-01 15:30:00", "孙七", "周八", "吴九", "郑十", "张三"
+            "admin", "系统管理员", "2025-07-01 15:30:00", "孙七", "周八", "吴九", "郑十", "张三"
         ),
         # 项目5的报告 - 房地产咨询报告
         (
             f"川鼎房咨[{current_year}]字第05001号", 5, "static/uploads/rd_report.pdf",
-            "admin", "2022-06-01 13:45:00", "张三", "李四", "王五", "赵六", "孙七"
+            "admin", "系统管理员", "2022-06-01 13:45:00", "张三", "李四", "王五", "赵六", "孙七"
         ),
         # 项目6的报告 - 资产咨询报告
         (
             f"川鼎咨评[{current_year}]字第06001号", 6, "static/uploads/wp_report1.pdf,static/uploads/wp_analysis.xlsx",
-            "admin", "2025-02-15 10:15:00", "李四", "赵六", "孙七", "周八", "吴九"
+            "admin", "系统管理员", "2025-02-15 10:15:00", "李四", "赵六", "孙七", "周八", "吴九"
         ),
         (
             f"川鼎咨评[{current_year}]字第06002号", 6, "static/uploads/wp_report2.pdf",
-            "admin", "2025-03-01 14:50:00", "王五", "孙七", "周八", "吴九", "郑十"
+            "admin", "系统管理员", "2025-03-01 14:50:00", "王五", "孙七", "周八", "吴九", "郑十"
         ),
         (
             f"川鼎咨评[{current_year}]字第06003号", 6, "static/uploads/wp_report3.pdf,static/uploads/wp_final.docx",
-            "admin", "2025-03-20 16:10:00", "赵六", "周八", "吴九", "郑十", "张三"
+            "admin", "系统管理员", "2025-03-20 16:10:00", "赵六", "周八", "吴九", "郑十", "张三"
         )
     ]
 
     c.executemany("""
         INSERT INTO reports (
-            report_no, project_id, file_paths, creator, create_date,
+            report_no, project_id, file_paths, creator, creator_realname, create_date,
             reviewer1, reviewer2, reviewer3, signer1, signer2
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, reports)
     print("✅ 所有示例报告数据已添加。")
 

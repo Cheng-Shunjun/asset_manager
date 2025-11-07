@@ -116,16 +116,6 @@
       font-size: 0.8rem;
     }
 
-    .report-card {
-      border-left: 4px solid #0dcaf0;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .report-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
-
     .person-badge {
       background-color: #e9ecef;
       color: #495057;
@@ -189,6 +179,29 @@
       padding: 0.1rem 0.3rem;
       border-radius: 0.2rem;
       font-size: 0.7rem;
+    }
+
+    /* 默认隐藏删除按钮 */
+    .delete-btn {
+      opacity: 0;
+      transform: scale(0.8);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    /* 鼠标悬停时显示删除按钮 */
+    .report-card-hover:hover .delete-btn {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* 报告卡片悬停效果 */
+    .report-card {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .report-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
   </style>
 </head>
@@ -396,7 +409,7 @@
                         class="bi bi-person-fill me-1" viewBox="0 0 16 16">
                         <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3Zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
                       </svg>
-                      {{ project.creator }}
+                      {{ project.creator_realname }} <!-- 修改这里 -->
                     </td>
                   </tr>
                   <tr>
@@ -604,18 +617,22 @@
               <div class="row">
                 {% for report in reports %}
                 <div class="col-12 mb-4">
-                  <div class="card report-card h-100">
+                  <div class="card report-card h-100 report-card-hover">
                     <div class="card-body">
                       <!-- 报告头部信息 -->
                       <div class="d-flex justify-content-between align-items-start mb-3">
                         <h6 class="card-title text-primary mb-0">{{ report.report_no }}</h6>
                         <div class="d-flex align-items-center">
+                          <!-- 在报告卡片头部信息部分 -->
                           <small class="text-muted text-end me-3">
                             <div>{{ report.create_date }}</div>
-                            <div>创建人: {{ report.creator }}</div>
+                            <div>创建人: {{ report.creator_realname }}</div> <!-- 修改这里 -->
                           </small>
-                          {% if project.status == 'active' %}
-                          <button type="button" class="btn btn-outline-danger btn-sm"
+                          <!-- 添加权限检查：只有管理员或报告创建人才能看到删除按钮 -->
+                          {% set can_delete = (user.user_type == 'admin' or user.username == report.creator) and
+                          project.status == 'active' %}
+                          {% if can_delete %}
+                          <button type="button" class="btn btn-outline-danger btn-sm delete-btn"
                             onclick="confirmDeleteReport('{{ report.report_no }}')">
                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor"
                               class="bi bi-trash" viewBox="0 0 16 16">
@@ -634,7 +651,10 @@
                       <div class="mb-2">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                           <small class="text-muted fw-bold">复核人:</small>
-                          {% if project.status == 'active' %}
+                          <!-- 编辑权限也做相应限制 -->
+                          {% set can_edit = (user.user_type == 'admin' or user.username == report.creator) and
+                          project.status == 'active' %}
+                          {% if can_edit %}
                           <span class="edit-link" data-bs-toggle="modal" data-bs-target="#editReviewersModal"
                             onclick="setCurrentReport('{{ report.report_no }}', '{{ report.reviewer1 }}', '{{ report.reviewer2 }}', '{{ report.reviewer3 }}', '{{ report.signer1 }}', '{{ report.signer2 }}')">
                             编辑
@@ -644,9 +664,9 @@
                         <div class="d-flex flex-wrap gap-1">
                           {% if report.reviewer1 %}
                           {% set reviewer1_realname = namespace(found=false) %}
-                          {% for user in users %}
-                          {% if user.username == report.reviewer1 %}
-                          <span class="person-badge">{{ user.realname }}</span>
+                          {% for user_item in users %}
+                          {% if user_item.username == report.reviewer1 %}
+                          <span class="person-badge">{{ user_item.realname }}</span>
                           {% set reviewer1_realname.found = true %}
                           {% endif %}
                           {% endfor %}
@@ -657,9 +677,9 @@
 
                           {% if report.reviewer2 %}
                           {% set reviewer2_realname = namespace(found=false) %}
-                          {% for user in users %}
-                          {% if user.username == report.reviewer2 %}
-                          <span class="person-badge">{{ user.realname }}</span>
+                          {% for user_item in users %}
+                          {% if user_item.username == report.reviewer2 %}
+                          <span class="person-badge">{{ user_item.realname }}</span>
                           {% set reviewer2_realname.found = true %}
                           {% endif %}
                           {% endfor %}
@@ -670,9 +690,9 @@
 
                           {% if report.reviewer3 %}
                           {% set reviewer3_realname = namespace(found=false) %}
-                          {% for user in users %}
-                          {% if user.username == report.reviewer3 %}
-                          <span class="person-badge">{{ user.realname }}</span>
+                          {% for user_item in users %}
+                          {% if user_item.username == report.reviewer3 %}
+                          <span class="person-badge">{{ user_item.realname }}</span>
                           {% set reviewer3_realname.found = true %}
                           {% endif %}
                           {% endfor %}
@@ -691,7 +711,7 @@
                       <div class="mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                           <small class="text-muted fw-bold">签字人:</small>
-                          {% if project.status == 'active' %}
+                          {% if can_edit %}
                           <span class="edit-link" data-bs-toggle="modal" data-bs-target="#editSignersModal"
                             onclick="setCurrentReport('{{ report.report_no }}', '{{ report.reviewer1 }}', '{{ report.reviewer2 }}', '{{ report.reviewer3 }}', '{{ report.signer1 }}', '{{ report.signer2 }}')">
                             编辑
@@ -701,9 +721,9 @@
                         <div class="d-flex flex-wrap gap-1">
                           {% if report.signer1 %}
                           {% set signer1_realname = namespace(found=false) %}
-                          {% for user in users %}
-                          {% if user.username == report.signer1 %}
-                          <span class="person-badge">{{ user.realname }}</span>
+                          {% for user_item in users %}
+                          {% if user_item.username == report.signer1 %}
+                          <span class="person-badge">{{ user_item.realname }}</span>
                           {% set signer1_realname.found = true %}
                           {% endif %}
                           {% endfor %}
@@ -714,9 +734,9 @@
 
                           {% if report.signer2 %}
                           {% set signer2_realname = namespace(found=false) %}
-                          {% for user in users %}
-                          {% if user.username == report.signer2 %}
-                          <span class="person-badge">{{ user.realname }}</span>
+                          {% for user_item in users %}
+                          {% if user_item.username == report.signer2 %}
+                          <span class="person-badge">{{ user_item.realname }}</span>
                           {% set signer2_realname.found = true %}
                           {% endif %}
                           {% endfor %}
@@ -762,7 +782,7 @@
                       {% endif %}
 
                       <!-- 文件上传表单 -->
-                      {% if project.status == 'active' %}
+                      {% if can_edit %}
                       <div class="update-form">
                         <h6 class="mb-3">添加报告文件</h6>
                         <form action="/project/{{ project.id }}/update_report/{{ report.report_no }}" method="post"
@@ -813,7 +833,8 @@
                 </svg>
                 报告取号
               </button>
-              <!-- 编辑进度按钮（仅进行中项目显示） -->
+              <!-- 编辑进度按钮（仅进行中项目显示，且需要权限） -->
+              {% if has_operation_permission %}
               <button type="button" class="btn btn-warning btn-action" data-bs-toggle="modal"
                 data-bs-target="#updateProgressModal">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
@@ -826,6 +847,10 @@
                 编辑进度
               </button>
               {% endif %}
+              {% endif %}
+
+              <!-- 项目状态操作按钮（只有有权限的用户才能看到） -->
+              {% if has_operation_permission %}
               <!-- 进行中项目的按钮 -->
               {% if project.status == 'active' %}
               <form action="/project/{{ project.id }}/pause" method="post" class="d-inline">
@@ -903,6 +928,12 @@
                   重新开启
                 </button>
               </form>
+              {% endif %}
+              {% else %}
+              <!-- 没有权限的用户显示提示 -->
+              <div class="alert alert-info mb-0">
+                <small>只有管理员、项目创建人或项目负责人可以操作项目状态</small>
+              </div>
               {% endif %}
             </div>
           </div>
