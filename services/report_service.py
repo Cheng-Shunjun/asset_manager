@@ -316,8 +316,6 @@ class ReportService:
             project_leader = project_result[1]
             has_permission = (
                 user.get("user_type") == "admin" or 
-                user.get("username") == project_creator or
-                user.get("username") == project_leader or
                 user.get("username") == report_creator
             )
             

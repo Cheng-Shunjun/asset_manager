@@ -834,7 +834,7 @@
                 报告取号
               </button>
               <!-- 编辑进度按钮（仅进行中项目显示，且需要权限） -->
-              {% if has_operation_permission %}
+              {% if project_operation_permission %}
               <button type="button" class="btn btn-warning btn-action" data-bs-toggle="modal"
                 data-bs-target="#updateProgressModal">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
@@ -850,7 +850,7 @@
               {% endif %}
 
               <!-- 项目状态操作按钮（只有有权限的用户才能看到） -->
-              {% if has_operation_permission %}
+              {% if project_operation_permission %}
               <!-- 进行中项目的按钮 -->
               {% if project.status == 'active' %}
               <form action="/project/{{ project.id }}/pause" method="post" class="d-inline">
@@ -932,7 +932,7 @@
               {% else %}
               <!-- 没有权限的用户显示提示 -->
               <div class="alert alert-info mb-0">
-                <small>只有管理员、项目创建人或项目负责人可以操作项目状态</small>
+                <small>只有管理员或项目负责人可以操作项目状态</small>
               </div>
               {% endif %}
             </div>

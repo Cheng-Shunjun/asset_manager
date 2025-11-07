@@ -27,10 +27,9 @@ class ProjectService:
         user_type = user.get("user_type", "user")
         username = user.get("username")
         
-        # 权限检查：管理员、项目创建人或项目负责人
+        # 权限检查：管理员或项目负责人
         has_permission = (
             user_type == "admin" or 
-            username == creator or
             username == project_leader
         )
         
@@ -213,10 +212,9 @@ class ProjectService:
         users_data = c.fetchall()
         users = [{"username": row[0], "realname": row[1] or row[0]} for row in users_data]
         
-        # 检查当前用户是否有操作权限：管理员、项目创建人或项目负责人
-        has_operation_permission = (
+        # 检查当前用户是否有操作权限：管理员或项目负责人
+        project_operation_permission = (
             user.get("user_type") == "admin" or 
-            user.get("username") == project_dict["creator"] or
             user.get("username") == project_dict["project_leader"]
         )
         
@@ -226,7 +224,7 @@ class ProjectService:
             "reports": reports,
             "users": users,
             "user": user,
-            "has_operation_permission": has_operation_permission
+            "project_operation_permission": project_operation_permission
         })
 
     async def update_project_status(self, project_id, status, user, db):
