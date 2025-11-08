@@ -5,34 +5,8 @@ import os
 from utils.helpers import secure_filename
 
 class ReportService:
-    
-    def _check_project_permission(self, project_id, user, db):
-        """检查用户是否有操作项目的权限：管理员、项目创建人或项目负责人"""
-        c = db.cursor()
-        
-        # 获取项目信息
-        c.execute("SELECT creator, project_leader FROM projects WHERE id = ?", (project_id,))
-        project = c.fetchone()
-        
-        if not project:
-            raise HTTPException(status_code=404, detail="项目不存在")
-        
-        creator = project[0]
-        project_leader = project[1]
-        user_type = user.get("user_type", "user")
-        username = user.get("username")
-        
-        # 权限检查：管理员、项目创建人或项目负责人
-        has_permission = (
-            user_type == "admin" or 
-            username == creator or
-            username == project_leader
-        )
-        
-        if not has_permission:
-            raise HTTPException(status_code=403, detail="权限不足，只有管理员、项目创建人或项目负责人可执行此操作")
-        
-        return True
+    def __check_report_permission(self, user, project_creator, project_leader, report_creator):
+        return (user.get("user_type") == "admin" or user.get("username") == report_creator)
 
     async def update_report(self, project_id, report_no, reviewer1, reviewer2, reviewer3,
                       signer1, signer2, report_files, user, db):
@@ -72,14 +46,8 @@ class ReportService:
             
             project_creator = project_result[0]
             project_leader = project_result[1]
-            has_permission = (
-                user.get("user_type") == "admin" or 
-                user.get("username") == project_creator or
-                user.get("username") == project_leader or
-                user.get("username") == report_creator
-            )
             
-            if not has_permission:
+            if not self.__check_report_permission(user, project_creator, project_leader, report_creator):
                 raise HTTPException(status_code=403, detail="没有权限编辑此报告")
         
             file_paths = []
@@ -314,12 +282,8 @@ class ReportService:
             
             project_creator = project_result[0]
             project_leader = project_result[1]
-            has_permission = (
-                user.get("user_type") == "admin" or 
-                user.get("username") == report_creator
-            )
             
-            if not has_permission:
+            if not self.__check_report_permission(user, project_creator, project_leader, report_creator):
                 raise HTTPException(status_code=403, detail="没有权限删除此报告")
             
             # 获取报告的所有文件信息（从 report_files 表）
@@ -372,3 +336,83 @@ class ReportService:
         except Exception as e:
             db.rollback()
             raise HTTPException(status_code=500, detail=f"删除报告失败: {str(e)}")
+    async def delete_report_file(self, project_id, report_id, file_id, user, db):
+        """删除报告文件"""
+        try:
+            c = db.cursor()
+            
+            # 检查项目状态
+            c.execute("SELECT status FROM projects WHERE id = ?", (project_id,))
+            result = c.fetchone()
+            
+            if not result:
+                raise HTTPException(status_code=404, detail="项目不存在")
+            
+            status = result[0]
+            if status != 'active':
+                raise HTTPException(status_code=400, detail="只有进行中的项目可以删除文件")
+            
+            # 获取报告信息
+            c.execute("SELECT id, creator, project_id FROM reports WHERE id = ?", (report_id,))
+            report_result = c.fetchone()
+            
+            if not report_result:
+                raise HTTPException(status_code=404, detail="报告不存在")
+            
+            report_creator = report_result[1]
+            report_project_id = report_result[2]
+            
+            # 检查项目权限
+            c.execute("SELECT creator, project_leader FROM projects WHERE id = ?", (report_project_id,))
+            project_result = c.fetchone()
+            
+            if not project_result:
+                raise HTTPException(status_code=404, detail="项目不存在")
+            
+            project_creator = project_result[0]
+            project_leader = project_result[1]
+            
+            # 权限验证：管理员、报告创建人
+            has_permission = self.__check_report_permission(user, project_creator, project_leader, report_creator)
+            
+            if not has_permission:
+                raise HTTPException(status_code=403, detail="没有权限删除此文件")
+            
+            # 获取文件信息
+            c.execute("SELECT file_path FROM report_files WHERE id = ? AND report_id = ?", (file_id, report_id))
+            file_result = c.fetchone()
+            
+            if not file_result:
+                raise HTTPException(status_code=404, detail="文件不存在")
+            
+            file_path = file_result[0]
+            
+            # 删除物理文件
+            if file_path and os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                    print(f"🗑️ 已删除文件: {file_path}")
+                except Exception as e:
+                    print(f"⚠️ 删除文件失败 {file_path}: {e}")
+            
+            # 从数据库删除文件记录
+            c.execute("DELETE FROM report_files WHERE id = ? AND report_id = ?", (file_id, report_id))
+            
+            # 更新报告的 file_paths 字段（为了兼容性）
+            c.execute("SELECT file_paths FROM reports WHERE id = ?", (report_id,))
+            report_file_paths = c.fetchone()
+            
+            if report_file_paths and report_file_paths[0]:
+                file_paths_list = report_file_paths[0].split(',')
+                if file_path in file_paths_list:
+                    file_paths_list.remove(file_path)
+                    new_file_paths = ','.join(file_paths_list) if file_paths_list else ""
+                    c.execute("UPDATE reports SET file_paths = ? WHERE id = ?", (new_file_paths, report_id))
+            
+            db.commit()
+            
+            return RedirectResponse(url=f"/project/{project_id}", status_code=303)
+            
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(status_code=500, detail=f"删除文件失败: {str(e)}")

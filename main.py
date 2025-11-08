@@ -4,7 +4,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
 from database.database import db_manager
-from routes import auth_routes, project_routes, report_routes, user_routes, file_routes
+from routes import auth_routes, project_routes, report_routes, user_routes
 import uvicorn
 import config
 
@@ -41,7 +41,7 @@ app.include_router(auth_routes.router)
 app.include_router(project_routes.router)
 app.include_router(report_routes.router)
 app.include_router(user_routes.router)
-app.include_router(file_routes.router)
+#app.include_router(file_routes.router)
 
 # 健康检查端点
 @app.get("/health")

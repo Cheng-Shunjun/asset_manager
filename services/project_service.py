@@ -6,10 +6,19 @@ import sqlite3
 import os
 import shutil
 from typing import List
+from utils.helpers import secure_filename
 
 templates = Jinja2Templates(directory="templates")
 
 class ProjectService:
+    def _get_project_permission(self, user, project_creator, project_leader):
+        user_type = user.get("user_type", "user")
+        username = user.get("username")
+        return (
+            user_type == "admin" or 
+            username == project_creator or
+            username == project_leader
+        )
     
     def _check_project_permission(self, project_id, user, db):
         """检查用户是否有操作项目的权限：管理员、项目创建人或项目负责人"""
@@ -22,16 +31,11 @@ class ProjectService:
         if not project:
             raise HTTPException(status_code=404, detail="项目不存在")
         
-        creator = project[0]
+        project_creator = project[0]
         project_leader = project[1]
-        user_type = user.get("user_type", "user")
-        username = user.get("username")
         
         # 权限检查：管理员或项目负责人
-        has_permission = (
-            user_type == "admin" or 
-            username == project_leader
-        )
+        has_permission = self._get_project_permission(user, project_creator, project_leader)
         
         if not has_permission:
             raise HTTPException(status_code=403, detail="权限不足，只有管理员、项目创建人或项目负责人可执行此操作")
@@ -162,6 +166,41 @@ class ProjectService:
         columns = [description[0] for description in c.description]
         project_dict = dict(zip(columns, project))
         
+        # 将负责人用户名转换为真实姓名
+        if project_dict["market_leader"]:
+            c.execute("SELECT realname FROM users WHERE username = ?", (project_dict["market_leader"],))
+            market_leader_result = c.fetchone()
+            project_dict["market_leader_realname"] = market_leader_result[0] if market_leader_result else project_dict["market_leader"]
+        else:
+            project_dict["market_leader_realname"] = ""
+        
+        if project_dict["project_leader"]:
+            c.execute("SELECT realname FROM users WHERE username = ?", (project_dict["project_leader"],))
+            project_leader_result = c.fetchone()
+            project_dict["project_leader_realname"] = project_leader_result[0] if project_leader_result else project_dict["project_leader"]
+        else:
+            project_dict["project_leader_realname"] = ""
+        
+        # 获取合同文件信息
+        c.execute("""
+            SELECT id, file_path, file_name, uploader_username, uploader_realname, upload_time, file_size
+            FROM contract_files 
+            WHERE project_id = ? 
+            ORDER BY upload_time DESC
+        """, (project_id,))
+        
+        contract_files = []
+        for row in c.fetchall():
+            contract_files.append({
+                "id": row[0],
+                "file_path": row[1],
+                "file_name": row[2],
+                "uploader_username": row[3],
+                "uploader_realname": row[4],
+                "upload_time": row[5],
+                "file_size": row[6]
+            })
+        
         # 获取报告信息
         c.execute("""
             SELECT id, report_no, file_paths, creator, creator_realname, create_date, 
@@ -213,14 +252,14 @@ class ProjectService:
         users = [{"username": row[0], "realname": row[1] or row[0]} for row in users_data]
         
         # 检查当前用户是否有操作权限：管理员或项目负责人
-        project_operation_permission = (
-            user.get("user_type") == "admin" or 
-            user.get("username") == project_dict["project_leader"]
-        )
+        project_creator = project_dict["creator"]
+        project_leader = project_dict["project_leader"]
+        project_operation_permission = self._get_project_permission(user, project_creator, project_leader)
         
         return templates.TemplateResponse("project_info.html", {
             "request": request,
             "project": project_dict,
+            "contract_files": contract_files,  # 新增合同文件数据
             "reports": reports,
             "users": users,
             "user": user,
@@ -265,3 +304,178 @@ class ProjectService:
         except Exception as e:
             db.rollback()
             raise HTTPException(status_code=500, detail=f"更新进度失败: {str(e)}")
+
+    async def get_edit_project_page(self, request, project_id, user, db):
+        """获取项目编辑页面"""
+        # 检查权限
+        self._check_project_permission(project_id, user, db)
+        
+        c = db.cursor()
+        c.execute("""
+            SELECT 
+                id, project_no, name, project_type, client_name, 
+                market_leader, project_leader, progress, report_numbers, 
+                amount, is_paid, creator, creator_realname, start_date, end_date, 
+                status, contract_file, create_date
+            FROM projects WHERE id=?
+        """, (project_id,))
+        
+        project = c.fetchone()
+        
+        if not project:
+            raise HTTPException(status_code=404, detail="项目不存在")
+        
+        columns = [description[0] for description in c.description]
+        project_dict = dict(zip(columns, project))
+        
+        # 获取用户列表用于选择框
+        c.execute("SELECT username, realname FROM users")
+        users_data = c.fetchall()
+        users = [{"username": row[0], "realname": row[1] or row[0]} for row in users_data]
+        
+        return templates.TemplateResponse("edit_project.html", {
+            "request": request,
+            "project": project_dict,
+            "users": users,
+            "user": user
+        })
+
+    async def update_project(self, project_id, name, project_type, client_name, market_leader,
+                            project_leader, amount, is_paid, start_date, user, db):
+        """更新项目信息"""
+        try:
+            # 检查权限
+            self._check_project_permission(project_id, user, db)
+            
+            c = db.cursor()
+            
+            # 验证项目是否存在
+            c.execute("SELECT status FROM projects WHERE id = ?", (project_id,))
+            result = c.fetchone()
+            
+            if not result:
+                raise HTTPException(status_code=404, detail="项目不存在")
+            
+            # 更新项目信息
+            c.execute("""
+                UPDATE projects 
+                SET name = ?, project_type = ?, client_name = ?, 
+                    market_leader = ?, project_leader = ?, amount = ?, 
+                    is_paid = ?, start_date = ?
+                WHERE id = ?
+            """, (
+                name, project_type, client_name, market_leader,
+                project_leader, amount, is_paid, start_date, project_id
+            ))
+            
+            db.commit()
+            
+            return RedirectResponse(url=f"/project/{project_id}", status_code=303)
+            
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(status_code=500, detail=f"更新项目失败: {str(e)}")
+
+    async def add_contract_files(self, project_id, request, user, db):
+        """添加合同文件"""
+        try:
+            # 检查权限
+            self._check_project_permission(project_id, user, db)
+            
+            c = db.cursor()
+            c.execute("SELECT status FROM projects WHERE id = ?", (project_id,))
+            result = c.fetchone()
+            
+            if not result:
+                raise HTTPException(status_code=404, detail="项目不存在")
+            
+            status = result[0]
+            if status in ['completed', 'paused', 'cancelled']:
+                raise HTTPException(status_code=400, detail=f"项目状态为{status}，无法添加合同文件")
+            
+            form_data = await request.form()
+            contract_files = form_data.getlist("contract_files")
+            
+            if not contract_files:
+                raise HTTPException(status_code=400, detail="请选择要上传的文件")
+            
+            # 获取当前用户的真实姓名
+            c.execute("SELECT realname FROM users WHERE username = ?", (user["username"],))
+            uploader_realname_result = c.fetchone()
+            uploader_realname = uploader_realname_result[0] if uploader_realname_result else user["username"]
+            
+            upload_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            
+            for contract_file in contract_files:
+                if contract_file.filename:
+                    contract_filename = secure_filename(contract_file.filename)
+                    contract_path = os.path.join('static/uploads', contract_filename)
+                    
+                    with open(contract_path, "wb") as f:
+                        content = await contract_file.read()
+                        f.write(content)
+                    
+                    file_size = os.path.getsize(contract_path)
+                    
+                    # 插入到 contract_files 表
+                    c.execute("""
+                        INSERT INTO contract_files 
+                        (project_id, file_path, file_name, uploader_username, uploader_realname, upload_time, file_size)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """, (
+                        project_id, contract_path, contract_file.filename, user["username"],
+                        uploader_realname, upload_time, file_size
+                    ))
+            
+            db.commit()
+            return RedirectResponse(url=f"/project/{project_id}", status_code=303)
+            
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(status_code=500, detail=f"添加合同文件失败: {str(e)}")
+
+    async def delete_contract_file(self, project_id, file_id, user, db):
+        """删除合同文件"""
+        try:
+            # 检查权限
+            self._check_project_permission(project_id, user, db)
+            
+            c = db.cursor()
+            
+            # 检查项目状态
+            c.execute("SELECT status FROM projects WHERE id = ?", (project_id,))
+            result = c.fetchone()
+            
+            if not result:
+                raise HTTPException(status_code=404, detail="项目不存在")
+            
+            status = result[0]
+            if status != 'active':
+                raise HTTPException(status_code=400, detail="只有进行中的项目可以删除合同文件")
+            
+            # 获取文件信息
+            c.execute("SELECT file_path FROM contract_files WHERE id = ? AND project_id = ?", (file_id, project_id))
+            file_result = c.fetchone()
+            
+            if not file_result:
+                raise HTTPException(status_code=404, detail="文件不存在")
+            
+            file_path = file_result[0]
+            
+            # 删除物理文件
+            if file_path and os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                    print(f"🗑️ 已删除合同文件: {file_path}")
+                except Exception as e:
+                    print(f"⚠️ 删除合同文件失败 {file_path}: {e}")
+            
+            # 从数据库删除文件记录
+            c.execute("DELETE FROM contract_files WHERE id = ? AND project_id = ?", (file_id, project_id))
+            
+            db.commit()
+            return RedirectResponse(url=f"/project/{project_id}", status_code=303)
+            
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(status_code=500, detail=f"删除合同文件失败: {str(e)}")

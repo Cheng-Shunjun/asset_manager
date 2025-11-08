@@ -52,3 +52,13 @@ async def delete_report(
     db: sqlite3.Connection = Depends(get_db)
 ):
     return await report_service.delete_report(project_id, report_no, user, db)
+
+@router.post("/project/{project_id}/delete_report_file/{report_id}/{file_id}")
+async def delete_report_file(
+    project_id: int,
+    report_id: int,
+    file_id: int,
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    return await report_service.delete_report_file(project_id, report_id, file_id, user, db)

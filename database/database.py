@@ -86,6 +86,20 @@ class Database:
                         file_size INTEGER,
                         FOREIGN KEY (report_id) REFERENCES reports (id)
                     )''')
+        # ========= 创建 contract_files 表 =========
+        c.execute("""
+        CREATE TABLE IF NOT EXISTS contract_files (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id INTEGER,               -- 关联的项目ID
+            file_path TEXT NOT NULL,          -- 文件路径
+            file_name TEXT NOT NULL,          -- 原文件名
+            uploader_username TEXT NOT NULL,  -- 上传者用户名
+            uploader_realname TEXT NOT NULL,  -- 上传者真实姓名
+            upload_time TEXT NOT NULL,        -- 上传时间
+            file_size INTEGER,                -- 文件大小（字节）
+            FOREIGN KEY (project_id) REFERENCES projects (id)
+        )
+        """)
         conn.commit()
     
     @contextmanager

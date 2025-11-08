@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Form, Depends, HTTPException
+from fastapi import APIRouter, Request, Form, Depends, HTTPException, File, UploadFile
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from database.database import db_manager, get_db
@@ -99,28 +99,51 @@ async def update_progress(
 
 @router.post("/project/{project_id}/add_contract")
 async def add_contract_files(
+    request: Request,
+    project_id: int,
+    contract_files: list[UploadFile] = File(...),
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    print("add contract router")
+    return await project_service.add_contract_files(project_id, request, user, db)
+
+@router.post("/project/{project_id}/delete_contract_file/{file_id}")
+async def delete_contract_file(
+    project_id: int,
+    file_id: int,
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    return await project_service.delete_contract_file(project_id, file_id, user, db)
+
+@router.get("/project/{project_id}/edit")
+async def edit_project_page(
     project_id: int,
     request: Request,
     user: dict = Depends(login_required),
     db: sqlite3.Connection = Depends(get_db)
 ):
-    return await project_service.add_contract_files(project_id, request, user, db)
+    return await project_service.get_edit_project_page(request, project_id, user, db)
 
-@router.get("/project/{project_id}/download_contract/{filename:path}")
-async def download_contract(
+@router.post("/project/{project_id}/edit")
+async def update_project(
     project_id: int,
-    filename: str,
+    request: Request,
+    name: str = Form(...),
+    project_type: str = Form(...),
+    client_name: str = Form(...),
+    market_leader: str = Form(...),
+    project_leader: str = Form(...),
+    amount: float = Form(0.0),
+    is_paid: str = Form(...),
+    start_date: str = Form(...),
     user: dict = Depends(login_required),
     db: sqlite3.Connection = Depends(get_db)
 ):
-    return await project_service.download_contract(project_id, filename, user, db)
+    print(project_leader, market_leader)
+    return await project_service.update_project(
+        project_id, name, project_type, client_name, market_leader,
+        project_leader, amount, is_paid, start_date, user, db
+    )
 
-@router.get("/project/{project_id}/download_report_file/{report_id}/{filename:path}")
-async def download_report_file(
-    project_id: int,
-    report_id: int,
-    filename: str,
-    user: dict = Depends(login_required),
-    db: sqlite3.Connection = Depends(get_db)
-):
-    return await project_service.download_report_file(project_id, report_id, filename, user, db)
