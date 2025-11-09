@@ -51,11 +51,13 @@ def init_database():
     print("✅ projects 表创建完成。")
 
     # ========= 创建 reports 表 =========
+    # ========= 创建 reports 表 =========
     c.execute("""
     CREATE TABLE IF NOT EXISTS reports (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         report_no TEXT NOT NULL,         -- 报告号
         project_id INTEGER,              -- 关联的项目ID
+        report_type TEXT,                -- 报告类型（新增字段）
         file_paths TEXT,                 -- 文件路径（多个以逗号分隔）
         creator TEXT,                    -- 创建人用户名
         creator_realname TEXT,           -- 创建人真实姓名
@@ -132,6 +134,40 @@ def init_database():
     )
     print("✅ 测试用户创建完成。")
 
+    # ========= 创建资质表 =========
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS user_qualifications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL,
+        qualification_type TEXT NOT NULL,
+        FOREIGN KEY (username) REFERENCES users (username),
+        UNIQUE(username, qualification_type)
+    )
+    """)
+    print("✅ user_qualifications 表创建完成。")
+
+    # ========= 插入测试资质数据 =========
+    qualifications = [
+        ("zhangwen", "资产评估师"),
+        ("zhangwen", "房地产估价师"),
+        ("zhangwen", "土地估价师"),
+        ("zhangsan", "资产评估师"),
+        ("lisi", "房地产估价师"),
+        ("wangwu", "土地估价师"),
+        ("zhaoliu", "资产评估师"),
+        ("zhaoliu", "房地产估价师"),
+        ("sunqi", "资产评估师"),
+        ("zhouba", "房地产估价师"),
+        ("wujiu", "土地估价师"),
+        ("zhengshi", "资产评估师"),
+    ]
+
+    c.executemany(
+        "INSERT INTO user_qualifications (username, qualification_type) VALUES (?, ?)",
+        qualifications
+    )
+    print("✅ 用户资质数据已添加。")
+
     # ========= 插入测试项目数据 =========
     current_year = datetime.now().year
     projects = [
@@ -185,62 +221,73 @@ def init_database():
     print("✅ 所有示例项目数据已添加。")
 
     # ========= 插入测试报告数据 =========
-    # 使用新的报告号格式，包含 creator_realname 字段
+    # ========= 插入测试报告数据 =========
+# 使用新的报告号格式，包含 creator_realname 字段
     reports = [
         # 项目1的报告 - 土地报告
         (
-            f"川鼎土估[{current_year}]字第01001号", 1, "static/uploads/zh_report1.pdf,static/uploads/zh_attachment1.docx",
+            f"川鼎土估[{current_year}]字第01001号", 1, "土地报告",
+            "static/uploads/zh_report1.pdf,static/uploads/zh_attachment1.docx",
             "zhangwen", "张文", "2025-01-15 10:30:00", "zhangsan", "lisi", "wangwu", "zhaoliu", "sunqi"
         ),
         (
-            f"川鼎土估[{current_year}]字第01002号", 1, "static/uploads/zh_report2.pdf",
+            f"川鼎土估[{current_year}]字第01002号", 1, "土地报告",
+            "static/uploads/zh_report2.pdf",
             "zhangwen", "张文", "2025-01-20 14:15:00", "wangwu", "zhaoliu", "sunqi", "zhouba", "wujiu"
         ),
         # 项目2的报告 - 房地产估价报告
         (
-            f"川鼎房估[{current_year}]字第02001号", 2, "static/uploads/sc_report.pdf,static/uploads/sc_data.xlsx,static/uploads/sc_charts.pdf",
+            f"川鼎房估[{current_year}]字第02001号", 2, "房地产估价报告",
+            "static/uploads/sc_report.pdf,static/uploads/sc_data.xlsx,static/uploads/sc_charts.pdf",
             "zhangwen", "张文", "2024-05-20 09:45:00", "lisi", "wangwu", "zhaoliu", "sunqi", "zhouba"
         ),
         # 项目3的报告 - 资产评估报告
         (
-            f"川鼎评报[{current_year}]字第03001号", 3, "static/uploads/edu_report.pdf",
+            f"川鼎评报[{current_year}]字第03001号", 3, "资产评估报告",
+            "static/uploads/edu_report.pdf",
             "zhangwen", "张文", "2023-10-10 16:20:00", "zhangsan", "lisi", "wangwu", "zhaoliu", "sunqi"
         ),
         # 项目4的报告 - 资产估值报告
         (
-            f"川鼎估评[{current_year}]字第04001号", 4, "static/uploads/ev_report1.pdf,static/uploads/ev_design.docx",
+            f"川鼎估评[{current_year}]字第04001号", 4, "资产估值报告",
+            "static/uploads/ev_report1.pdf,static/uploads/ev_design.docx",
             "zhangwen", "张文", "2025-06-15 11:00:00", "zhaoliu", "sunqi", "zhouba", "wujiu", "zhengshi"
         ),
         (
-            f"川鼎估评[{current_year}]字第04002号", 4, "static/uploads/ev_report2.pdf",
+            f"川鼎估评[{current_year}]字第04002号", 4, "资产估值报告",
+            "static/uploads/ev_report2.pdf",
             "zhangwen", "张文", "2025-07-01 15:30:00", "sunqi", "zhouba", "wujiu", "zhengshi", "zhangsan"
         ),
         # 项目5的报告 - 房地产咨询报告
         (
-            f"川鼎房咨[{current_year}]字第05001号", 5, "static/uploads/rd_report.pdf",
+            f"川鼎房咨[{current_year}]字第05001号", 5, "房地产咨询报告",
+            "static/uploads/rd_report.pdf",
             "zhangwen", "张文", "2022-06-01 13:45:00", "zhangsan", "lisi", "wangwu", "zhaoliu", "sunqi"
         ),
         # 项目6的报告 - 资产咨询报告
         (
-            f"川鼎咨评[{current_year}]字第06001号", 6, "static/uploads/wp_report1.pdf,static/uploads/wp_analysis.xlsx",
+            f"川鼎咨评[{current_year}]字第06001号", 6, "资产咨询报告",
+            "static/uploads/wp_report1.pdf,static/uploads/wp_analysis.xlsx",
             "zhangwen", "张文", "2025-02-15 10:15:00", "lisi", "zhaoliu", "sunqi", "zhouba", "wujiu"
         ),
         (
-            f"川鼎咨评[{current_year}]字第06002号", 6, "static/uploads/wp_report2.pdf",
+            f"川鼎咨评[{current_year}]字第06002号", 6, "资产咨询报告",
+            "static/uploads/wp_report2.pdf",
             "zhangwen", "张文", "2025-03-01 14:50:00", "wangwu", "sunqi", "zhouba", "wujiu", "zhengshi"
         ),
         (
-            f"川鼎咨评[{current_year}]字第06003号", 6, "static/uploads/wp_report3.pdf,static/uploads/wp_final.docx",
+            f"川鼎咨评[{current_year}]字第06003号", 6, "资产咨询报告",
+            "static/uploads/wp_report3.pdf,static/uploads/wp_final.docx",
             "zhangwen", "张文", "2025-03-20 16:10:00", "zhaoliu", "zhouba", "wujiu", "zhengshi", "zhangsan"
         )
     ]
 
     c.executemany("""
         INSERT INTO reports (
-            report_no, project_id, file_paths, creator, creator_realname, create_date,
+            report_no, project_id, report_type, file_paths, creator, creator_realname, create_date,
             reviewer1, reviewer2, reviewer3, signer1, signer2
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, reports)
     print("✅ 所有示例报告数据已添加。")
 

@@ -64,12 +64,28 @@ class ProjectService:
                 "amount": p["amount"],
                 "is_paid": p["is_paid"],
                 "creator": p["creator"],
-                "creator_realname": p["creator_realname"],  # 新增字段
+                "creator_realname": p["creator_realname"],
                 "start_date": p["start_date"],
                 "end_date": p["end_date"],
                 "status": p["status"],
                 "create_date": p["create_date"]
             }
+            
+            # 将负责人用户名转换为真实姓名
+            if project_dict["market_leader"]:
+                c.execute("SELECT realname FROM users WHERE username = ?", (project_dict["market_leader"],))
+                market_leader_result = c.fetchone()
+                project_dict["market_leader_realname"] = market_leader_result[0] if market_leader_result else project_dict["market_leader"]
+            else:
+                project_dict["market_leader_realname"] = ""
+            
+            if project_dict["project_leader"]:
+                c.execute("SELECT realname FROM users WHERE username = ?", (project_dict["project_leader"],))
+                project_leader_result = c.fetchone()
+                project_dict["project_leader_realname"] = project_leader_result[0] if project_leader_result else project_dict["project_leader"]
+            else:
+                project_dict["project_leader_realname"] = ""
+            
             projects_list.append(project_dict)
             if p["start_date"]:
                 years.add(int(p["start_date"][:4]))
@@ -203,25 +219,26 @@ class ProjectService:
         
         # 获取报告信息
         c.execute("""
-            SELECT id, report_no, file_paths, creator, creator_realname, create_date, 
+            SELECT id, report_no, report_type, file_paths, creator, creator_realname, create_date, 
                 reviewer1, reviewer2, reviewer3, signer1, signer2
             FROM reports WHERE project_id = ? ORDER BY create_date DESC
         """, (project_id,))
-        
+
         reports = []
         for row in c.fetchall():
             report_data = {
                 "id": row[0],
                 "report_no": row[1],
-                "file_paths": row[2],
-                "creator": row[3],
-                "creator_realname": row[4],
-                "create_date": row[5],
-                "reviewer1": row[6],
-                "reviewer2": row[7],
-                "reviewer3": row[8],
-                "signer1": row[9],
-                "signer2": row[10],
+                "report_type": row[2],
+                "file_paths": row[3],
+                "creator": row[4],
+                "creator_realname": row[5],
+                "create_date": row[6],
+                "reviewer1": row[7],
+                "reviewer2": row[8],
+                "reviewer3": row[9],
+                "signer1": row[10],
+                "signer2": row[11],
                 "files": []
             }
             
@@ -247,9 +264,20 @@ class ProjectService:
             
             reports.append(report_data)
         
+        # 获取用户列表时包含资质信息
         c.execute("SELECT username, realname FROM users")
         users_data = c.fetchall()
-        users = [{"username": row[0], "realname": row[1] or row[0]} for row in users_data]
+        users = []
+        for row in users_data:
+            # 获取每个用户的资质
+            c.execute("SELECT qualification_type FROM user_qualifications WHERE username = ?", (row[0],))
+            qualifications = [qual_row[0] for qual_row in c.fetchall()]
+            
+            users.append({
+                "username": row[0], 
+                "realname": row[1] or row[0],
+                "qualifications": qualifications
+            })
         
         # 检查当前用户是否有操作权限：管理员或项目负责人
         project_creator = project_dict["creator"]

@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="UTF-8">
   <title>用户管理</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
+
 <body class="bg-light">
   <nav class="navbar navbar-dark bg-primary">
     <div class="container-fluid">
@@ -15,18 +17,20 @@
 
   <div class="container mt-4">
     <h4>注册用户</h4>
-    
+
     <!-- 调试信息（可选） -->
     <div class="alert alert-info">
       用户数量: {{ users|length }}
     </div>
-    
+
+    <!-- 在用户表格中添加资质列 -->
     <table class="table table-hover bg-white rounded shadow-sm">
       <thead class="table-primary">
         <tr>
           <th>用户名</th>
           <th>真实姓名</th>
           <th>用户类型</th>
+          <th>资质</th>
           <th>密码</th>
         </tr>
       </thead>
@@ -37,16 +41,19 @@
           <td>{{ u.realname }}</td>
           <td>
             {% if u.user_type == 'admin' %}
-              <span class="badge bg-danger">管理员</span>
+            <span class="badge bg-danger">管理员</span>
             {% else %}
-              <span class="badge bg-secondary">普通用户</span>
+            <span class="badge bg-secondary">普通用户</span>
             {% endif %}
           </td>
+          <td>
+            {% for qual in u.qualifications %}
+            <span class="badge bg-info me-1">{{ qual }}</span>
+            {% else %}
+            <span class="text-muted">无</span>
+            {% endfor %}
+          </td>
           <td>{{ u.password }}</td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="4" class="text-center text-muted">暂无用户数据</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -55,4 +62,5 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>

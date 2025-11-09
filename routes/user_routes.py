@@ -20,11 +20,16 @@ async def user_manager(
     
     users_list = []
     for user_row in users:
+        # 获取用户资质
+        c.execute("SELECT qualification_type FROM user_qualifications WHERE username = ?", (user_row[0],))
+        qualifications = [row[0] for row in c.fetchall()]
+        
         users_list.append({
             'username': user_row[0],
             'realname': user_row[1],
             'user_type': user_row[2],
-            'password': user_row[3]
+            'password': user_row[3],
+            'qualifications': qualifications  # 添加资质信息
         })
     
     return templates.TemplateResponse("user_manager.html", {

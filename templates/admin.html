@@ -57,7 +57,8 @@
       overflow: hidden;
       text-overflow: ellipsis;
       max-width: 200px;
-      height: 50px; /* 固定高度确保只有一行 */
+      height: 50px;
+      /* 固定高度确保只有一行 */
       line-height: 1.2;
       vertical-align: middle;
       padding: 8px 12px;
@@ -69,7 +70,8 @@
     }
 
     .table {
-      min-width: 1200px; /* 设置最小宽度让表格更宽 */
+      min-width: 1200px;
+      /* 设置最小宽度让表格更宽 */
       table-layout: auto;
     }
 
@@ -83,62 +85,86 @@
     }
 
     /* 为特定列设置不同宽度 */
-    .table th:nth-child(1), .table td:nth-child(1) { /* 项目序号 */
+    .table th:nth-child(1),
+    .table td:nth-child(1) {
+      /* 项目序号 */
       min-width: 100px;
       max-width: 120px;
     }
 
-    .table th:nth-child(2), .table td:nth-child(2) { /* 项目名称 */
+    .table th:nth-child(2),
+    .table td:nth-child(2) {
+      /* 项目名称 */
       min-width: 150px;
       max-width: 200px;
     }
 
-    .table th:nth-child(3), .table td:nth-child(3) { /* 项目类型 */
+    .table th:nth-child(3),
+    .table td:nth-child(3) {
+      /* 项目类型 */
       min-width: 120px;
       max-width: 150px;
     }
 
-    .table th:nth-child(4), .table td:nth-child(4) { /* 甲方名称 */
+    .table th:nth-child(4),
+    .table td:nth-child(4) {
+      /* 甲方名称 */
       min-width: 150px;
       max-width: 200px;
     }
 
-    .table th:nth-child(5), .table td:nth-child(5) { /* 市场部负责人 */
+    .table th:nth-child(5),
+    .table td:nth-child(5) {
+      /* 市场部负责人 */
       min-width: 120px;
       max-width: 150px;
     }
 
-    .table th:nth-child(6), .table td:nth-child(6) { /* 项目负责人 */
+    .table th:nth-child(6),
+    .table td:nth-child(6) {
+      /* 项目负责人 */
       min-width: 120px;
       max-width: 150px;
     }
 
-    .table th:nth-child(7), .table td:nth-child(7) { /* 项目进度 */
+    .table th:nth-child(7),
+    .table td:nth-child(7) {
+      /* 项目进度 */
       min-width: 100px;
       max-width: 120px;
     }
 
-    .table th:nth-child(8), .table td:nth-child(8) { /* 报告号 */
+    .table th:nth-child(8),
+    .table td:nth-child(8) {
+      /* 报告号 */
       min-width: 120px;
       max-width: 150px;
     }
 
-    .table th:nth-child(9), .table td:nth-child(9) { /* 合同金额 */
+    .table th:nth-child(9),
+    .table td:nth-child(9) {
+      /* 合同金额 */
       min-width: 100px;
       max-width: 120px;
     }
 
-    .table th:nth-child(10), .table td:nth-child(10) { /* 已收费 */
+    .table th:nth-child(10),
+    .table td:nth-child(10) {
+      /* 已收费 */
       min-width: 80px;
       max-width: 100px;
     }
 
-    .table th:nth-child(11), .table td:nth-child(11) { /* 开始日期 */
+    .table th:nth-child(11),
+    .table td:nth-child(11) {
+      /* 开始日期 */
       min-width: 100px;
       max-width: 120px;
     }
 
-    .table th:nth-child(12), .table td:nth-child(12) { /* 状态 */
+    .table th:nth-child(12),
+    .table td:nth-child(12) {
+      /* 状态 */
       min-width: 80px;
       max-width: 100px;
     }
@@ -197,20 +223,42 @@
             <td>{{ p.name }}</td>
             <td>{{ p.project_type }}</td>
             <td>{{ p.client_name }}</td>
-            <td>{{ p.market_leader }}</td>
-            <td>{{ p.project_leader }}</td>
+            <!-- 修改市场部负责人显示 -->
+            <td>
+              {% if p.market_leader_realname %}
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                class="bi bi-person-fill me-1" viewBox="0 0 16 16">
+                <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3Zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+              </svg>
+              {{ p.market_leader_realname }}
+              {% else %}
+              <span class="text-muted">未设置</span>
+              {% endif %}
+            </td>
+            <!-- 修改项目负责人显示 -->
+            <td>
+              {% if p.project_leader_realname %}
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                class="bi bi-person-fill me-1" viewBox="0 0 16 16">
+                <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3Zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+              </svg>
+              {{ p.project_leader_realname }}
+              {% else %}
+              <span class="text-muted">未设置</span>
+              {% endif %}
+            </td>
             <td>{{ p.progress }}</td>
             <td>{{ p.report_numbers }}</td>
             <td class="amount-cell">
               {% if p.amount %}
-                {% set amount = p.amount %}
-                {% if amount >= 10000 %}
-                  {{ "%.2f"|format(amount / 10000) }}万
-                {% else %}
-                  {{ "%.0f"|format(amount) }}元
-                {% endif %}
+              {% set amount = p.amount %}
+              {% if amount >= 10000 %}
+              {{ "%.2f"|format(amount / 10000) }}万
               {% else %}
-                0元
+              {{ "%.0f"|format(amount) }}元
+              {% endif %}
+              {% else %}
+              0元
               {% endif %}
             </td>
             <td>{{ p.is_paid }}</td>
@@ -243,14 +291,14 @@
 
   <script>
     // 页面加载时对项目进行排序（进行中的项目在前）
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
       sortProjectsByStatus();
     });
 
     function sortProjectsByStatus() {
       const tbody = document.getElementById('projectsTableBody');
       const rows = Array.from(tbody.querySelectorAll('tr'));
-      
+
       // 定义状态优先级
       const statusPriority = {
         'active': 1,
@@ -258,17 +306,17 @@
         'completed': 3,
         'cancelled': 4
       };
-      
+
       // 按状态排序
       rows.sort((a, b) => {
         const statusA = a.getAttribute('data-status');
         const statusB = b.getAttribute('data-status');
         const priorityA = statusPriority[statusA] || 5;
         const priorityB = statusPriority[statusB] || 5;
-        
+
         return priorityA - priorityB;
       });
-      
+
       // 清空tbody并重新添加排序后的行
       tbody.innerHTML = '';
       rows.forEach(row => tbody.appendChild(row));
@@ -294,4 +342,5 @@
     });
   </script>
 </body>
+
 </html>

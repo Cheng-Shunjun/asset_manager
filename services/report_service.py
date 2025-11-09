@@ -3,6 +3,7 @@ from fastapi.responses import RedirectResponse
 from datetime import datetime
 import os
 from utils.helpers import secure_filename
+from services.qualification_service import qualification_service
 
 class ReportService:
     def __check_report_permission(self, user, project_creator, project_leader, report_creator):
@@ -22,8 +23,13 @@ class ReportService:
             if status in ['completed', 'paused', 'cancelled']:
                 raise HTTPException(status_code=400, detail=f"项目状态为{status}，无法更新报告")
             
-            # 获取报告信息，包括创建人
-            c.execute("SELECT id, file_paths, reviewer1, reviewer2, reviewer3, signer1, signer2, creator FROM reports WHERE report_no = ? AND project_id = ?", (report_no, project_id))
+            # 获取报告信息，包括创建人和报告类型
+            c.execute("""
+                SELECT id, file_paths, reviewer1, reviewer2, reviewer3, signer1, signer2, 
+                    creator, report_type 
+                FROM reports 
+                WHERE report_no = ? AND project_id = ?
+            """, (report_no, project_id))
             result = c.fetchone()
             
             if not result:
@@ -37,6 +43,7 @@ class ReportService:
             existing_signer1 = result[5]
             existing_signer2 = result[6]
             report_creator = result[7]
+            report_type = result[8]  # 获取报告类型用于资质验证
             
             # 权限验证：只有管理员、项目创建人、项目负责人或报告创建人可以编辑
             c.execute("SELECT creator, project_leader FROM projects WHERE id = ?", (project_id,))
@@ -89,6 +96,7 @@ class ReportService:
             final_signer1 = signer1 if signer1 is not None else existing_signer1
             final_signer2 = signer2 if signer2 is not None else existing_signer2
             
+            # 复核人验证
             reviewers = [final_reviewer1, final_reviewer2, final_reviewer3]
             if not all(reviewers):
                 raise HTTPException(status_code=400, detail="必须设置3个复核人，不能有空缺")
@@ -96,12 +104,61 @@ class ReportService:
             if len(reviewers) != len(set(reviewers)):
                 raise HTTPException(status_code=400, detail="复核人不能重复，请选择3个不同的复核人")
             
+            # 签字人验证
             signers = [final_signer1, final_signer2]
             if not all(signers):
                 raise HTTPException(status_code=400, detail="必须设置2个签字人，不能有空缺")
             
             if len(signers) != len(set(signers)):
                 raise HTTPException(status_code=400, detail="签字人不能重复，请选择2个不同的签字人")
+            
+            # 新增：签字人资质验证
+            # 需要签字的报告类型
+            signature_required_types = ["房地产估价报告", "资产评估报告", "土地报告"]
+            
+            if report_type in signature_required_types:
+                # 报告类型与所需资质的映射
+                qualification_map = {
+                    "资产评估报告": "资产评估师",
+                    "房地产估价报告": "房地产估价师", 
+                    "土地报告": "土地估价师"
+                }
+                
+                required_qualification = qualification_map.get(report_type)
+                if required_qualification:
+                    # 验证第一个签字人资质
+                    c.execute("""
+                        SELECT COUNT(*) FROM user_qualifications 
+                        WHERE username = ? AND qualification_type = ?
+                    """, (final_signer1, required_qualification))
+                    signer1_qualified = c.fetchone()[0] > 0
+                    
+                    # 验证第二个签字人资质
+                    c.execute("""
+                        SELECT COUNT(*) FROM user_qualifications 
+                        WHERE username = ? AND qualification_type = ?
+                    """, (final_signer2, required_qualification))
+                    signer2_qualified = c.fetchone()[0] > 0
+                    
+                    if not signer1_qualified or not signer2_qualified:
+                        unqualified_signers = []
+                        if not signer1_qualified:
+                            # 获取签字人真实姓名用于错误提示
+                            c.execute("SELECT realname FROM users WHERE username = ?", (final_signer1,))
+                            signer1_realname_result = c.fetchone()
+                            signer1_realname = signer1_realname_result[0] if signer1_realname_result else final_signer1
+                            unqualified_signers.append(signer1_realname)
+                        
+                        if not signer2_qualified:
+                            c.execute("SELECT realname FROM users WHERE username = ?", (final_signer2,))
+                            signer2_realname_result = c.fetchone()
+                            signer2_realname = signer2_realname_result[0] if signer2_realname_result else final_signer2
+                            unqualified_signers.append(signer2_realname)
+                        
+                        raise HTTPException(
+                            status_code=400, 
+                            detail=f"{report_type}需要{required_qualification}资质才能签字。以下签字人不具备资质：{', '.join(unqualified_signers)}"
+                        )
             
             c.execute("""
                 UPDATE reports 
@@ -124,7 +181,7 @@ class ReportService:
             raise HTTPException(status_code=500, detail=f"更新报告失败: {str(e)}")
 
     async def generate_report_no(self, project_id, report_type, is_filing, reviewer1, reviewer2,
-                           reviewer3, signer1, signer2, user, db):
+                       reviewer3, signer1, signer2, user, db):
         try:
             c = db.cursor()
             c.execute("SELECT status FROM projects WHERE id = ?", (project_id,))
@@ -137,16 +194,70 @@ class ReportService:
             if status != 'active':
                 raise HTTPException(status_code=400, detail="只有进行中的项目可以生成报告号")
             
-            # 移除权限限制：所有人都可以为进行中的项目生成报告号
-            # 只检查项目状态，不检查用户权限
+            # 需要签字的报告类型
+            signature_required_types = ["房地产估价报告", "资产评估报告", "土地报告"]
             
+            # 对于需要签字的报告类型，验证签字人资质
+            if report_type in signature_required_types:
+                # 验证签字人是否设置
+                if not signer1 or not signer2:
+                    raise HTTPException(status_code=400, detail=f"{report_type}需要设置2个签字人")
+                
+                # 验证签字人不能重复
+                if signer1 == signer2:
+                    raise HTTPException(status_code=400, detail="签字人不能重复，请选择2个不同的签字人")
+                
+                # 验证签字人资质
+                qualification_map = {
+                    "资产评估报告": "资产评估师",
+                    "房地产估价报告": "房地产估价师", 
+                    "土地报告": "土地估价师"
+                }
+                
+                required_qualification = qualification_map.get(report_type)
+                if required_qualification:
+                    # 验证第一个签字人资质
+                    c.execute("""
+                        SELECT COUNT(*) FROM user_qualifications 
+                        WHERE username = ? AND qualification_type = ?
+                    """, (signer1, required_qualification))
+                    signer1_qualified = c.fetchone()[0] > 0
+                    
+                    # 验证第二个签字人资质
+                    c.execute("""
+                        SELECT COUNT(*) FROM user_qualifications 
+                        WHERE username = ? AND qualification_type = ?
+                    """, (signer2, required_qualification))
+                    signer2_qualified = c.fetchone()[0] > 0
+                    
+                    if not signer1_qualified or not signer2_qualified:
+                        unqualified_signers = []
+                        if not signer1_qualified:
+                            # 获取签字人真实姓名用于错误提示
+                            c.execute("SELECT realname FROM users WHERE username = ?", (signer1,))
+                            signer1_realname_result = c.fetchone()
+                            signer1_realname = signer1_realname_result[0] if signer1_realname_result else signer1
+                            unqualified_signers.append(signer1_realname)
+                        
+                        if not signer2_qualified:
+                            c.execute("SELECT realname FROM users WHERE username = ?", (signer2,))
+                            signer2_realname_result = c.fetchone()
+                            signer2_realname = signer2_realname_result[0] if signer2_realname_result else signer2
+                            unqualified_signers.append(signer2_realname)
+                        
+                        raise HTTPException(
+                            status_code=400, 
+                            detail=f"{report_type}需要{required_qualification}资质才能签字。以下签字人不具备资质：{', '.join(unqualified_signers)}"
+                        )
+            else:
+                # 对于不需要签字的报告类型，清空签字人信息
+                signer1 = ""
+                signer2 = ""
+            
+            # 复核人验证（所有报告类型都需要复核人）
             reviewers = [reviewer1, reviewer2, reviewer3]
             if len(reviewers) != len(set(reviewers)):
                 raise HTTPException(status_code=400, detail="复核人不能重复，请选择3个不同的复核人")
-            
-            signers = [signer1, signer2]
-            if len(signers) != len(set(signers)):
-                raise HTTPException(status_code=400, detail="签字人不能重复，请选择2个不同的签字人")
             
             now = datetime.now()
             current_year = now.year
@@ -222,11 +333,11 @@ class ReportService:
             
             c.execute("""
                 INSERT INTO reports (
-                    report_no, project_id, file_paths, creator, creator_realname, create_date,
+                    report_no, project_id, report_type, file_paths, creator, creator_realname, create_date,
                     reviewer1, reviewer2, reviewer3, signer1, signer2
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
-                report_no, project_id, "", user["username"], creator_realname, create_date,
+                report_no, project_id, report_type, "", user["username"], creator_realname, create_date,
                 reviewer1, reviewer2, reviewer3, signer1, signer2
             ))
             

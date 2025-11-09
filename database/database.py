@@ -35,6 +35,16 @@ class Database:
                         user_type TEXT,
                         password TEXT)''')
         
+        c.execute("""
+        CREATE TABLE IF NOT EXISTS user_qualifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL,
+            qualification_type TEXT NOT NULL,
+            FOREIGN KEY (username) REFERENCES users (username),
+            UNIQUE(username, qualification_type)
+        )
+        """)
+        
         # 项目表
         c.execute('''CREATE TABLE IF NOT EXISTS projects (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -58,21 +68,25 @@ class Database:
                     )''')
         
         # 报告表
-        c.execute('''CREATE TABLE IF NOT EXISTS reports (
+        # ========= 创建 reports 表 =========
+        c.execute("""
+        CREATE TABLE IF NOT EXISTS reports (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        report_no TEXT NOT NULL,
-                        project_id INTEGER,
-                        file_paths TEXT,
-                        creator TEXT,
-                        creator_realname TEXT NOT NULL,
-                        create_date TEXT,
-                        reviewer1 TEXT,
-                        reviewer2 TEXT,
-                        reviewer3 TEXT,
-                        signer1 TEXT,
-                        signer2 TEXT,
+                        report_no TEXT NOT NULL,         -- 报告号
+                        project_id INTEGER,              -- 关联的项目ID
+                        report_type TEXT,                -- 报告类型（新增字段）
+                        file_paths TEXT,                 -- 文件路径（多个以逗号分隔）
+                        creator TEXT,                    -- 创建人用户名
+                        creator_realname TEXT,           -- 创建人真实姓名
+                        create_date TEXT,                -- 创建日期
+                        reviewer1 TEXT,                  -- 复核人1用户名
+                        reviewer2 TEXT,                  -- 复核人2用户名
+                        reviewer3 TEXT,                  -- 复核人3用户名
+                        signer1 TEXT,                    -- 签字人1用户名
+                        signer2 TEXT,                    -- 签字人2用户名
                         FOREIGN KEY (project_id) REFERENCES projects (id)
-                    )''')
+                    )
+                    """)
         
         # 报告文件表
         c.execute('''CREATE TABLE IF NOT EXISTS report_files (

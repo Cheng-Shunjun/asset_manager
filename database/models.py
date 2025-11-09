@@ -54,3 +54,12 @@ class ReportFile:
     uploader_realname: Optional[str] = None
     upload_time: Optional[str] = None
     file_size: Optional[int] = None
+
+@dataclass
+class UserQualification:
+    username: str
+    qualification_type: str
+
+@dataclass
+class UserWithQualifications(User):
+    qualifications: List[str] = None

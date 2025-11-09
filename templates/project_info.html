@@ -308,6 +308,43 @@
     .file-link:hover {
       color: #0d6efd;
     }
+
+    /* 编辑按钮悬停效果 */
+    .edit-btn-container {
+      opacity: 0;
+      transform: scale(0.8);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      margin-left: 0.5rem;
+    }
+
+    .report-card-hover:hover .edit-btn-container {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* 编辑链接样式 - 红色 */
+    .edit-link-red {
+      color: #dc3545;
+      text-decoration: none;
+      font-size: 0.75rem;
+      margin-left: 0.5rem;
+      cursor: pointer;
+      transition: color 0.2s ease;
+    }
+
+    .edit-link-red:hover {
+      color: #c82333;
+      text-decoration: underline;
+    }
+
+    /* 复核人和签字人标题容器 */
+    .reviewer-header,
+    .signer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
   </style>
 </head>
 
@@ -372,7 +409,7 @@
                 <span class="badge status-badge status-active fs-6">进行中</span>
                 {% endif %}
                 <!-- 编辑按钮 - 只有管理员、项目创建人或项目负责人可见 -->
-                {% if project_operation_permission %}
+                {% if project_operation_permission and project.status == 'active' %}
                 <a href="/project/{{ project.id }}/edit" class="btn btn-outline-light btn-sm">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                     class="bi bi-pencil me-1" viewBox="0 0 16 16">
@@ -761,12 +798,25 @@
                       <!-- 报告头部信息 -->
                       <div class="d-flex justify-content-between align-items-start mb-3">
                         <h6 class="card-title text-primary mb-0">{{ report.report_no }}</h6>
+                        <div class="report-type-badge">
+                          <span class="badge bg-info text-dark">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor"
+                              class="bi bi-tag me-1" viewBox="0 0 16 16">
+                              <path
+                                d="M6 4.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm-1 0a.5.5 0 1 0-1 0 .5.5 0 0 0 1 0z" />
+                              <path
+                                d="M2 1h4.586a1 1 0 0 1 .707.293l7 7a1 1 0 0 1 0 1.414l-4.586 4.586a1 1 0 0 1-1.414 0l-7-7A1 1 0 0 1 1 6.586V2a1 1 0 0 1 1-1zm0 5.586 7 7L13.586 9l-7-7H2v4.586z" />
+                            </svg>
+                            {{ report.report_type }}
+                          </span>
+                        </div>
                         <div class="d-flex align-items-center">
                           <!-- 在报告卡片头部信息部分 -->
                           <small class="text-muted text-end me-3">
                             <div>{{ report.create_date }}</div>
                             <div>创建人: {{ report.creator_realname }}</div> <!-- 修改这里 -->
                           </small>
+
                           <!-- 添加权限检查：只有管理员或报告创建人才能看到删除按钮 -->
                           {% set can_delete = (user.user_type == 'admin' or user.username == report.creator) and
                           project.status == 'active' %}
@@ -788,16 +838,18 @@
 
                       <!-- 复核人信息 -->
                       <div class="mb-2">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
+                        <div class="reviewer-header">
                           <small class="text-muted fw-bold">复核人:</small>
                           <!-- 编辑权限也做相应限制 -->
-                          {% set can_edit = (user.user_type == 'admin' or user.username == report.creator) and
+                          {% set can_edit_report = (user.user_type == 'admin' or user.username == report.creator) and
                           project.status == 'active' %}
-                          {% if can_edit %}
-                          <span class="edit-link" data-bs-toggle="modal" data-bs-target="#editReviewersModal"
-                            onclick="setCurrentReport('{{ report.report_no }}', '{{ report.reviewer1 }}', '{{ report.reviewer2 }}', '{{ report.reviewer3 }}', '{{ report.signer1 }}', '{{ report.signer2 }}')">
-                            编辑
-                          </span>
+                          {% if can_edit_report %}
+                          <div class="edit-btn-container">
+                            <span class="edit-link-red" data-bs-toggle="modal" data-bs-target="#editReviewersModal"
+                              onclick="setCurrentReport('{{ report.report_no }}', '{{ report.reviewer1 }}', '{{ report.reviewer2 }}', '{{ report.reviewer3 }}', '{{ report.signer1 }}', '{{ report.signer2 }}')">
+                              编辑
+                            </span>
+                          </div>
                           {% endif %}
                         </div>
                         <div class="d-flex flex-wrap gap-1">
@@ -846,15 +898,19 @@
                         </div>
                       </div>
 
-                      <!-- 签字人信息 -->
+                      <!-- 签字人信息 - 只在需要签字的报告类型显示 -->
+                      {% set signature_required_types = ["房地产估价报告", "资产评估报告", "土地报告"] %}
+                      {% if report.report_type in signature_required_types %}
                       <div class="mb-3">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
+                        <div class="signer-header">
                           <small class="text-muted fw-bold">签字人:</small>
-                          {% if can_edit %}
-                          <span class="edit-link" data-bs-toggle="modal" data-bs-target="#editSignersModal"
-                            onclick="setCurrentReport('{{ report.report_no }}', '{{ report.reviewer1 }}', '{{ report.reviewer2 }}', '{{ report.reviewer3 }}', '{{ report.signer1 }}', '{{ report.signer2 }}')">
-                            编辑
-                          </span>
+                          {% if can_edit_report %}
+                          <div class="edit-btn-container">
+                            <span class="edit-link-red" data-bs-toggle="modal" data-bs-target="#editSignersModal"
+                              onclick="setCurrentReport('{{ report.report_no }}', '{{ report.reviewer1 }}', '{{ report.reviewer2 }}', '{{ report.reviewer3 }}', '{{ report.signer1 }}', '{{ report.signer2 }}')">
+                              编辑
+                            </span>
+                          </div>
                           {% endif %}
                         </div>
                         <div class="d-flex flex-wrap gap-1">
@@ -889,6 +945,7 @@
                           {% endif %}
                         </div>
                       </div>
+                      {% endif %}
 
                       <!-- 报告文件 -->
                       {% if report.files %}
@@ -915,8 +972,6 @@
                           </div>
 
                           <!-- 删除按钮 - 只有有权限的用户才显示 -->
-                          {% set can_edit_report = (user.user_type == 'admin' or user.username == report.creator or
-                          project_operation_permission) and project.status == 'active' %}
                           {% if can_edit_report %}
                           <div class="file-delete-btn">
                             <button type="button" class="btn btn-outline-danger btn-sm"
@@ -939,26 +994,27 @@
                       <p class="text-muted mb-3">暂无文件</p>
                       {% endif %}
 
-                      <!-- 文件上传表单 -->
-                      {% if can_edit %}
+                      <!-- 文件上传表单 - 移到文件列表后面 -->
+                      {% if can_edit_report %}
                       <div class="update-form">
                         <h6 class="mb-3">添加报告文件</h6>
                         <form action="/project/{{ project.id }}/update_report/{{ report.report_no }}" method="post"
                           enctype="multipart/form-data">
-                          <div class="mb-2">
+                          <div class="input-group mb-2">
                             <input type="file" name="report_files" class="form-control"
                               accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" multiple>
+                            <button type="submit" class="btn btn-outline-primary">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                class="bi bi-upload me-1" viewBox="0 0 16 16">
+                                <path
+                                  d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z" />
+                                <path
+                                  d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z" />
+                              </svg>
+                              上传文件
+                            </button>
                           </div>
-                          <button type="submit" class="btn btn-outline-primary w-100">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                              class="bi bi-upload me-1" viewBox="0 0 16 16">
-                              <path
-                                d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z" />
-                              <path
-                                d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z" />
-                            </svg>
-                            上传文件
-                          </button>
+                          <small class="text-muted">支持多文件上传，可同时选择多个文件</small>
                         </form>
                       </div>
                       {% endif %}
@@ -1099,6 +1155,8 @@
       </div>
     </div>
   </div>
+  <!-- 在页面底部添加用户数据存储 -->
+  <div id="usersData" style="display: none;" data-users='{{ users | tojson | safe }}'></div>
 
   <!-- 报告取号模态框 -->
   <div class="modal fade" id="generateReportModal" tabindex="-1" aria-labelledby="generateReportModalLabel"
@@ -1113,7 +1171,7 @@
           <form id="generateReportForm">
             <div class="mb-3">
               <label class="form-label">报告类型 <span class="text-danger">*</span></label>
-              <select name="report_type" class="form-select" id="reportTypeSelect" onchange="toggleFilingSelect()"
+              <select name="report_type" class="form-select" id="reportTypeSelect" onchange="toggleFilingAndSigners()"
                 required>
                 <option value="">请选择报告类型</option>
                 <option value="房地产咨询报告">房地产咨询报告</option>
@@ -1164,23 +1222,33 @@
               </div>
             </div>
 
-            <!-- 签字人选择 -->
-            <div class="mb-3">
+            <!-- 签字人选择 - 默认隐藏 -->
+            <div class="mb-3" id="signersSection" style="display: none;">
               <label class="form-label">签字人 <span class="text-danger">*</span></label>
+              <div class="alert alert-info">
+                <small>
+                  <strong>资质要求：</strong>
+                  <span id="qualificationRequirement"></span>
+                </small>
+              </div>
               <div class="row">
                 <div class="col-md-6">
-                  <select name="signer1" class="form-select" id="modalSigner1" required>
+                  <select name="signer1" class="form-select" id="modalSigner1">
                     <option value="">请选择签字人1</option>
                     {% for user in users %}
-                    <option value="{{ user.username }}">{{ user.realname }}</option>
+                    <option value="{{ user.username }}" data-qualifications="{{ user.qualifications|join(',') }}">
+                      {{ user.realname }}
+                    </option>
                     {% endfor %}
                   </select>
                 </div>
                 <div class="col-md-6">
-                  <select name="signer2" class="form-select" id="modalSigner2" required>
+                  <select name="signer2" class="form-select" id="modalSigner2">
                     <option value="">请选择签字人2</option>
                     {% for user in users %}
-                    <option value="{{ user.username }}">{{ user.realname }}</option>
+                    <option value="{{ user.username }}" data-qualifications="{{ user.qualifications|join(',') }}">
+                      {{ user.realname }}
+                    </option>
                     {% endfor %}
                   </select>
                 </div>
@@ -1198,7 +1266,6 @@
           <button type="button" class="btn btn-primary" id="generateButton" onclick="generateReportNo()">生成报告号</button>
           <button type="button" class="btn btn-success" id="copyButton" style="display: none;"
             onclick="copyReportNo()">复制到粘贴板</button>
-          <!-- 移除单独的完成按钮 -->
         </div>
       </div>
     </div>
@@ -1322,12 +1389,26 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script>
+    // 检查用户数据是否正确传递
     let currentReportNo = '';
     let currentReviewer1 = '';
     let currentReviewer2 = '';
     let currentReviewer3 = '';
     let currentSigner1 = '';
     let currentSigner2 = '';
+
+    // 获取用户数据
+    function getUsersData() {
+      const usersDataElement = document.getElementById('usersData');
+      if (usersDataElement) {
+        try {
+          return JSON.parse(usersDataElement.getAttribute('data-users'));
+        } catch (e) {
+          console.error('解析用户数据失败:', e);
+        }
+      }
+      return [];
+    }
 
     // 设置当前报告信息
     function setCurrentReport(reportNo, reviewer1, reviewer2, reviewer3, signer1, signer2) {
@@ -1455,17 +1536,27 @@
       }
     });
 
-    // 切换备案选择框的显示
-    function toggleFilingSelect() {
+    // 切换备案选择和签字人显示的函数
+    function toggleFilingAndSigners() {
       const reportType = document.getElementById('reportTypeSelect').value;
       const filingSection = document.getElementById('filingSection');
       const filingSelect = document.getElementById('filingSelect');
+      const signersSection = document.getElementById('signersSection');
+      const signer1Select = document.getElementById('modalSigner1');
+      const signer2Select = document.getElementById('modalSigner2');
+      const qualificationRequirement = document.getElementById('qualificationRequirement');
       const resultSection = document.getElementById('resultSection');
       const copyButton = document.getElementById('copyButton');
+
+      console.log('选择的报告类型:', reportType);
 
       // 需要备案的报告类型
       const filingRequiredTypes = ["房地产估价报告", "资产评估报告", "土地报告"];
 
+      // 需要签字的报告类型
+      const signatureRequiredTypes = ["房地产估价报告", "资产评估报告", "土地报告"];
+
+      // 控制备案选择显示
       if (filingRequiredTypes.includes(reportType)) {
         filingSection.style.display = 'block';
         filingSelect.required = true;
@@ -1475,13 +1566,123 @@
         filingSelect.value = '';
       }
 
+      // 控制签字人显示
+      if (signatureRequiredTypes.includes(reportType)) {
+        signersSection.style.display = 'block';
+        signer1Select.required = true;
+        signer2Select.required = true;
+
+        // 设置资质要求提示
+        const qualificationMap = {
+          "资产评估报告": "资产评估师",
+          "房地产估价报告": "房地产估价师",
+          "土地报告": "土地估价师"
+        };
+        const requiredQualification = qualificationMap[reportType];
+        qualificationRequirement.textContent = `需要${requiredQualification}资质`;
+
+        // 只显示具备资质的用户
+        filterQualifiedUsers(reportType);
+      } else {
+        signersSection.style.display = 'none';
+        signer1Select.required = false;
+        signer2Select.required = false;
+        signer1Select.value = '';
+        signer2Select.value = '';
+      }
+
       // 隐藏结果区域
       resultSection.style.display = 'none';
       copyButton.style.display = 'none';
     }
 
-    // 生成报告号
-    // 生成报告号
+    // 只显示具备相应资质的用户
+    function filterQualifiedUsers(reportType) {
+      const qualificationMap = {
+        "资产评估报告": "资产评估师",
+        "房地产估价报告": "房地产估价师",
+        "土地报告": "土地估价师"
+      };
+      const requiredQualification = qualificationMap[reportType];
+
+      console.log('需要的资质:', requiredQualification);
+      console.log('报告类型:', reportType);
+
+      // 处理签字人1的下拉框
+      const signer1Select = document.getElementById('modalSigner1');
+      const signer1OriginalOptions = Array.from(signer1Select.options);
+
+      console.log('原始选项数量:', signer1OriginalOptions.length);
+
+      // 清空现有选项（保留第一个提示选项）
+      signer1Select.innerHTML = '<option value="">请选择签字人1</option>';
+
+      let qualifiedCount = 0;
+
+      // 添加具备资质的用户
+      signer1OriginalOptions.forEach(option => {
+        if (option.value && option.value !== '') {
+          const qualifications = option.getAttribute('data-qualifications') || '';
+          console.log(`用户 ${option.textContent} 的资质:`, qualifications);
+
+          if (qualifications.includes(requiredQualification)) {
+            // 创建新选项
+            const newOption = document.createElement('option');
+            newOption.value = option.value;
+            newOption.textContent = option.textContent.split(' (')[0]; // 只显示姓名，不显示资质
+            newOption.setAttribute('data-qualifications', qualifications);
+            signer1Select.appendChild(newOption);
+            qualifiedCount++;
+            console.log(`✅ 用户 ${option.textContent} 具备资质`);
+          }
+        }
+      });
+
+      console.log('找到的具备资质用户数量:', qualifiedCount);
+
+      // 如果没有具备资质的用户，显示提示
+      if (qualifiedCount === 0) {
+        const noQualifiedOption = document.createElement('option');
+        noQualifiedOption.value = '';
+        noQualifiedOption.textContent = '暂无具备资质的用户';
+        noQualifiedOption.disabled = true;
+        signer1Select.appendChild(noQualifiedOption);
+        console.log('❌ 没有找到具备资质的用户');
+      }
+
+      // 同样处理签字人2的下拉框
+      const signer2Select = document.getElementById('modalSigner2');
+      const signer2OriginalOptions = Array.from(signer2Select.options);
+
+      // 清空现有选项（保留第一个提示选项）
+      signer2Select.innerHTML = '<option value="">请选择签字人2</option>';
+
+      // 添加具备资质的用户
+      signer2OriginalOptions.forEach(option => {
+        if (option.value && option.value !== '') {
+          const qualifications = option.getAttribute('data-qualifications') || '';
+          if (qualifications.includes(requiredQualification)) {
+            // 创建新选项
+            const newOption = document.createElement('option');
+            newOption.value = option.value;
+            newOption.textContent = option.textContent.split(' (')[0]; // 只显示姓名，不显示资质
+            newOption.setAttribute('data-qualifications', qualifications);
+            signer2Select.appendChild(newOption);
+          }
+        }
+      });
+
+      // 如果没有具备资质的用户，显示提示
+      if (signer2Select.options.length === 1) {
+        const noQualifiedOption = document.createElement('option');
+        noQualifiedOption.value = '';
+        noQualifiedOption.textContent = '暂无具备资质的用户';
+        noQualifiedOption.disabled = true;
+        signer2Select.appendChild(noQualifiedOption);
+      }
+    }
+
+    // 修改生成报告号函数，添加签字人验证
     async function generateReportNo() {
       const reportType = document.getElementById('reportTypeSelect').value;
       const filingSelect = document.getElementById('filingSelect');
@@ -1489,8 +1690,10 @@
       const reviewer1 = document.getElementById('modalReviewer1').value;
       const reviewer2 = document.getElementById('modalReviewer2').value;
       const reviewer3 = document.getElementById('modalReviewer3').value;
-      const signer1 = document.getElementById('modalSigner1').value;
-      const signer2 = document.getElementById('modalSigner2').value;
+      const signer1Select = document.getElementById('modalSigner1');
+      const signer2Select = document.getElementById('modalSigner2');
+      const signer1 = signer1Select.value;
+      const signer2 = signer2Select.value;
 
       // 验证报告类型
       if (!reportType) {
@@ -1517,15 +1720,25 @@
         return;
       }
 
-      // 验证签字人：必须2个都有且不能重复
-      if (!signer1 || !signer2) {
-        alert('必须设置2个签字人，不能有空缺');
-        return;
-      }
+      // 验证签字人：只有需要签字的报告类型才验证
+      const signatureRequiredTypes = ["房地产估价报告", "资产评估报告", "土地报告"];
+      if (signatureRequiredTypes.includes(reportType)) {
+        if (!signer1 || !signer2) {
+          alert('必须设置2个签字人，不能有空缺');
+          return;
+        }
 
-      if (signer1 === signer2) {
-        alert('签字人不能重复，请选择2个不同的签字人');
-        return;
+        if (signer1 === signer2) {
+          alert('签字人不能重复，请选择2个不同的签字人');
+          return;
+        }
+
+        // 检查是否有"暂无具备资质的用户"选项被选中
+        if (signer1Select.options[signer1Select.selectedIndex].disabled ||
+          signer2Select.options[signer2Select.selectedIndex].disabled) {
+          alert('请选择有效的签字人');
+          return;
+        }
       }
 
       try {
@@ -1569,6 +1782,76 @@
       }
     }
 
+    // 重置签字人下拉框到原始状态
+    function resetSignerSelects() {
+      const signer1Select = document.getElementById('modalSigner1');
+      const signer2Select = document.getElementById('modalSigner2');
+      const users = getUsersData();
+
+      // 重新构建原始选项
+      signer1Select.innerHTML = '<option value="">请选择签字人1</option>';
+      signer2Select.innerHTML = '<option value="">请选择签字人2</option>';
+
+      // 使用用户数据重新构建选项
+      users.forEach(user => {
+        const option1 = document.createElement('option');
+        option1.value = user.username;
+        option1.textContent = user.realname;
+        option1.setAttribute('data-qualifications', user.qualifications ? user.qualifications.join(',') : '');
+        signer1Select.appendChild(option1);
+
+        const option2 = document.createElement('option');
+        option2.value = user.username;
+        option2.textContent = user.realname;
+        option2.setAttribute('data-qualifications', user.qualifications ? user.qualifications.join(',') : '');
+        signer2Select.appendChild(option2);
+      });
+    }
+
+    // 模态框关闭时重置表单和按钮
+    document.getElementById('generateReportModal').addEventListener('hidden.bs.modal', function () {
+      document.getElementById('generateReportForm').reset();
+      document.getElementById('filingSection').style.display = 'none';
+      document.getElementById('signersSection').style.display = 'none';
+      document.getElementById('resultSection').style.display = 'none';
+
+      // 重置按钮状态
+      document.getElementById('generateButton').style.display = 'inline-block';
+      document.getElementById('copyButton').style.display = 'none';
+
+      // 重置取消按钮
+      document.getElementById('cancelButton').textContent = '取消';
+      document.getElementById('cancelButton').classList.remove('btn-primary');
+      document.getElementById('cancelButton').classList.add('btn-secondary');
+      document.getElementById('cancelButton').setAttribute('onclick', '');
+      document.getElementById('cancelButton').setAttribute('data-bs-dismiss', 'modal');
+
+      // 重置签字人下拉框到原始状态
+      resetSignerSelects();
+    });
+
+    // 模态框显示时重置表单和按钮
+    document.getElementById('generateReportModal').addEventListener('show.bs.modal', function () {
+      document.getElementById('generateReportForm').reset();
+      document.getElementById('filingSection').style.display = 'none';
+      document.getElementById('signersSection').style.display = 'none';
+      document.getElementById('resultSection').style.display = 'none';
+
+      // 确保按钮状态正确
+      document.getElementById('generateButton').style.display = 'inline-block';
+      document.getElementById('copyButton').style.display = 'none';
+
+      // 确保取消按钮状态正确
+      document.getElementById('cancelButton').textContent = '取消';
+      document.getElementById('cancelButton').classList.remove('btn-primary');
+      document.getElementById('cancelButton').classList.add('btn-secondary');
+      document.getElementById('cancelButton').setAttribute('onclick', '');
+      document.getElementById('cancelButton').setAttribute('data-bs-dismiss', 'modal');
+
+      // 重置签字人下拉框到原始状态
+      resetSignerSelects();
+    });
+
     // 复制报告号
     function copyReportNo() {
       const reportNoInput = document.getElementById('generatedReportNo');
@@ -1587,42 +1870,6 @@
         location.reload();
       }, 500);
     }
-
-    // 模态框关闭时重置表单和按钮
-    document.getElementById('generateReportModal').addEventListener('hidden.bs.modal', function () {
-      document.getElementById('generateReportForm').reset();
-      document.getElementById('filingSection').style.display = 'none';
-      document.getElementById('resultSection').style.display = 'none';
-
-      // 重置按钮状态
-      document.getElementById('generateButton').style.display = 'inline-block';
-      document.getElementById('copyButton').style.display = 'none';
-
-      // 重置取消按钮
-      document.getElementById('cancelButton').textContent = '取消';
-      document.getElementById('cancelButton').classList.remove('btn-primary');
-      document.getElementById('cancelButton').classList.add('btn-secondary');
-      document.getElementById('cancelButton').setAttribute('onclick', '');
-      document.getElementById('cancelButton').setAttribute('data-bs-dismiss', 'modal');
-    });
-
-    // 模态框显示时重置表单和按钮
-    document.getElementById('generateReportModal').addEventListener('show.bs.modal', function () {
-      document.getElementById('generateReportForm').reset();
-      document.getElementById('filingSection').style.display = 'none';
-      document.getElementById('resultSection').style.display = 'none';
-
-      // 确保按钮状态正确
-      document.getElementById('generateButton').style.display = 'inline-block';
-      document.getElementById('copyButton').style.display = 'none';
-
-      // 确保取消按钮状态正确
-      document.getElementById('cancelButton').textContent = '取消';
-      document.getElementById('cancelButton').classList.remove('btn-primary');
-      document.getElementById('cancelButton').classList.add('btn-secondary');
-      document.getElementById('cancelButton').setAttribute('onclick', '');
-      document.getElementById('cancelButton').setAttribute('data-bs-dismiss', 'modal');
-    });
 
     // 确认删除报告
     function confirmDeleteReport(reportNo) {
@@ -1679,6 +1926,7 @@
         e.preventDefault(); // 只在超长时阻止
       }
     });
+
     // 确认删除文件
     function confirmDeleteFile(fileId, fileName, reportId) {
       if (confirm(`确定要删除文件 "${fileName}" 吗？\n\n此操作将永久删除文件，且无法恢复！`)) {
@@ -1698,6 +1946,7 @@
         form.submit();
       }
     }
+
     // 确认删除合同文件
     function confirmDeleteContractFile(fileId, fileName) {
       if (confirm(`确定要删除合同文件 "${fileName}" 吗？\n\n此操作将永久删除文件，且无法恢复！`)) {
