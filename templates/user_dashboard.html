@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>用户首页 - 资产管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- 使用 CDN 的 UMD 版本作为临时解决方案 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <style>
+        .sidebar {
+            background-color: #f8f9fa;
+            min-height: calc(100vh - 56px);
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-link {
+            color: #495057;
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background-color: #e9ecef;
+            color: #0d6efd;
+        }
+
+        .stat-card {
+            border-left: 4px solid #0d6efd;
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            min-height: 300px;
+        }
+
+        .chart-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 250px;
+            color: #6c757d;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-dark bg-primary">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">资产管理系统 - 用户中心</span>
+            <div>
+                <span class="text-light me-3">欢迎, {{ user.username }}</span>
+                {% if user.user_type == 'admin' %}
+                <a href="/admin" class="btn btn-light me-2">管理后台</a>
+                {% endif %}
+                <a href="/logout" class="btn btn-outline-light">退出</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- 侧边栏菜单 -->
+            <div class="col-md-3 col-lg-2 sidebar">
+                <nav class="nav flex-column p-3">
+                    <a class="nav-link active" href="/user_dashboard">
+                        📊 Dashboard
+                    </a>
+                    <a class="nav-link" href="/user_profile">
+                        👤 个人信息
+                    </a>
+
+                    <!-- 项目菜单 -->
+                    <a class="nav-link" data-bs-toggle="collapse" href="#projectsMenu">
+                        📁 项目
+                    </a>
+                    <div class="collapse show" id="projectsMenu">
+                        <div class="submenu">
+                            <a class="nav-link" href="/user_projects?type=participated">我参与的</a>
+                            <a class="nav-link" href="/user_projects?type=created">我创建的</a>
+                            <a class="nav-link" href="/user_projects?type=responsible">我负责的</a>
+                        </div>
+                    </div>
+
+                    <!-- 报告菜单 -->
+                    <a class="nav-link" data-bs-toggle="collapse" href="#reportsMenu">
+                        📄 报告
+                    </a>
+                    <div class="collapse show" id="reportsMenu">
+                        <div class="submenu">
+                            <a class="nav-link" href="/user_reports?type=created">我创建的</a>
+                            <a class="nav-link" href="/user_reports?type=reviewed">我复核的</a>
+                            <a class="nav-link" href="/user_reports?type=signed">我签字的</a>
+                        </div>
+                    </div>
+                </nav>
+            </div>
+
+            <!-- 主内容区 -->
+            <div class="col-md-9 col-lg-10 p-4">
+                <h3 class="mb-4">Dashboard</h3>
+
+                <!-- 统计卡片 -->
+                <div class="row mb-4">
+                    <!-- 项目统计 -->
+                    <div class="col-md-6 mb-3">
+                        <div class="card stat-card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">项目统计</h5>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <h6>负责的项目</h6>
+                                        <p class="mb-1">进行中: {{ dashboard_data.responsible_projects.get('active', 0) }}
+                                        </p>
+                                        <p>已完成: {{ dashboard_data.responsible_projects.get('completed', 0) }}</p>
+                                    </div>
+                                    <div class="col-6">
+                                        <h6>参与的项目</h6>
+                                        <p class="mb-1">进行中: {{ dashboard_data.participated_projects.get('active', 0) }}
+                                        </p>
+                                        <p>已完成: {{ dashboard_data.participated_projects.get('completed', 0) }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 报告统计 -->
+                    <div class="col-md-6 mb-3">
+                        <div class="card stat-card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">报告统计</h5>
+                                <div class="row text-center">
+                                    <div class="col-4">
+                                        <h3 class="text-primary">{{ dashboard_data.created_reports }}</h3>
+                                        <small>创建的报告</small>
+                                    </div>
+                                    <div class="col-4">
+                                        <h3 class="text-success">{{ dashboard_data.reviewed_reports }}</h3>
+                                        <small>复核的报告</small>
+                                    </div>
+                                    <div class="col-4">
+                                        <h3 class="text-warning">{{ dashboard_data.signed_reports }}</h3>
+                                        <small>签字的报告</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 图表区域 -->
+                <div class="row">
+                    <!-- 月度报告统计 -->
+                    <div class="col-md-6">
+                        <div class="chart-container">
+                            <h5>近一年月度报告参与数</h5>
+                            <div class="chart-placeholder" id="monthlyReportsPlaceholder">
+                                加载图表中...
+                            </div>
+                            <canvas id="monthlyReportsChart" style="display: none;"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- 月度项目统计 -->
+                    <div class="col-md-6">
+                        <div class="chart-container">
+                            <h5>近一年月度项目参与数</h5>
+                            <div class="chart-placeholder" id="monthlyProjectsPlaceholder">
+                                加载图表中...
+                            </div>
+                            <canvas id="monthlyProjectsChart" style="display: none;"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- 签字报告类型分布 -->
+                    <div class="col-md-6">
+                        <div class="chart-container">
+                            <h5>签字报告类型分布</h5>
+                            <div class="chart-placeholder" id="signedReportsPlaceholder">
+                                加载图表中...
+                            </div>
+                            <canvas id="signedReportsChart" style="display: none;"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- 复核报告类型分布 -->
+                    <div class="col-md-6">
+                        <div class="chart-container">
+                            <h5>复核报告类型分布</h5>
+                            <div class="chart-placeholder" id="reviewedReportsPlaceholder">
+                                加载图表中...
+                            </div>
+                            <canvas id="reviewedReportsChart" style="display: none;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 数据对象
+//         const chartData = {
+//             monthly_reports: {{ dashboard_data.monthly_reports | tojson }},
+//         monthly_projects: { { dashboard_data.monthly_projects | tojson } },
+//         signed_report_types: { { dashboard_data.signed_report_types | tojson } },
+//         reviewed_report_types: { { dashboard_data.reviewed_report_types | tojson } }
+// };
+        const chartData = {
+    monthly_reports: { "2025-01": 1, "2025-03": 1, "2025-07": 1, "2025-11": 4 },
+    monthly_projects: {"2025-01": 1, "2025-02": 1, "2025-06": 1},
+    signed_report_types: {"类型A": 3, "类型B": 2, "类型C": 1},  // 测试数据
+    reviewed_report_types: {"类型A": 5, "类型B": 3, "类型C": 2}  // 测试数据
+};
+        console.log('📊 图表数据:', chartData);
+
+        // 等待页面加载完成
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log('🚀 开始初始化图表...');
+
+            // 检查 Chart.js 是否加载成功
+            if (typeof Chart === 'undefined') {
+                console.error('❌ Chart.js 未加载');
+                showAllChartErrors('图表库加载失败，请检查网络连接');
+                return;
+            }
+
+            console.log('✅ Chart.js 加载成功，版本:', Chart.version);
+            initializeAllCharts();
+        });
+
+        function showAllChartErrors(message) {
+            const placeholders = document.querySelectorAll('.chart-placeholder');
+            placeholders.forEach(placeholder => {
+                placeholder.innerHTML = `<div class="alert alert-warning">${message}</div>`;
+            });
+        }
+
+        function initializeAllCharts() {
+            console.log('🎨 开始渲染图表...');
+
+            // 初始化所有图表，使用正确的占位符ID
+            if (chartData.monthly_reports && Object.keys(chartData.monthly_reports).length > 0) {
+                initChart('monthlyReportsChart', 'monthlyReportsPlaceholder', 'bar',
+                    Object.keys(chartData.monthly_reports),
+                    Object.values(chartData.monthly_reports),
+                    '报告数', 'rgba(54, 162, 235, 0.5)');
+            } else {
+                const placeholder = document.getElementById('monthlyReportsPlaceholder');
+                if (placeholder) placeholder.innerHTML = '<div class="alert alert-info">暂无月度报告数据</div>';
+            }
+
+            if (chartData.monthly_projects && Object.keys(chartData.monthly_projects).length > 0) {
+                initChart('monthlyProjectsChart', 'monthlyProjectsPlaceholder', 'bar',
+                    Object.keys(chartData.monthly_projects),
+                    Object.values(chartData.monthly_projects),
+                    '项目数', 'rgba(75, 192, 192, 0.5)');
+            } else {
+                const placeholder = document.getElementById('monthlyProjectsPlaceholder');
+                if (placeholder) placeholder.innerHTML = '<div class="alert alert-info">暂无月度项目数据</div>';
+            }
+
+            if (chartData.signed_report_types && Object.keys(chartData.signed_report_types).length > 0) {
+                initChart('signedReportsChart', 'signedReportsPlaceholder', 'pie',
+                    Object.keys(chartData.signed_report_types),
+                    Object.values(chartData.signed_report_types),
+                    '', '', true);
+            } else {
+                const placeholder = document.getElementById('signedReportsPlaceholder');
+                if (placeholder) placeholder.innerHTML = '<div class="alert alert-info">暂无签字报告类型数据</div>';
+            }
+
+            if (chartData.reviewed_report_types && Object.keys(chartData.reviewed_report_types).length > 0) {
+                initChart('reviewedReportsChart', 'reviewedReportsPlaceholder', 'pie',
+                    Object.keys(chartData.reviewed_report_types),
+                    Object.values(chartData.reviewed_report_types),
+                    '', '', true);
+            } else {
+                const placeholder = document.getElementById('reviewedReportsPlaceholder');
+                if (placeholder) placeholder.innerHTML = '<div class="alert alert-info">暂无复核报告类型数据</div>';
+            }
+
+            console.log('🎉 所有图表初始化完成');
+        }
+
+        function initChart(canvasId, placeholderId, type, labels, data, label, color, isPie = false) {
+            const canvas = document.getElementById(canvasId);
+            const placeholder = document.getElementById(placeholderId);
+
+            if (!canvas) {
+                console.error('未找到画布:', canvasId);
+                if (placeholder) {
+                    placeholder.innerHTML = '<div class="alert alert-danger">图表容器未找到</div>';
+                }
+                return;
+            }
+
+            if (!placeholder) {
+                console.error('未找到占位符:', placeholderId);
+                return;
+            }
+
+            // 检查数据是否为空
+            if (!data || data.length === 0 || data.every(val => val === 0)) {
+                placeholder.innerHTML = '<div class="alert alert-info">暂无数据</div>';
+                return;
+            }
+
+            try {
+                const config = isPie ? {
+                    type: 'pie',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'right'
+                            }
+                        }
+                    }
+                } : {
+                    type: type,
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: label,
+                            data: data,
+                            backgroundColor: color,
+                            borderColor: color.replace('0.5', '1'),
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1
+                                }
+                            }
+                        }
+                    }
+                };
+
+                new Chart(canvas, config);
+
+                // 显示画布，隐藏占位符
+                canvas.style.display = 'block';
+                placeholder.style.display = 'none';
+
+                console.log('✅ 图表初始化成功:', canvasId);
+            } catch (error) {
+                console.error('图表初始化失败:', canvasId, error);
+                placeholder.innerHTML = '<div class="alert alert-danger">图表渲染失败: ' + error.message + '</div>';
+            }
+        }
+    </script>
+</body>
+
+</html>

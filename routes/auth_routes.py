@@ -27,7 +27,7 @@ async def login(
     
     if user:
         session_id = create_session(username, user[3])
-        response = RedirectResponse(url="/admin", status_code=303)
+        response = RedirectResponse(url="/user_dashboard", status_code=303)  # 修改这里
         response.set_cookie(key="session_id", value=session_id, httponly=True)
         return response
     else:
