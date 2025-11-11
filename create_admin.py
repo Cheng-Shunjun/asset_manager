@@ -20,7 +20,16 @@ def init_database():
         username TEXT UNIQUE NOT NULL,
         realname TEXT,
         user_type TEXT,
-        password TEXT
+        password TEXT,
+        -- 新增字段
+        phone TEXT,
+        email TEXT,
+        hire_date TEXT,
+        education TEXT,
+        position TEXT,
+        department TEXT,
+        create_time TEXT DEFAULT CURRENT_TIMESTAMP,
+        update_time TEXT DEFAULT CURRENT_TIMESTAMP
     )
     """)
     print("✅ users 表创建完成。")
@@ -50,7 +59,6 @@ def init_database():
     """)
     print("✅ projects 表创建完成。")
 
-    # ========= 创建 reports 表 =========
     # ========= 创建 reports 表 =========
     c.execute("""
     CREATE TABLE IF NOT EXISTS reports (
@@ -104,68 +112,80 @@ def init_database():
     """)
     print("✅ contract_files 表创建完成。")
 
-    # ========= 插入管理员用户 =========
-    username = "zhangwen"
-    realname = "张文"
-    user_type = "admin"
-    password = "123456"
-
-    c.execute(
-        "INSERT INTO users (username, realname, user_type, password) VALUES (?, ?, ?, ?)",
-        (username, realname, user_type, password)
-    )
-    print("✅ 管理员账户创建成功。")
-
-    # ========= 插入测试用户 =========
-    test_users = [
-        ("zhangsan", "张三", "user", "123456"),
-        ("lisi", "李四", "user", "123456"),
-        ("wangwu", "王五", "user", "123456"),
-        ("zhaoliu", "赵六", "user", "123456"),
-        ("sunqi", "孙七", "user", "123456"),
-        ("zhouba", "周八", "user", "123456"),
-        ("wujiu", "吴九", "user", "123456"),
-        ("zhengshi", "郑十", "user", "123456")
-    ]
-    
-    c.executemany(
-        "INSERT INTO users (username, realname, user_type, password) VALUES (?, ?, ?, ?)",
-        test_users
-    )
-    print("✅ 测试用户创建完成。")
-
     # ========= 创建资质表 =========
     c.execute("""
     CREATE TABLE IF NOT EXISTS user_qualifications (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL,
         qualification_type TEXT NOT NULL,
+        qualification_number TEXT,
+        issue_date TEXT,
+        expiry_date TEXT,
+        issue_authority TEXT,
         FOREIGN KEY (username) REFERENCES users (username),
         UNIQUE(username, qualification_type)
     )
     """)
     print("✅ user_qualifications 表创建完成。")
 
-    # ========= 插入测试资质数据 =========
-    qualifications = [
-        ("zhangwen", "资产评估师"),
-        ("zhangwen", "房地产估价师"),
-        ("zhangwen", "土地估价师"),
-        ("zhangsan", "资产评估师"),
-        ("lisi", "房地产估价师"),
-        ("wangwu", "土地估价师"),
-        ("zhaoliu", "资产评估师"),
-        ("zhaoliu", "房地产估价师"),
-        ("sunqi", "资产评估师"),
-        ("zhouba", "房地产估价师"),
-        ("wujiu", "土地估价师"),
-        ("zhengshi", "资产评估师"),
+    # ========= 插入管理员用户 =========
+    admin_user = (
+        "zhangwen", "张文", "admin", "123456",
+        "13800138000", "zhangwen@company.com", "2020-03-15",
+        "硕士", "总经理", "管理层", "2020-03-15 09:00:00", "2025-01-01 10:00:00"
+    )
+
+    c.execute("""
+        INSERT INTO users (username, realname, user_type, password, 
+                          phone, email, hire_date, education, position, department, create_time, update_time)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, admin_user)
+    print("✅ 管理员账户创建成功。")
+
+    # ========= 插入测试用户 =========
+    test_users = [
+        # (username, realname, user_type, password, phone, email, hire_date, education, position, department)
+        ("zhangsan", "张三", "user", "123456", "13900139001", "zhangsan@company.com", "2021-05-10", "本科", "技术总监", "技术部"),
+        ("lisi", "李四", "user", "123456", "13900139002", "lisi@company.com", "2021-08-20", "硕士", "资产评估师", "评估部"),
+        ("wangwu", "王五", "user", "123456", "13900139003", "wangwu@company.com", "2022-01-15", "本科", "房地产估价师", "评估部"),
+        ("zhaoliu", "赵六", "user", "123456", "13900139004", "zhaoliu@company.com", "2022-03-22", "博士", "土地估价师", "评估部"),
+        ("sunqi", "孙七", "user", "123456", "13900139005", "sunqi@company.com", "2022-06-30", "本科", "评估助理", "评估部"),
+        ("zhouba", "周八", "user", "123456", "13900139006", "zhouba@company.com", "2023-02-14", "硕士", "评估助理", "评估部"),
+        ("wujiu", "吴九", "user", "123456", "13900139007", "wujiu@company.com", "2023-07-01", "本科", "行政", "行政部"),
+        ("zhengshi", "郑十", "user", "123456", "13900139008", "zhengshi@company.com", "2024-01-08", "大专", "财务", "财务部"),
+        ("liushi", "刘石", "user", "123456", "13900139009", "liushi@company.com", "2023-09-10", "硕士", "总经理助理", "管理层"),
+        ("chenyi", "陈一", "user", "123456", "13900139010", "chenyi@company.com", "2024-03-01", "本科", "市场专员", "市场部")
     ]
 
-    c.executemany(
-        "INSERT INTO user_qualifications (username, qualification_type) VALUES (?, ?)",
-        qualifications
-    )
+    c.executemany("""
+        INSERT INTO users (username, realname, user_type, password, phone, email, hire_date, education, position, department)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, test_users)
+    print("✅ 测试用户创建完成。")
+
+    # ========= 插入测试资质数据 =========
+    qualifications = [
+        # (username, qualification_type, qualification_number, issue_date, expiry_date, issue_authority)
+        ("zhangwen", "资产评估师", "P123456789", "2018-06-15", "2028-06-15", "中国资产评估协会"),
+        ("zhangwen", "房地产估价师", "F987654321", "2019-03-20", "2029-03-20", "中国房地产估价师协会"),
+        ("zhangwen", "土地估价师", "L456789123", "2020-11-05", "2030-11-05", "中国土地估价师协会"),
+        ("zhangsan", "资产评估师", "P234567890", "2020-08-12", "2030-08-12", "中国资产评估协会"),
+        ("lisi", "房地产估价师", "F876543210", "2021-05-18", "2031-05-18", "中国房地产估价师协会"),
+        ("wangwu", "土地估价师", "L567891234", "2022-02-25", "2032-02-25", "中国土地估价师协会"),
+        ("zhaoliu", "资产评估师", "P345678901", "2019-11-30", "2029-11-30", "中国资产评估协会"),
+        ("zhaoliu", "房地产估价师", "F765432109", "2021-09-15", "2031-09-15", "中国房地产估价师协会"),
+        ("sunqi", "资产评估师", "P456789012", "2023-04-10", "2033-04-10", "中国资产评估协会"),
+        ("zhouba", "房地产估价师", "F654321098", "2022-12-20", "2032-12-20", "中国房地产估价师协会"),
+        ("wujiu", "土地估价师", "L678912345", "2023-07-05", "2033-07-05", "中国土地估价师协会"),
+        ("zhengshi", "资产评估师", "P567890123", "2024-01-15", "2034-01-15", "中国资产评估协会"),
+        ("liushi", "房地产估价师", "F543210987", "2022-08-08", "2032-08-08", "中国房地产估价师协会"),
+        ("chenyi", "土地估价师", "L789123456", "2023-03-25", "2033-03-25", "中国土地估价师协会")
+    ]
+
+    c.executemany("""
+        INSERT INTO user_qualifications (username, qualification_type, qualification_number, issue_date, expiry_date, issue_authority)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, qualifications)
     print("✅ 用户资质数据已添加。")
 
     # ========= 插入测试项目数据 =========
@@ -221,8 +241,6 @@ def init_database():
     print("✅ 所有示例项目数据已添加。")
 
     # ========= 插入测试报告数据 =========
-    # ========= 插入测试报告数据 =========
-# 使用新的报告号格式，包含 creator_realname 字段
     reports = [
         # 项目1的报告 - 土地报告
         (
@@ -292,9 +310,6 @@ def init_database():
     print("✅ 所有示例报告数据已添加。")
 
     # ========= 插入测试文件数据 =========
-    report_files_data = []
-    
-    # 为每个报告的文件创建详细记录
     file_records = [
         # 报告1的文件
         (1, "static/uploads/zh_report1.pdf", "zh_report1.pdf", "zhangwen", "张文", "2025-01-15 10:30:00", 1024000),
@@ -342,11 +357,11 @@ def init_database():
 
     # ========= 插入测试合同文件数据 =========
     contract_files_data = [
-    (1, "static/uploads/contract1.pdf", "项目合同.pdf", "zhangwen", "张文", "2025-01-10 15:32:21", 2048000),
-    (1, "static/uploads/contract_attachment.docx", "合同附件.docx", "zhangsan", "张三", "2025-01-12 10:15:30", 512000),
-    (2, "static/uploads/sc_contract.pdf", "智慧城市项目合同.pdf", "zhangwen", "张文", "2024-03-01 09:15:30", 3072000),
-    (4, "static/uploads/ev_contract.pdf", "新能源车站合同.pdf", "wujiu", "吴九", "2025-06-01 10:05:18", 2560000),
-    (6, "static/uploads/wp_contract.pdf", "污水处理厂合同.pdf", "lisi", "李四", "2025-02-01 11:30:15", 1792000),
+        (1, "static/uploads/contract1.pdf", "项目合同.pdf", "zhangwen", "张文", "2025-01-10 15:32:21", 2048000),
+        (1, "static/uploads/contract_attachment.docx", "合同附件.docx", "zhangsan", "张三", "2025-01-12 10:15:30", 512000),
+        (2, "static/uploads/sc_contract.pdf", "智慧城市项目合同.pdf", "zhangwen", "张文", "2024-03-01 09:15:30", 3072000),
+        (4, "static/uploads/ev_contract.pdf", "新能源车站合同.pdf", "wujiu", "吴九", "2025-06-01 10:05:18", 2560000),
+        (6, "static/uploads/wp_contract.pdf", "污水处理厂合同.pdf", "lisi", "李四", "2025-02-01 11:30:15", 1792000),
     ]
 
     c.executemany("""
@@ -374,6 +389,7 @@ def init_database():
     print(f"   - 项目数量: {len(projects)}")
     print(f"   - 报告数量: {len(reports)}")
     print(f"   - 文件记录数量: {len(file_records)}")
+    print(f"   - 资质记录数量: {len(qualifications)}")
 
 if __name__ == "__main__":
     init_database()

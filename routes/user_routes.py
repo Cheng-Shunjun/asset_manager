@@ -10,71 +10,6 @@ templates = Jinja2Templates(directory="templates")
 
 from services.user_service import user_service
 
-# 更新现有的路由函数
-async def get_user_dashboard_data(request, user, db):
-    data = await user_service.get_user_dashboard_data(request, user, db)
-    return templates.TemplateResponse("user_dashboard.html", {
-        "request": request,
-        "user": user,
-        "dashboard_data": data
-    })
-
-async def get_user_projects_data(request, user, project_type, db):
-    projects = await user_service.get_user_projects_data(request, user, project_type, db)
-    return templates.TemplateResponse("user_projects.html", {
-        "request": request,
-        "user": user,
-        "projects": projects,
-        "project_type": project_type
-    })
-
-async def get_user_reports_data(request, user, report_type, db):
-    reports = await user_service.get_user_reports_data(request, user, report_type, db)
-    return templates.TemplateResponse("user_reports.html", {
-        "request": request,
-        "user": user,
-        "reports": reports,
-        "report_type": report_type
-    })
-
-async def get_user_profile_data(request, user, db):
-    profile_data = await user_service.get_user_profile_data(request, user, db)
-    return templates.TemplateResponse("user_profile.html", {
-        "request": request,
-        "user": user,
-        "profile_data": profile_data
-    })
-
-@router.get("/user_manager", response_class=HTMLResponse)
-async def user_manager(
-    request: Request,
-    user: dict = Depends(login_required),
-    db: sqlite3.Connection = Depends(get_db)
-):
-    c = db.cursor()
-    c.execute("SELECT username, realname, user_type, password FROM users")
-    users = c.fetchall()
-    
-    users_list = []
-    for user_row in users:
-        # 获取用户资质
-        c.execute("SELECT qualification_type FROM user_qualifications WHERE username = ?", (user_row[0],))
-        qualifications = [row[0] for row in c.fetchall()]
-        
-        users_list.append({
-            'username': user_row[0],
-            'realname': user_row[1],
-            'user_type': user_row[2],
-            'password': user_row[3],
-            'qualifications': qualifications  # 添加资质信息
-        })
-    
-    return templates.TemplateResponse("user_manager.html", {
-        "request": request,
-        "users": users_list,
-        "user": user
-    })
-
 @router.get("/user_dashboard", response_class=HTMLResponse)
 async def user_dashboard(
     request: Request,
@@ -82,7 +17,12 @@ async def user_dashboard(
     db: sqlite3.Connection = Depends(get_db)
 ):
     """用户首页 - Dashboard"""
-    return await get_user_dashboard_data(request, user, db)
+    data = await user_service.get_user_dashboard_data(request, user, db)
+    return templates.TemplateResponse("user_dashboard.html", {
+        "request": request,
+        "user": user,
+        "dashboard_data": data
+    })
 
 @router.get("/user_projects", response_class=HTMLResponse)
 async def user_projects(
@@ -92,7 +32,13 @@ async def user_projects(
     db: sqlite3.Connection = Depends(get_db)
 ):
     """用户项目页面"""
-    return await get_user_projects_data(request, user, type, db)
+    projects = await user_service.get_user_projects_data(request, user, type, db)
+    return templates.TemplateResponse("user_projects.html", {
+        "request": request,
+        "user": user,
+        "projects": projects,
+        "project_type": type
+    })
 
 @router.get("/user_reports", response_class=HTMLResponse)
 async def user_reports(
@@ -102,7 +48,13 @@ async def user_reports(
     db: sqlite3.Connection = Depends(get_db)
 ):
     """用户报告页面"""
-    return await get_user_reports_data(request, user, type, db)
+    reports = await user_service.get_user_reports_data(request, user, type, db)
+    return templates.TemplateResponse("user_reports.html", {
+        "request": request,
+        "user": user,
+        "reports": reports,
+        "report_type": type
+    })
 
 @router.get("/user_profile", response_class=HTMLResponse)
 async def user_profile(
@@ -111,4 +63,72 @@ async def user_profile(
     db: sqlite3.Connection = Depends(get_db)
 ):
     """用户个人信息页面"""
-    return await get_user_profile_data(request, user, db)
+    profile_data = await get_user_profile_data(request, user, db)
+    return templates.TemplateResponse("user_profile.html", {
+        "request": request,
+        "user": user,
+        "user_profile": profile_data["user_profile"],
+        "user_qualifications": profile_data["user_qualifications"],
+        "stats": profile_data["stats"]
+    })
+
+async def get_user_profile_data(request, user, db):
+    """获取用户个人信息数据"""
+    c = db.cursor()
+    
+    # 获取用户详细信息
+    c.execute("""
+        SELECT username, realname, user_type, phone, email, 
+               hire_date, education, position, department 
+        FROM users WHERE username = ?
+    """, (user["username"],))
+    
+    user_data = c.fetchone()
+    user_profile = dict(user_data) if user_data else {}
+    
+    # 获取用户资质
+    c.execute("""
+        SELECT qualification_type, qualification_number, 
+               issue_date, expiry_date, issue_authority 
+        FROM user_qualifications WHERE username = ?
+    """, (user["username"],))
+    
+    user_qualifications = [dict(row) for row in c.fetchall()]
+    
+    # 获取用户统计信息
+    stats = await get_user_basic_stats(user, db)
+    
+    return {
+        "user_profile": user_profile,
+        "user_qualifications": user_qualifications,
+        "stats": stats
+    }
+
+async def get_user_basic_stats(user, db):
+    """获取用户基本统计信息"""
+    c = db.cursor()
+    username = user["username"]
+    
+    # 负责的项目数
+    c.execute("SELECT COUNT(*) FROM projects WHERE project_leader = ?", (username,))
+    responsible_projects = c.fetchone()[0]
+    
+    # 参与的项目数
+    c.execute("""
+        SELECT COUNT(DISTINCT p.id) FROM projects p
+        LEFT JOIN reports r ON p.id = r.project_id
+        WHERE p.project_leader = ? OR p.market_leader = ? OR p.creator = ?
+           OR r.reviewer1 = ? OR r.reviewer2 = ? OR r.reviewer3 = ?
+           OR r.signer1 = ? OR r.signer2 = ?
+    """, (username, username, username, username, username, username, username, username))
+    participated_projects = c.fetchone()[0]
+    
+    # 创建的报告数
+    c.execute("SELECT COUNT(*) FROM reports WHERE creator = ?", (username,))
+    created_reports = c.fetchone()[0]
+    
+    return {
+        "responsible_projects": responsible_projects,
+        "participated_projects": participated_projects,
+        "created_reports": created_reports
+    }

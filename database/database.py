@@ -28,18 +28,34 @@ class Database:
         c = conn.cursor()
         
         # 用户表
+        # 用户表 - 扩展字段
         c.execute('''CREATE TABLE IF NOT EXISTS users (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         username TEXT UNIQUE,
                         realname TEXT,
                         user_type TEXT,
-                        password TEXT)''')
-        
+                        password TEXT,
+                        -- 新增字段
+                        phone TEXT,
+                        email TEXT,
+                        hire_date TEXT,
+                        education TEXT,
+                        position TEXT,
+                        department TEXT,
+                        create_time TEXT DEFAULT CURRENT_TIMESTAMP,
+                        update_time TEXT DEFAULT CURRENT_TIMESTAMP
+                    )''')
+
+        # 用户资质表（多对多关系）
         c.execute("""
         CREATE TABLE IF NOT EXISTS user_qualifications (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT NOT NULL,
             qualification_type TEXT NOT NULL,
+            qualification_number TEXT,
+            issue_date TEXT,
+            expiry_date TEXT,
+            issue_authority TEXT,
             FOREIGN KEY (username) REFERENCES users (username),
             UNIQUE(username, qualification_type)
         )
