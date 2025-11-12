@@ -3,11 +3,9 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>用户首页 - 资产管理系统</title>
+    <title>个人信息 - 资产管理系统</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- 使用备用CDN -->
-    <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.0/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.0/font/bootstrap-icons.min.css">
     <style>
         :root {
             --primary-color: #2c80ff;
@@ -15,13 +13,13 @@
             --success-color: #28a745;
             --warning-color: #ffc107;
             --info-color: #17a2b8;
-            --light-bg: #f8f9fa;
+            --light-bg: #f5f7fb;
             --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             --hover-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
         }
 
         body {
-            background-color: #f5f7fb;
+            background-color: var(--light-bg);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
@@ -63,7 +61,7 @@
 
         .main-content {
             padding: 2rem;
-            background-color: #f5f7fb;
+            background-color: var(--light-bg);
         }
 
         .page-title {
@@ -75,150 +73,95 @@
             display: inline-block;
         }
 
-        .stat-card {
+        .profile-card {
             border: none;
             border-radius: 12px;
             box-shadow: var(--card-shadow);
             transition: all 0.3s ease;
-            border-left: 4px solid var(--primary-color);
             background: white;
+            margin-bottom: 1.5rem;
         }
 
-        .stat-card:hover {
-            transform: translateY(-5px);
+        .profile-card:hover {
+            transform: translateY(-2px);
             box-shadow: var(--hover-shadow);
         }
 
-        .stat-card .card-title {
-            color: #2c3e50;
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), #1a6fd8);
+            color: white;
+            border-radius: 12px 12px 0 0 !important;
+            padding: 1.25rem 1.5rem;
             font-weight: 600;
-            font-size: 1.1rem;
-            margin-bottom: 1rem;
         }
 
-        .stats-number {
-            font-size: 2.2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-
-        .stats-label {
-            font-size: 0.9rem;
-            color: var(--secondary-color);
-            font-weight: 500;
-        }
-
-        .project-stats h6 {
-            color: #495057;
-            font-weight: 600;
-            margin-bottom: 0.8rem;
-            font-size: 0.95rem;
-        }
-
-        .project-stats p {
-            margin-bottom: 0.3rem;
-            font-size: 0.9rem;
-            color: #6c757d;
-        }
-
-        /* 表格样式 - 参考admin.html */
-        table.table tbody tr {
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-        }
-
-        table.table tbody tr:hover {
-            background-color: #f0f8ff;
-            box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.1);
-            font-weight: 500;
-        }
-
-        .status-badge {
-            font-size: 0.75rem;
-            padding: 0.35em 0.65em;
-        }
-
-        .status-active {
-            background-color: #198754;
-            color: white;
-        }
-
-        .status-completed {
-            background-color: #0d6efd;
-            color: white;
-        }
-
-        .status-paused {
-            background-color: #6c757d;
-            color: white;
-        }
-
-        .status-cancelled {
-            background-color: #dc3545;
-            color: white;
-        }
-
-        .amount-cell {
-            font-weight: 600;
-            color: #198754;
-        }
-
-        .table th {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 200px;
-            height: 50px;
-            line-height: 1.2;
-            vertical-align: middle;
-            padding: 8px 12px;
-        }
-
-        .table-container {
-            width: 100%;
-            overflow-x: auto;
-        }
-
-        .table {
-            min-width: 1200px;
-            table-layout: auto;
-        }
-
-        .table td {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 200px;
-            vertical-align: middle;
-            padding: 8px 12px;
-        }
-
-        .projects-table-container {
-            background: white;
-            border-radius: 12px;
+        .card-body {
             padding: 1.5rem;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #f1f3f4;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #495057;
+            min-width: 120px;
+            margin-right: 1rem;
+        }
+
+        .info-value {
+            color: #6c757d;
+            flex: 1;
+        }
+
+        .qualification-badge {
+            background: linear-gradient(135deg, var(--success-color), #1e7e34);
+            color: white;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin: 0.25rem;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .qualification-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .edit-btn {
+            background: linear-gradient(135deg, var(--primary-color), #1a6fd8);
+            border: none;
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+            color: white;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .edit-btn:hover {
+            transform: translateY(-1px);
             box-shadow: var(--card-shadow);
-            border: 1px solid #e9ecef;
-            margin-top: 1.5rem;
         }
 
-        .table-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
-            gap: 1rem;
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(44, 128, 255, 0.25);
         }
 
-        .filter-controls {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        /* 备用图标样式 */
         .fallback-icon {
             display: inline-block;
             width: 20px;
@@ -226,7 +169,6 @@
             margin-right: 8px;
         }
 
-        /* 响应式调整 */
         @media (max-width: 768px) {
             .sidebar {
                 min-height: auto;
@@ -237,13 +179,14 @@
                 padding: 1rem;
             }
 
-            .table-header {
+            .info-item {
                 flex-direction: column;
                 align-items: flex-start;
             }
 
-            .filter-controls {
-                width: 100%;
+            .info-label {
+                min-width: auto;
+                margin-bottom: 0.25rem;
             }
         }
     </style>
@@ -277,10 +220,10 @@
             <!-- 侧边栏菜单 -->
             <div class="col-md-3 col-lg-2 sidebar">
                 <nav class="nav flex-column p-3">
-                    <a class="nav-link active" href="/user_dashboard">
+                    <a class="nav-link" href="/user_dashboard">
                         <span class="fallback-icon">📊</span>Dashboard
                     </a>
-                    <a class="nav-link" href="/user_profile">
+                    <a class="nav-link active" href="/user_profile">
                         <span class="fallback-icon">👤</span>个人信息
                     </a>
                 </nav>
@@ -288,155 +231,166 @@
 
             <!-- 主内容区 -->
             <div class="col-md-9 col-lg-10 main-content">
-                <h3 class="page-title">Dashboard</h3>
+                <h3 class="page-title">个人信息</h3>
 
-                <!-- 统计卡片 -->
-                <div class="row mb-4">
-                    <!-- 项目统计 -->
-                    <div class="col-md-6 mb-4">
-                        <div class="card stat-card h-100">
-                            <div class="card-body">
-                                <h5 class="card-title">
-                                    <span class="fallback-icon">📁</span>项目统计
-                                </h5>
-                                <div class="row project-stats">
-                                    <div class="col-6">
-                                        <h6><span class="fallback-icon">⭐</span>负责的项目</h6>
-                                        <p class="mb-1">进行中: <span class="text-primary fw-bold">{{ dashboard_data.responsible_projects.get('active', 0) }}</span></p>
-                                        <p>已完成: <span class="text-success fw-bold">{{ dashboard_data.responsible_projects.get('completed', 0) }}</span></p>
-                                    </div>
-                                    <div class="col-6">
-                                        <h6><span class="fallback-icon">👥</span>参与的项目</h6>
-                                        <p class="mb-1">进行中: <span class="text-primary fw-bold">{{ dashboard_data.participated_projects.get('active', 0) }}</span></p>
-                                        <p>已完成: <span class="text-success fw-bold">{{ dashboard_data.participated_projects.get('completed', 0) }}</span></p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                <!-- 基本信息卡片 -->
+                <div class="card profile-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><span class="fallback-icon">👤</span>基本信息</span>
+                        <button class="btn btn-light btn-sm" onclick="toggleEditMode('basicInfo')">
+                            <span class="fallback-icon">✏️</span>编辑
+                        </button>
                     </div>
-
-                    <!-- 报告统计 -->
-                    <div class="col-md-6 mb-4">
-                        <div class="card stat-card h-100">
-                            <div class="card-body">
-                                <h5 class="card-title">
-                                    <span class="fallback-icon">📄</span>报告统计
-                                </h5>
-                                <div class="row text-center">
-                                    <div class="col-4">
-                                        <div class="stats-number text-primary">{{ dashboard_data.created_reports }}</div>
-                                        <div class="stats-label">创建的报告</div>
+                    <div class="card-body">
+                        <form id="basicInfoForm" method="post" action="/update_user_profile">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <span class="info-label">用户名</span>
+                                        <span class="info-value">{{ user_info.username }}</span>
                                     </div>
-                                    <div class="col-4">
-                                        <div class="stats-number text-success">{{ dashboard_data.reviewed_reports }}</div>
-                                        <div class="stats-label">复核的报告</div>
+                                    <div class="info-item">
+                                        <span class="info-label">姓名</span>
+                                        <div class="info-value">
+                                            <span id="realnameDisplay">{{ user_info.realname or '未设置' }}</span>
+                                            <input type="text" class="form-control d-none" id="realnameInput" name="realname" value="{{ user_info.realname or '' }}">
+                                        </div>
                                     </div>
-                                    <div class="col-4">
-                                        <div class="stats-number text-warning">{{ dashboard_data.signed_reports }}</div>
-                                        <div class="stats-label">签字的报告</div>
+                                    <div class="info-item">
+                                        <span class="info-label">用户类型</span>
+                                        <span class="info-value">
+                                            {% if user_info.user_type == 'admin' %}
+                                            <span class="badge bg-danger">管理员</span>
+                                            {% else %}
+                                            <span class="badge bg-primary">普通用户</span>
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">部门</span>
+                                        <div class="info-value">
+                                            <span id="departmentDisplay">{{ user_info.department or '未设置' }}</span>
+                                            <input type="text" class="form-control d-none" id="departmentInput" name="department" value="{{ user_info.department or '' }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <span class="info-label">职位</span>
+                                        <div class="info-value">
+                                            <span id="positionDisplay">{{ user_info.position or '未设置' }}</span>
+                                            <input type="text" class="form-control d-none" id="positionInput" name="position" value="{{ user_info.position or '' }}">
+                                        </div>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">学历</span>
+                                        <div class="info-value">
+                                            <span id="educationDisplay">{{ user_info.education or '未设置' }}</span>
+                                            <input type="text" class="form-control d-none" id="educationInput" name="education" value="{{ user_info.education or '' }}">
+                                        </div>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">入职日期</span>
+                                        <span class="info-value">{{ user_info.hire_date or '未设置' }}</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">注册时间</span>
+                                        <span class="info-value">{{ user_info.create_time or '未设置' }}</span>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                            <div class="d-none mt-3" id="basicInfoActions">
+                                <button type="submit" class="btn btn-primary me-2">保存</button>
+                                <button type="button" class="btn btn-secondary" onclick="cancelEdit('basicInfo')">取消</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
 
-                <!-- 项目表格 -->
-                <div class="projects-table-container">
-                    <div class="table-header">
-                        <h5 class="mb-0"><span class="fallback-icon">📋</span>我参与的项目</h5>
-                        <div class="filter-controls">
-                            <div class="btn-group" role="group">
-                                <input type="radio" class="btn-check" name="statusFilter" id="allProjects" autocomplete="off" checked>
-                                <label class="btn btn-outline-primary" for="allProjects">全部项目</label>
-                                
-                                <input type="radio" class="btn-check" name="statusFilter" id="activeProjects" autocomplete="off">
-                                <label class="btn btn-outline-primary" for="activeProjects">进行中</label>
-                                
-                                <input type="radio" class="btn-check" name="statusFilter" id="completedProjects" autocomplete="off">
-                                <label class="btn btn-outline-primary" for="completedProjects">已完成</label>
-                            </div>
-                        </div>
+                <!-- 联系信息卡片 -->
+                <div class="card profile-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><span class="fallback-icon">📞</span>联系信息</span>
+                        <button class="btn btn-light btn-sm" onclick="toggleEditMode('contactInfo')">
+                            <span class="fallback-icon">✏️</span>编辑
+                        </button>
                     </div>
+                    <div class="card-body">
+                        <form id="contactInfoForm" method="post" action="/update_user_profile">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <span class="info-label">手机号码</span>
+                                        <div class="info-value">
+                                            <span id="phoneDisplay">{{ user_info.phone or '未设置' }}</span>
+                                            <input type="tel" class="form-control d-none" id="phoneInput" name="phone" value="{{ user_info.phone or '' }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <span class="info-label">邮箱</span>
+                                        <div class="info-value">
+                                            <span id="emailDisplay">{{ user_info.email or '未设置' }}</span>
+                                            <input type="email" class="form-control d-none" id="emailInput" name="email" value="{{ user_info.email or '' }}">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-none mt-3" id="contactInfoActions">
+                                <button type="submit" class="btn btn-primary me-2">保存</button>
+                                <button type="button" class="btn btn-secondary" onclick="cancelEdit('contactInfo')">取消</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
 
-                    <div class="table-container">
-                        <table class="table table-hover bg-white rounded shadow-sm">
-                            <thead class="table-primary">
-                                <tr>
-                                    <th>项目序号</th>
-                                    <th>项目名称</th>
-                                    <th>项目类型</th>
-                                    <th>甲方名称</th>
-                                    <th>市场部负责人</th>
-                                    <th>项目负责人</th>
-                                    <th>项目进度</th>
-                                    <th>报告号</th>
-                                    <th>合同金额</th>
-                                    <th>已收费</th>
-                                    <th>开始日期</th>
-                                    <th>状态</th>
-                                </tr>
-                            </thead>
-                            <tbody id="projectsTableBody">
-                                {% for project in dashboard_data.user_projects %}
-                                <tr data-status="{{ project.status }}" onclick="window.location.href='/project/{{ project.id }}'">
-                                    <td>{{ project.project_no }}</td>
-                                    <td>{{ project.name }}</td>
-                                    <td>{{ project.project_type }}</td>
-                                    <td>{{ project.client_name }}</td>
-                                    <td>
-                                        {% if project.market_leader_realname %}
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-person-fill me-1" viewBox="0 0 16 16">
-                                            <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3Zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
-                                        </svg>
-                                        {{ project.market_leader_realname }}
-                                        {% else %}
-                                        <span class="text-muted">未设置</span>
+                <!-- 资质信息卡片 -->
+                <div class="card profile-card">
+                    <div class="card-header">
+                        <span><span class="fallback-icon">🏆</span>资质信息</span>
+                    </div>
+                    <div class="card-body">
+                        {% if qualifications %}
+                            <div class="row">
+                                {% for qual in qualifications %}
+                                <div class="col-md-6 mb-3">
+                                    <div class="qualification-item">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <span class="qualification-badge">
+                                                <span class="fallback-icon">📜</span>{{ qual.qualification_type }}
+                                            </span>
+                                            {% if qual.expiry_date %}
+                                            <small class="text-{% if qual.expiry_date > today %}success{% else %}danger{% endif %}">
+                                                有效期至: {{ qual.expiry_date }}
+                                            </small>
+                                            {% endif %}
+                                        </div>
+                                        {% if qual.qualification_number %}
+                                        <div class="text-muted small">
+                                            证书编号: {{ qual.qualification_number }}
+                                        </div>
                                         {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if project.project_leader_realname %}
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-person-fill me-1" viewBox="0 0 16 16">
-                                            <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3Zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
-                                        </svg>
-                                        {{ project.project_leader_realname }}
-                                        {% else %}
-                                        <span class="text-muted">未设置</span>
+                                        {% if qual.issue_authority %}
+                                        <div class="text-muted small">
+                                            发证机构: {{ qual.issue_authority }}
+                                        </div>
                                         {% endif %}
-                                    </td>
-                                    <td>{{ project.progress }}</td>
-                                    <td>{{ project.report_numbers }}</td>
-                                    <td class="amount-cell">
-                                        {% if project.amount %}
-                                        {% set amount = project.amount %}
-                                        {% if amount >= 10000 %}
-                                        {{ "%.2f"|format(amount / 10000) }}万
-                                        {% else %}
-                                        {{ "%.0f"|format(amount) }}元
+                                        {% if qual.issue_date %}
+                                        <div class="text-muted small">
+                                            发证日期: {{ qual.issue_date }}
+                                        </div>
                                         {% endif %}
-                                        {% else %}
-                                        0元
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ project.is_paid }}</td>
-                                    <td>{{ project.start_date }}</td>
-                                    <td>
-                                        {% if project.status == 'active' %}
-                                        <span class="badge status-badge status-active">进行中</span>
-                                        {% elif project.status == 'completed' %}
-                                        <span class="badge status-badge status-completed">已完成</span>
-                                        {% elif project.status == 'paused' %}
-                                        <span class="badge status-badge status-paused">已暂停</span>
-                                        {% elif project.status == 'cancelled' %}
-                                        <span class="badge status-badge status-cancelled">已取消</span>
-                                        {% else %}
-                                        <span class="badge status-badge status-active">进行中</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
+                                    </div>
+                                </div>
                                 {% endfor %}
-                            </tbody>
-                        </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center text-muted py-4">
+                                <span class="fallback-icon">📝</span>
+                                <p class="mb-0">暂无资质信息</p>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -445,29 +399,48 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // 项目状态筛选
+        // 编辑模式切换
+        function toggleEditMode(section) {
+            const displayElements = document.querySelectorAll(`#${section}Form .info-value span`);
+            const inputElements = document.querySelectorAll(`#${section}Form .info-value input`);
+            const actionsElement = document.getElementById(`${section}Actions`);
+
+            displayElements.forEach(el => el.classList.add('d-none'));
+            inputElements.forEach(el => el.classList.remove('d-none'));
+            actionsElement.classList.remove('d-none');
+        }
+
+        // 取消编辑
+        function cancelEdit(section) {
+            const displayElements = document.querySelectorAll(`#${section}Form .info-value span`);
+            const inputElements = document.querySelectorAll(`#${section}Form .info-value input`);
+            const actionsElement = document.getElementById(`${section}Actions`);
+
+            displayElements.forEach(el => el.classList.remove('d-none'));
+            inputElements.forEach(el => el.classList.add('d-none'));
+            actionsElement.classList.add('d-none');
+        }
+
+        // 表单提交处理
         document.addEventListener('DOMContentLoaded', function() {
-            const statusFilters = document.querySelectorAll('input[name="statusFilter"]');
-            const projectRows = document.querySelectorAll('#projectsTableBody tr');
-            
-            statusFilters.forEach(filter => {
-                filter.addEventListener('change', function() {
-                    const filterValue = this.id;
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
                     
-                    projectRows.forEach(row => {
-                        const status = row.getAttribute('data-status');
-                        
-                        switch(filterValue) {
-                            case 'allProjects':
-                                row.style.display = '';
-                                break;
-                            case 'activeProjects':
-                                row.style.display = status === 'active' ? '' : 'none';
-                                break;
-                            case 'completedProjects':
-                                row.style.display = status === 'completed' ? '' : 'none';
-                                break;
+                    const formData = new FormData(this);
+                    fetch(this.action, {
+                        method: 'POST',
+                        body: formData
+                    }).then(response => {
+                        if (response.ok) {
+                            location.reload();
+                        } else {
+                            alert('保存失败，请重试');
                         }
+                    }).catch(error => {
+                        console.error('Error:', error);
+                        alert('保存失败，请重试');
                     });
                 });
             });

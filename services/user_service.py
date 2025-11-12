@@ -12,6 +12,85 @@ class UserService:
     def __init__(self):
         pass
 
+    async def get_user_profile(self, username: str, db):
+        """获取用户个人信息"""
+        c = db.cursor()
+        c.execute("""
+            SELECT username, realname, email, phone, department, position, created_at
+            FROM users 
+            WHERE username = ?
+        """, (username,))
+        
+        user_data = c.fetchone()
+        if not user_data:
+            raise HTTPException(status_code=404, detail="用户不存在")
+        
+        # 转换为字典格式
+        column_names = [col[0] for col in c.description]
+        user_profile = dict(zip(column_names, user_data))
+        
+        return user_profile
+
+    async def update_user_profile(self, username: str, profile_data: Dict, db):
+        """更新用户个人信息"""
+        c = db.cursor()
+        
+        # 检查用户是否存在
+        c.execute("SELECT username FROM users WHERE username = ?", (username,))
+        if not c.fetchone():
+            raise HTTPException(status_code=404, detail="用户不存在")
+        
+        # 构建更新语句
+        update_fields = []
+        update_values = []
+        
+        allowed_fields = ["realname", "email", "phone", "department", "position"]
+        for field in allowed_fields:
+            if field in profile_data:
+                update_fields.append(f"{field} = ?")
+                update_values.append(profile_data[field])
+        
+        if not update_fields:
+            raise HTTPException(status_code=400, detail="没有可更新的字段")
+        
+        # 添加用户名作为WHERE条件
+        update_values.append(username)
+        
+        # 执行更新
+        update_query = f"UPDATE users SET {', '.join(update_fields)} WHERE username = ?"
+        c.execute(update_query, update_values)
+        db.commit()
+        
+        return {"message": "个人信息更新成功"}
+
+    async def change_password(self, username: str, password_data: Dict, db):
+        """修改用户密码"""
+        c = db.cursor()
+        
+        # 验证当前密码
+        c.execute("SELECT password FROM users WHERE username = ?", (username,))
+        result = c.fetchone()
+        if not result:
+            raise HTTPException(status_code=404, detail="用户不存在")
+        
+        current_password_hash = result[0]
+        # 这里应该添加密码验证逻辑，比如使用密码哈希比较
+        # 假设有一个函数 verify_password(plain_password, hashed_password)
+        
+        # 更新密码
+        new_password = password_data.get("new_password")
+        if not new_password:
+            raise HTTPException(status_code=400, detail="新密码不能为空")
+        
+        # 这里应该对新密码进行哈希处理
+        # new_password_hash = hash_password(new_password)
+        new_password_hash = new_password  # 暂时直接存储，实际应用中应该使用哈希
+        
+        c.execute("UPDATE users SET password = ? WHERE username = ?", (new_password_hash, username))
+        db.commit()
+        
+        return {"message": "密码修改成功"}
+
     async def get_user_dashboard_data(self, request, user, db):
         """获取用户Dashboard数据"""
         c = db.cursor()

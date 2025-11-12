@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Request, Depends
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, Request, Depends, Form
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from database.database import db_manager, get_db
 from auth.auth import login_required
@@ -63,46 +63,99 @@ async def user_profile(
     db: sqlite3.Connection = Depends(get_db)
 ):
     """用户个人信息页面"""
-    profile_data = await get_user_profile_data(request, user, db)
-    return templates.TemplateResponse("user_profile.html", {
-        "request": request,
-        "user": user,
-        "user_profile": profile_data["user_profile"],
-        "user_qualifications": profile_data["user_qualifications"],
-        "stats": profile_data["stats"]
-    })
+    try:
+        # 使用 user_service 获取用户个人信息
+        user_profile = await user_service.get_user_profile(user["username"], db)
+        
+        # 获取用户统计信息（可选，用于在个人资料页面显示一些统计）
+        stats = await get_user_basic_stats(user, db)
 
-async def get_user_profile_data(request, user, db):
-    """获取用户个人信息数据"""
-    c = db.cursor()
-    
-    # 获取用户详细信息
-    c.execute("""
-        SELECT username, realname, user_type, phone, email, 
-               hire_date, education, position, department 
-        FROM users WHERE username = ?
-    """, (user["username"],))
-    
-    user_data = c.fetchone()
-    user_profile = dict(user_data) if user_data else {}
-    
-    # 获取用户资质
-    c.execute("""
-        SELECT qualification_type, qualification_number, 
-               issue_date, expiry_date, issue_authority 
-        FROM user_qualifications WHERE username = ?
-    """, (user["username"],))
-    
-    user_qualifications = [dict(row) for row in c.fetchall()]
-    
-    # 获取用户统计信息
-    stats = await get_user_basic_stats(user, db)
-    
-    return {
-        "user_profile": user_profile,
-        "user_qualifications": user_qualifications,
-        "stats": stats
-    }
+        print(user_profile)
+        
+        return templates.TemplateResponse("user_profile.html", {
+            "request": request,
+            "user": user,
+            "user_info": user_profile,  # 改为模板期望的变量名
+            "stats": stats
+        })
+    except Exception as e:
+        # 如果获取个人信息失败，返回默认页面
+        return templates.TemplateResponse("user_profile.html", {
+            "request": request,
+            "user": user,
+            "user_info": {},  # 改为模板期望的变量名
+            "stats": {},
+            "error": str(e)
+        })
+
+@router.post("/user_profile/update")
+async def update_user_profile(
+    request: Request,
+    realname: str = Form(None),
+    email: str = Form(None),
+    phone: str = Form(None),
+    department: str = Form(None),
+    position: str = Form(None),
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    """更新用户个人信息"""
+    try:
+        profile_data = {
+            "realname": realname,
+            "email": email,
+            "phone": phone,
+            "department": department,
+            "position": position
+        }
+        
+        # 移除空值
+        profile_data = {k: v for k, v in profile_data.items() if v is not None}
+        
+        result = await user_service.update_user_profile(user["username"], profile_data, db)
+        return JSONResponse({"success": True, "message": result["message"]})
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)}, status_code=400)
+
+@router.post("/user_profile/change_password")
+async def change_password(
+    request: Request,
+    current_password: str = Form(...),
+    new_password: str = Form(...),
+    confirm_password: str = Form(...),
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    """修改用户密码"""
+    try:
+        # 验证新密码和确认密码是否匹配
+        if new_password != confirm_password:
+            return JSONResponse({
+                "success": False, 
+                "message": "新密码和确认密码不匹配"
+            }, status_code=400)
+        
+        password_data = {
+            "current_password": current_password,
+            "new_password": new_password
+        }
+        
+        result = await user_service.change_password(user["username"], password_data, db)
+        return JSONResponse({"success": True, "message": result["message"]})
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)}, status_code=400)
+
+@router.get("/user_profile/data")
+async def get_user_profile_data(
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    """获取用户个人信息数据（API接口）"""
+    try:
+        user_profile = await user_service.get_user_profile(user["username"], db)
+        return JSONResponse({"success": True, "data": user_profile})
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)}, status_code=400)
 
 async def get_user_basic_stats(user, db):
     """获取用户基本统计信息"""
