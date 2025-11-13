@@ -169,6 +169,11 @@
             margin-right: 8px;
         }
 
+        .non-editable {
+            color: #6c757d;
+            font-style: italic;
+        }
+
         @media (max-width: 768px) {
             .sidebar {
                 min-height: auto;
@@ -235,75 +240,59 @@
 
                 <!-- 基本信息卡片 -->
                 <div class="card profile-card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="card-header">
                         <span><span class="fallback-icon">👤</span>基本信息</span>
-                        <button class="btn btn-light btn-sm" onclick="toggleEditMode('basicInfo')">
-                            <span class="fallback-icon">✏️</span>编辑
-                        </button>
                     </div>
                     <div class="card-body">
-                        <form id="basicInfoForm" method="post" action="/update_user_profile">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="info-item">
-                                        <span class="info-label">用户名</span>
-                                        <span class="info-value">{{ user_info.username }}</span>
-                                    </div>
-                                    <div class="info-item">
-                                        <span class="info-label">姓名</span>
-                                        <div class="info-value">
-                                            <span id="realnameDisplay">{{ user_info.realname or '未设置' }}</span>
-                                            <input type="text" class="form-control d-none" id="realnameInput" name="realname" value="{{ user_info.realname or '' }}">
-                                        </div>
-                                    </div>
-                                    <div class="info-item">
-                                        <span class="info-label">用户类型</span>
-                                        <span class="info-value">
-                                            {% if user_info.user_type == 'admin' %}
-                                            <span class="badge bg-danger">管理员</span>
-                                            {% else %}
-                                            <span class="badge bg-primary">普通用户</span>
-                                            {% endif %}
-                                        </span>
-                                    </div>
-                                    <div class="info-item">
-                                        <span class="info-label">部门</span>
-                                        <div class="info-value">
-                                            <span id="departmentDisplay">{{ user_info.department or '未设置' }}</span>
-                                            <input type="text" class="form-control d-none" id="departmentInput" name="department" value="{{ user_info.department or '' }}">
-                                        </div>
-                                    </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <span class="info-label">用户名</span>
+                                    <span class="info-value">{{ user_profile.username }}</span>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="info-item">
-                                        <span class="info-label">职位</span>
-                                        <div class="info-value">
-                                            <span id="positionDisplay">{{ user_info.position or '未设置' }}</span>
-                                            <input type="text" class="form-control d-none" id="positionInput" name="position" value="{{ user_info.position or '' }}">
-                                        </div>
-                                    </div>
-                                    <div class="info-item">
-                                        <span class="info-label">学历</span>
-                                        <div class="info-value">
-                                            <span id="educationDisplay">{{ user_info.education or '未设置' }}</span>
-                                            <input type="text" class="form-control d-none" id="educationInput" name="education" value="{{ user_info.education or '' }}">
-                                        </div>
-                                    </div>
-                                    <div class="info-item">
-                                        <span class="info-label">入职日期</span>
-                                        <span class="info-value">{{ user_info.hire_date or '未设置' }}</span>
-                                    </div>
-                                    <div class="info-item">
-                                        <span class="info-label">注册时间</span>
-                                        <span class="info-value">{{ user_info.create_time or '未设置' }}</span>
-                                    </div>
+                                <div class="info-item">
+                                    <span class="info-label">姓名</span>
+                                    <span class="info-value">{{ user_profile.realname or '未设置' }}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">用户类型</span>
+                                    <span class="info-value">
+                                        {% if user_profile.user_type == 'admin' %}
+                                        <span class="badge bg-danger">管理员</span>
+                                        {% else %}
+                                        <span class="badge bg-primary">普通用户</span>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">部门</span>
+                                    <span class="info-value">{{ user_profile.department or '未设置' }}</span>
                                 </div>
                             </div>
-                            <div class="d-none mt-3" id="basicInfoActions">
-                                <button type="submit" class="btn btn-primary me-2">保存</button>
-                                <button type="button" class="btn btn-secondary" onclick="cancelEdit('basicInfo')">取消</button>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <span class="info-label">职位</span>
+                                    <span class="info-value">{{ user_profile.position or '未设置' }}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">学历</span>
+                                    <span class="info-value">{{ user_profile.education or '未设置' }}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">入职日期</span>
+                                    <span class="info-value">{{ user_profile.hire_date or '未设置' }}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">注册时间</span>
+                                    <span class="info-value">{{ user_profile.create_time or '未设置' }}</span>
+                                </div>
                             </div>
-                        </form>
+                        </div>
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <span class="fallback-icon">ℹ️</span>如需修改基本信息，请联系系统管理员
+                            </small>
+                        </div>
                     </div>
                 </div>
 
@@ -316,14 +305,14 @@
                         </button>
                     </div>
                     <div class="card-body">
-                        <form id="contactInfoForm" method="post" action="/update_user_profile">
+                        <form id="contactInfoForm" method="post" action="/user_profile/update">
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="info-item">
                                         <span class="info-label">手机号码</span>
                                         <div class="info-value">
-                                            <span id="phoneDisplay">{{ user_info.phone or '未设置' }}</span>
-                                            <input type="tel" class="form-control d-none" id="phoneInput" name="phone" value="{{ user_info.phone or '' }}">
+                                            <span id="phoneDisplay">{{ user_profile.phone or '未设置' }}</span>
+                                            <input type="tel" class="form-control d-none" id="phoneInput" name="phone" value="{{ user_profile.phone or '' }}">
                                         </div>
                                     </div>
                                 </div>
@@ -331,8 +320,8 @@
                                     <div class="info-item">
                                         <span class="info-label">邮箱</span>
                                         <div class="info-value">
-                                            <span id="emailDisplay">{{ user_info.email or '未设置' }}</span>
-                                            <input type="email" class="form-control d-none" id="emailInput" name="email" value="{{ user_info.email or '' }}">
+                                            <span id="emailDisplay">{{ user_profile.email or '未设置' }}</span>
+                                            <input type="email" class="form-control d-none" id="emailInput" name="email" value="{{ user_profile.email or '' }}">
                                         </div>
                                     </div>
                                 </div>
@@ -351,9 +340,9 @@
                         <span><span class="fallback-icon">🏆</span>资质信息</span>
                     </div>
                     <div class="card-body">
-                        {% if qualifications %}
+                        {% if user_qualifications %}
                             <div class="row">
-                                {% for qual in qualifications %}
+                                {% for qual in user_qualifications %}
                                 <div class="col-md-6 mb-3">
                                     <div class="qualification-item">
                                         <div class="d-flex justify-content-between align-items-start mb-2">
@@ -432,13 +421,17 @@
                     fetch(this.action, {
                         method: 'POST',
                         body: formData
-                    }).then(response => {
-                        if (response.ok) {
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(data.message);
                             location.reload();
                         } else {
-                            alert('保存失败，请重试');
+                            alert('保存失败: ' + data.message);
                         }
-                    }).catch(error => {
+                    })
+                    .catch(error => {
                         console.error('Error:', error);
                         alert('保存失败，请重试');
                     });

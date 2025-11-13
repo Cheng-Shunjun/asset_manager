@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from database.database import db_manager, get_db
 from auth.auth import login_required
+from datetime import datetime
 import sqlite3
 
 router = APIRouter()
@@ -64,27 +65,40 @@ async def user_profile(
 ):
     """用户个人信息页面"""
     try:
+        print(f"用户个人信息页面，用户名: {user['username']}")
+        
         # 使用 user_service 获取用户个人信息
         user_profile = await user_service.get_user_profile(user["username"], db)
         
-        # 获取用户统计信息（可选，用于在个人资料页面显示一些统计）
+        # 获取用户资质信息
+        user_qualifications = await user_service.get_user_qualifications(user["username"], db)
+        
+        # 获取用户统计信息
         stats = await get_user_basic_stats(user, db)
 
-        print(user_profile)
+        today = datetime.now().strftime("%Y-%m-%d")
+
+        return templates.TemplateResponse("user_profile.html", {
+            "request": request,
+            "user": user,
+            "user_profile": user_profile,
+            "user_qualifications": user_qualifications,  # 添加资质信息
+            "stats": stats,
+            "today": today
+        })
+    except Exception as e:
+        # 如果获取个人信息失败，返回默认页面
+        print(f"查询失败！！！错误: {str(e)}")
+        import traceback
+        print(f"完整错误: {traceback.format_exc()}")
         
         return templates.TemplateResponse("user_profile.html", {
             "request": request,
             "user": user,
-            "user_info": user_profile,  # 改为模板期望的变量名
-            "stats": stats
-        })
-    except Exception as e:
-        # 如果获取个人信息失败，返回默认页面
-        return templates.TemplateResponse("user_profile.html", {
-            "request": request,
-            "user": user,
-            "user_info": {},  # 改为模板期望的变量名
+            "user_profile": {},
+            "user_qualifications": [],  # 空列表
             "stats": {},
+            "today": today,
             "error": str(e)
         })
 
@@ -145,17 +159,17 @@ async def change_password(
     except Exception as e:
         return JSONResponse({"success": False, "message": str(e)}, status_code=400)
 
-@router.get("/user_profile/data")
-async def get_user_profile_data(
-    user: dict = Depends(login_required),
-    db: sqlite3.Connection = Depends(get_db)
-):
-    """获取用户个人信息数据（API接口）"""
-    try:
-        user_profile = await user_service.get_user_profile(user["username"], db)
-        return JSONResponse({"success": True, "data": user_profile})
-    except Exception as e:
-        return JSONResponse({"success": False, "message": str(e)}, status_code=400)
+# @router.get("/user_profile/data")
+# async def get_user_profile_data(
+#     user: dict = Depends(login_required),
+#     db: sqlite3.Connection = Depends(get_db)
+# ):
+#     """获取用户个人信息数据（API接口）"""
+#     try:
+#         user_profile = await user_service.get_user_profile(user["username"], db)
+#         return JSONResponse({"success": True, "data": user_profile})
+#     except Exception as e:
+#         return JSONResponse({"success": False, "message": str(e)}, status_code=400)
 
 async def get_user_basic_stats(user, db):
     """获取用户基本统计信息"""

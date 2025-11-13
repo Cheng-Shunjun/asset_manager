@@ -405,7 +405,18 @@
                                         {% endif %}
                                     </td>
                                     <td>{{ project.progress }}</td>
-                                    <td>{{ project.report_numbers }}</td>
+                                    <td>
+                                        {% if project.report_numbers %}
+                                            {% set reports = project.report_numbers.split(',') %}
+                                            {% for report in reports %}
+                                                {% if report.strip() %}
+                                                <div>{{ loop.index }}. {{ report.strip() }}</div>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% else %}
+                                            <span class="text-muted">无报告</span>
+                                        {% endif %}
+                                    </td>
                                     <td class="amount-cell">
                                         {% if project.amount %}
                                         {% set amount = project.amount %}

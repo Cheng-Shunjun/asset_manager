@@ -14,22 +14,32 @@ class UserService:
 
     async def get_user_profile(self, username: str, db):
         """获取用户个人信息"""
-        c = db.cursor()
-        c.execute("""
-            SELECT username, realname, email, phone, department, position, created_at
-            FROM users 
-            WHERE username = ?
-        """, (username,))
-        
-        user_data = c.fetchone()
-        if not user_data:
-            raise HTTPException(status_code=404, detail="用户不存在")
-        
-        # 转换为字典格式
-        column_names = [col[0] for col in c.description]
-        user_profile = dict(zip(column_names, user_data))
-        
-        return user_profile
+        #print(f"get_user_profile method called with username: {username}")
+        try:
+            c = db.cursor()
+            # 使用正确的字段名 - 将 created_at 改为 create_time
+            c.execute("""
+                SELECT username, realname, email, phone, department, position, education, hire_date, create_time
+                FROM users 
+                WHERE username = ?
+            """, (username,))
+            
+            user_data = c.fetchone()
+            
+            if not user_data:
+                print("User not found in database")
+                raise HTTPException(status_code=404, detail="用户不存在")
+            
+            # 转换为字典格式
+            column_names = [col[0] for col in c.description]
+            user_profile = dict(zip(column_names, user_data))
+            print(f"Final user_profile data: {user_profile}")
+            return user_profile
+        except HTTPException:
+            raise
+        except Exception as e:
+            print(f"Error in get_user_profile: {e}")
+            raise HTTPException(status_code=500, detail=f"获取用户信息失败: {str(e)}")
 
     async def update_user_profile(self, username: str, profile_data: Dict, db):
         """更新用户个人信息"""
@@ -355,5 +365,34 @@ class UserService:
             reports.append(report_dict)
         
         return reports
+    async def get_user_qualifications(self, username: str, db):
+        """获取用户资质信息"""
+        c = db.cursor()
+        
+        # 首先检查 user_qualifications 表是否存在
+        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='user_qualifications'")
+        table_exists = c.fetchone()
+        
+        if not table_exists:
+            print("user_qualifications 表不存在")
+            return []
+        
+        # 查询用户资质信息
+        c.execute("""
+            SELECT qualification_type, qualification_number, 
+                issue_date, expiry_date, issue_authority 
+            FROM user_qualifications 
+            WHERE username = ?
+            ORDER BY issue_date DESC
+        """, (username,))
+        
+        qualifications = []
+        for row in c.fetchall():
+            qual_dict = dict(zip([col[0] for col in c.description], row))
+            qualifications.append(qual_dict)
+        
+        #print(f"找到 {len(qualifications)} 条资质记录")
+        #print(qualifications)
+        return qualifications
 
 user_service = UserService()
