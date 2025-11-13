@@ -19,7 +19,7 @@ class UserService:
             c = db.cursor()
             # 使用正确的字段名 - 将 created_at 改为 create_time
             c.execute("""
-                SELECT username, realname, email, phone, department, position, education, hire_date, create_time
+                SELECT username, user_type, realname, email, phone, department, position, education, hire_date, create_time
                 FROM users 
                 WHERE username = ?
             """, (username,))
@@ -33,7 +33,7 @@ class UserService:
             # 转换为字典格式
             column_names = [col[0] for col in c.description]
             user_profile = dict(zip(column_names, user_data))
-            print(f"Final user_profile data: {user_profile}")
+            #print(f"Final user_profile data: {user_profile}")
             return user_profile
         except HTTPException:
             raise
