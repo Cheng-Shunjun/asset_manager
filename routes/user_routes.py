@@ -142,9 +142,6 @@ async def change_password(
 ):
     """修改用户密码"""
     try:
-        print(current_password)
-        print(new_password)
-        print(new_password)
         # 验证新密码和确认密码是否匹配
         if new_password != confirm_password:
             return JSONResponse({

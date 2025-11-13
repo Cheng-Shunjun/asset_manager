@@ -10,12 +10,22 @@ router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 project_service = ProjectService()
 
+def admin_required(user: dict = Depends(login_required)):
+    """管理员权限检查依赖"""
+    if user.get("user_type") != "admin":
+        raise HTTPException(
+            status_code=403, 
+            detail="权限不足，只有管理员可以访问此页面"
+        )
+    return user
+
 @router.get("/admin", response_class=HTMLResponse)
 async def admin(
     request: Request,
-    user: dict = Depends(login_required),
+    user: dict = Depends(admin_required),  # 使用管理员权限检查
     db: sqlite3.Connection = Depends(get_db)
 ):
+    """管理员后台页面 - 仅管理员可访问"""
     return await project_service.get_admin_page(request, user, db)
 
 @router.get("/create_project")
