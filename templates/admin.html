@@ -1,11 +1,103 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 
 <head>
   <meta charset="UTF-8">
-  <title>资产管理后台</title>
+  <title>管理后台 - 资产管理系统</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.0/font/bootstrap-icons.min.css">
   <style>
+    :root {
+      --primary-color: #2c80ff;
+      --secondary-color: #6c757d;
+      --success-color: #28a745;
+      --warning-color: #ffc107;
+      --info-color: #17a2b8;
+      --light-bg: #f5f7fb;
+      --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      --hover-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    body {
+      background-color: var(--light-bg);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .navbar {
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      padding: 0.8rem 0;
+    }
+
+    .sidebar {
+      background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+      min-height: calc(100vh - 76px);
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.08);
+      border-right: 1px solid #e9ecef;
+      padding: 0;
+    }
+
+    .nav-link {
+      color: #495057;
+      padding: 0.85rem 1.25rem;
+      border-radius: 0.5rem;
+      margin: 0.2rem 0.75rem;
+      transition: all 0.3s ease;
+      font-weight: 500;
+      border: none;
+    }
+
+    .nav-link:hover {
+      background: linear-gradient(135deg, var(--primary-color), #1a6fd8);
+      color: white;
+      transform: translateX(5px);
+      box-shadow: var(--card-shadow);
+    }
+
+    .nav-link.active {
+      background: linear-gradient(135deg, var(--primary-color), #1a6fd8);
+      color: white;
+      box-shadow: var(--card-shadow);
+    }
+
+    .main-content {
+      padding: 2rem;
+      background-color: var(--light-bg);
+    }
+
+    .page-title {
+      color: #2c3e50;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 3px solid var(--primary-color);
+      display: inline-block;
+    }
+
+    .table-container {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: var(--card-shadow);
+      border: 1px solid #e9ecef;
+      margin-top: 1.5rem;
+    }
+
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .filter-controls {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
     table.table tbody tr {
       cursor: pointer;
       transition: background-color 0.2s ease;
@@ -15,10 +107,6 @@
       background-color: #f0f8ff;
       box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.1);
       font-weight: 500;
-    }
-
-    .year-filter-container {
-      max-width: 200px;
     }
 
     .status-badge {
@@ -51,14 +139,12 @@
       color: #198754;
     }
 
-    /* 新增样式 */
     .table th {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       max-width: 200px;
       height: 50px;
-      /* 固定高度确保只有一行 */
       line-height: 1.2;
       vertical-align: middle;
       padding: 8px 12px;
@@ -71,7 +157,6 @@
 
     .table {
       min-width: 1200px;
-      /* 设置最小宽度让表格更宽 */
       table-layout: auto;
     }
 
@@ -87,209 +172,276 @@
     /* 为特定列设置不同宽度 */
     .table th:nth-child(1),
     .table td:nth-child(1) {
-      /* 项目序号 */
       min-width: 100px;
       max-width: 120px;
     }
 
     .table th:nth-child(2),
     .table td:nth-child(2) {
-      /* 项目名称 */
       min-width: 150px;
       max-width: 200px;
     }
 
     .table th:nth-child(3),
     .table td:nth-child(3) {
-      /* 项目类型 */
       min-width: 120px;
       max-width: 150px;
     }
 
     .table th:nth-child(4),
     .table td:nth-child(4) {
-      /* 甲方名称 */
       min-width: 150px;
       max-width: 200px;
     }
 
     .table th:nth-child(5),
     .table td:nth-child(5) {
-      /* 市场部负责人 */
       min-width: 120px;
       max-width: 150px;
     }
 
     .table th:nth-child(6),
     .table td:nth-child(6) {
-      /* 项目负责人 */
       min-width: 120px;
       max-width: 150px;
     }
 
     .table th:nth-child(7),
     .table td:nth-child(7) {
-      /* 项目进度 */
       min-width: 100px;
       max-width: 120px;
     }
 
     .table th:nth-child(8),
     .table td:nth-child(8) {
-      /* 报告号 */
       min-width: 120px;
       max-width: 150px;
     }
 
     .table th:nth-child(9),
     .table td:nth-child(9) {
-      /* 合同金额 */
       min-width: 100px;
       max-width: 120px;
     }
 
     .table th:nth-child(10),
     .table td:nth-child(10) {
-      /* 已收费 */
       min-width: 80px;
       max-width: 100px;
     }
 
     .table th:nth-child(11),
     .table td:nth-child(11) {
-      /* 开始日期 */
       min-width: 100px;
       max-width: 120px;
     }
 
     .table th:nth-child(12),
     .table td:nth-child(12) {
-      /* 状态 */
       min-width: 80px;
       max-width: 100px;
+    }
+
+    /* 备用图标样式 */
+    .fallback-icon {
+      display: inline-block;
+      width: 20px;
+      text-align: center;
+      margin-right: 8px;
+    }
+
+    /* 响应式调整 */
+    @media (max-width: 768px) {
+      .sidebar {
+        min-height: auto;
+        margin-bottom: 1rem;
+      }
+
+      .main-content {
+        padding: 1rem;
+      }
+
+      .table-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .filter-controls {
+        width: 100%;
+      }
     }
   </style>
 </head>
 
-<body class="bg-light">
+<body>
+  <!-- 导航栏 -->
   <nav class="navbar navbar-dark bg-primary">
     <div class="container-fluid">
-      <span class="navbar-brand mb-0 h1">资产管理系统后台</span>
-      <div>
-        <a href="/create_project" class="btn btn-light me-2">创建项目</a>
-        <a href="/user_manager" class="btn btn-light">用户管理</a>
-        <a href="/user_dashboard" class="btn btn-light me-2">用户中心</a>
-      </div>
+      <span class="navbar-brand mb-0 h1 fw-bold">
+        <span class="fallback-icon">📊</span>资产管理系统 - 管理后台
+      </span>
     </div>
   </nav>
 
-  <div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h4 class="mb-0">项目列表</h4>
-      {% if years %}
-      <div class="year-filter-container">
-        <select id="yearFilter" class="form-select">
-          <option value="">全部年份</option>
-          {% for year in years %}
-          <option value="{{ year }}">{{ year }}</option>
-          {% endfor %}
-        </select>
+  <div class="container-fluid">
+    <div class="row">
+      <!-- 侧边栏菜单 -->
+      <div class="col-md-3 col-lg-2 sidebar">
+        <nav class="nav flex-column p-3">
+          <a class="nav-link active" href="/admin">
+            <span class="fallback-icon">📋</span>项目管理
+          </a>
+          <a class="nav-link" href="/create_project">
+            <span class="fallback-icon">➕</span>创建项目
+          </a>
+          <a class="nav-link" href="/user_manager">
+            <span class="fallback-icon">👥</span>用户管理
+          </a>
+          <a class="nav-link" href="/user_dashboard">
+            <span class="fallback-icon">👤</span>用户中心
+          </a>
+        </nav>
       </div>
-      {% endif %}
-    </div>
 
-    {% if projects %}
-    <div class="table-container">
-      <table class="table table-hover bg-white rounded shadow-sm">
-        <thead class="table-primary">
-          <tr>
-            <th>项目序号</th>
-            <th>项目名称</th>
-            <th>项目类型</th>
-            <th>甲方名称</th>
-            <th>市场部负责人</th>
-            <th>项目负责人</th>
-            <th>项目进度</th>
-            <th>报告号</th>
-            <th>合同金额</th>
-            <th>已收费</th>
-            <th>开始日期</th>
-            <th>状态</th>
-          </tr>
-        </thead>
-        <tbody id="projectsTableBody">
-          {% for p in projects %}
-          <tr data-status="{{ p.status }}" onclick="window.location.href='/project/{{ p.id }}'">
-            <td>{{ p.project_no }}</td>
-            <td>{{ p.name }}</td>
-            <td>{{ p.project_type }}</td>
-            <td>{{ p.client_name }}</td>
-            <!-- 修改市场部负责人显示 -->
-            <td>
-              {% if p.market_leader_realname %}
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
-                class="bi bi-person-fill me-1" viewBox="0 0 16 16">
-                <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3Zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-              </svg>
-              {{ p.market_leader_realname }}
-              {% else %}
-              <span class="text-muted">未设置</span>
+      <!-- 主内容区 -->
+      <div class="col-md-9 col-lg-10 main-content">
+        <h3 class="page-title">项目管理</h3>
+
+        <!-- 项目表格 -->
+        <div class="table-container">
+          <div class="table-header">
+            <h5 class="mb-0"><span class="fallback-icon">📋</span>项目列表</h5>
+            <div class="filter-controls">
+              {% if years %}
+              <div class="year-filter-container">
+                <select id="yearFilter" class="form-select">
+                  <option value="">全部年份</option>
+                  {% for year in years %}
+                  <option value="{{ year }}">{{ year }}</option>
+                  {% endfor %}
+                </select>
+              </div>
               {% endif %}
-            </td>
-            <!-- 修改项目负责人显示 -->
-            <td>
-              {% if p.project_leader_realname %}
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
-                class="bi bi-person-fill me-1" viewBox="0 0 16 16">
-                <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3Zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-              </svg>
-              {{ p.project_leader_realname }}
-              {% else %}
-              <span class="text-muted">未设置</span>
-              {% endif %}
-            </td>
-            <td>{{ p.progress }}</td>
-            <td>{{ p.report_numbers }}</td>
-            <td class="amount-cell">
-              {% if p.amount %}
-              {% set amount = p.amount %}
-              {% if amount >= 10000 %}
-              {{ "%.2f"|format(amount / 10000) }}万
-              {% else %}
-              {{ "%.0f"|format(amount) }}元
-              {% endif %}
-              {% else %}
-              0元
-              {% endif %}
-            </td>
-            <td>{{ p.is_paid }}</td>
-            <td>{{ p.start_date }}</td>
-            <td>
-              {% if p.status == 'active' %}
-              <span class="badge status-badge status-active">进行中</span>
-              {% elif p.status == 'completed' %}
-              <span class="badge status-badge status-completed">已完成</span>
-              {% elif p.status == 'paused' %}
-              <span class="badge status-badge status-paused">已暂停</span>
-              {% elif p.status == 'cancelled' %}
-              <span class="badge status-badge status-cancelled">已取消</span>
-              {% else %}
-              <span class="badge status-badge status-active">进行中</span>
-              {% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+              <div class="btn-group" role="group">
+                <input type="radio" class="btn-check" name="statusFilter" id="allProjects" autocomplete="off" checked>
+                <label class="btn btn-outline-primary" for="allProjects">全部项目</label>
+                
+                <input type="radio" class="btn-check" name="statusFilter" id="activeProjects" autocomplete="off">
+                <label class="btn btn-outline-primary" for="activeProjects">进行中</label>
+                
+                <input type="radio" class="btn-check" name="statusFilter" id="completedProjects" autocomplete="off">
+                <label class="btn btn-outline-primary" for="completedProjects">已完成</label>
+              </div>
+            </div>
+          </div>
+
+          {% if projects %}
+          <div class="table-container">
+            <table class="table table-hover bg-white rounded shadow-sm">
+              <thead class="table-primary">
+                <tr>
+                  <th>项目序号</th>
+                  <th>项目名称</th>
+                  <th>项目类型</th>
+                  <th>甲方名称</th>
+                  <th>市场部负责人</th>
+                  <th>项目负责人</th>
+                  <th>项目进度</th>
+                  <th>报告号</th>
+                  <th>合同金额</th>
+                  <th>已收费</th>
+                  <th>开始日期</th>
+                  <th>状态</th>
+                </tr>
+              </thead>
+              <tbody id="projectsTableBody">
+                {% for p in projects %}
+                <tr data-status="{{ p.status }}" onclick="window.location.href='/project/{{ p.id }}'">
+                  <td>{{ p.project_no }}</td>
+                  <td>{{ p.name }}</td>
+                  <td>{{ p.project_type }}</td>
+                  <td>{{ p.client_name }}</td>
+                  <td>
+                    {% if p.market_leader_realname %}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                      class="bi bi-person-fill me-1" viewBox="0 0 16 16">
+                      <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3Zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+                    </svg>
+                    {{ p.market_leader_realname }}
+                    {% else %}
+                    <span class="text-muted">未设置</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if p.project_leader_realname %}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                      class="bi bi-person-fill me-1" viewBox="0 0 16 16">
+                      <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3Zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+                    </svg>
+                    {{ p.project_leader_realname }}
+                    {% else %}
+                    <span class="text-muted">未设置</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ p.progress }}</td>
+                  <td>
+                    {% if p.report_numbers %}
+                      {% set reports = p.report_numbers.split(',') %}
+                      <div style="max-height: 120px; overflow-y: auto; font-size: 0.85rem;">
+                        {% for report in reports %}
+                          {% if report.strip() %}
+                          <div class="mb-1">{{ loop.index }}. {{ report.strip() }}</div>
+                          {% endif %}
+                        {% endfor %}
+                      </div>
+                    {% else %}
+                      <span class="text-muted">无报告</span>
+                    {% endif %}
+                  </td>
+                  <td class="amount-cell">
+                    {% if p.amount %}
+                    {% set amount = p.amount %}
+                    {% if amount >= 10000 %}
+                    {{ "%.2f"|format(amount / 10000) }}万
+                    {% else %}
+                    {{ "%.0f"|format(amount) }}元
+                    {% endif %}
+                    {% else %}
+                    0元
+                    {% endif %}
+                  </td>
+                  <td>{{ p.is_paid }}</td>
+                  <td>{{ p.start_date }}</td>
+                  <td>
+                    {% if p.status == 'active' %}
+                    <span class="badge status-badge status-active">进行中</span>
+                    {% elif p.status == 'completed' %}
+                    <span class="badge status-badge status-completed">已完成</span>
+                    {% elif p.status == 'paused' %}
+                    <span class="badge status-badge status-paused">已暂停</span>
+                    {% elif p.status == 'cancelled' %}
+                    <span class="badge status-badge status-cancelled">已取消</span>
+                    {% else %}
+                    <span class="badge status-badge status-active">进行中</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="alert alert-info text-center">
+            <h5><span class="fallback-icon">📝</span>暂无项目</h5>
+            <p class="mb-0">当前系统中还没有任何项目。<a href="/create_project" class="alert-link">点击这里创建第一个项目</a>。</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
     </div>
-    {% else %}
-    <div class="alert alert-info text-center">
-      <h5>暂无项目</h5>
-      <p class="mb-0">当前系统中还没有任何项目。<a href="/create_project" class="alert-link">点击这里创建第一个项目</a>。</p>
-    </div>
-    {% endif %}
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // 页面加载时对项目进行排序（进行中的项目在前）
     document.addEventListener('DOMContentLoaded', function () {
@@ -298,6 +450,8 @@
 
     function sortProjectsByStatus() {
       const tbody = document.getElementById('projectsTableBody');
+      if (!tbody) return;
+      
       const rows = Array.from(tbody.querySelectorAll('tr'));
 
       // 定义状态优先级
@@ -339,6 +493,34 @@
         } else {
           row.style.display = 'none';
         }
+      });
+    });
+
+    // 项目状态筛选
+    document.addEventListener('DOMContentLoaded', function() {
+      const statusFilters = document.querySelectorAll('input[name="statusFilter"]');
+      const projectRows = document.querySelectorAll('#projectsTableBody tr');
+      
+      statusFilters.forEach(filter => {
+        filter.addEventListener('change', function() {
+          const filterValue = this.id;
+          
+          projectRows.forEach(row => {
+            const status = row.getAttribute('data-status');
+            
+            switch(filterValue) {
+              case 'allProjects':
+                row.style.display = '';
+                break;
+              case 'activeProjects':
+                row.style.display = status === 'active' ? '' : 'none';
+                break;
+              case 'completedProjects':
+                row.style.display = status === 'completed' ? '' : 'none';
+                break;
+            }
+          });
+        });
       });
     });
   </script>
