@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <title>个人信息 - 资产管理系统</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.0/font/bootstrap-icons.min.css">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.0/font/bootstrap-icons.min.css">
     <style>
         :root {
             --primary-color: #2c80ff;
@@ -194,6 +195,60 @@
                 margin-bottom: 0.25rem;
             }
         }
+
+        .password-tips ul {
+            padding-left: 1.2rem;
+            margin-bottom: 0;
+        }
+
+        .password-tips li {
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-bottom: 0.2rem;
+        }
+
+        /* 密码输入框的特殊样式 */
+        #passwordChangeForm .form-control {
+            font-family: 'Courier New', monospace;
+            letter-spacing: 1px;
+        }
+
+        /* 密码强度样式 */
+        .password-strength {
+            height: 4px;
+            border-radius: 2px;
+            margin-top: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .strength-weak {
+            background-color: #dc3545;
+            width: 33%;
+        }
+
+        .strength-medium {
+            background-color: #ffc107;
+            width: 66%;
+        }
+
+        .strength-strong {
+            background-color: #28a745;
+            width: 100%;
+        }
+
+        .password-feedback {
+            font-size: 0.75rem;
+            margin-top: 2px;
+            min-height: 16px;
+        }
+
+        .password-valid {
+            color: #28a745;
+        }
+
+        .password-invalid {
+            color: #dc3545;
+        }
     </style>
 </head>
 
@@ -312,7 +367,8 @@
                                         <span class="info-label">手机号码</span>
                                         <div class="info-value">
                                             <span id="phoneDisplay">{{ user_profile.phone or '未设置' }}</span>
-                                            <input type="tel" class="form-control d-none" id="phoneInput" name="phone" value="{{ user_profile.phone or '' }}">
+                                            <input type="tel" class="form-control d-none" id="phoneInput" name="phone"
+                                                value="{{ user_profile.phone or '' }}">
                                         </div>
                                     </div>
                                 </div>
@@ -321,14 +377,16 @@
                                         <span class="info-label">邮箱</span>
                                         <div class="info-value">
                                             <span id="emailDisplay">{{ user_profile.email or '未设置' }}</span>
-                                            <input type="email" class="form-control d-none" id="emailInput" name="email" value="{{ user_profile.email or '' }}">
+                                            <input type="email" class="form-control d-none" id="emailInput" name="email"
+                                                value="{{ user_profile.email or '' }}">
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="d-none mt-3" id="contactInfoActions">
                                 <button type="submit" class="btn btn-primary me-2">保存</button>
-                                <button type="button" class="btn btn-secondary" onclick="cancelEdit('contactInfo')">取消</button>
+                                <button type="button" class="btn btn-secondary"
+                                    onclick="cancelEdit('contactInfo')">取消</button>
                             </div>
                         </form>
                     </div>
@@ -341,45 +399,111 @@
                     </div>
                     <div class="card-body">
                         {% if user_qualifications %}
-                            <div class="row">
-                                {% for qual in user_qualifications %}
-                                <div class="col-md-6 mb-3">
-                                    <div class="qualification-item">
-                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                            <span class="qualification-badge">
-                                                <span class="fallback-icon">📜</span>{{ qual.qualification_type }}
-                                            </span>
-                                            {% if qual.expiry_date %}
-                                            <small class="text-{% if qual.expiry_date > today %}success{% else %}danger{% endif %}">
-                                                有效期至: {{ qual.expiry_date }}
-                                            </small>
-                                            {% endif %}
-                                        </div>
-                                        {% if qual.qualification_number %}
-                                        <div class="text-muted small">
-                                            证书编号: {{ qual.qualification_number }}
-                                        </div>
-                                        {% endif %}
-                                        {% if qual.issue_authority %}
-                                        <div class="text-muted small">
-                                            发证机构: {{ qual.issue_authority }}
-                                        </div>
-                                        {% endif %}
-                                        {% if qual.issue_date %}
-                                        <div class="text-muted small">
-                                            发证日期: {{ qual.issue_date }}
-                                        </div>
+                        <div class="row">
+                            {% for qual in user_qualifications %}
+                            <div class="col-md-6 mb-3">
+                                <div class="qualification-item">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <span class="qualification-badge">
+                                            <span class="fallback-icon">📜</span>{{ qual.qualification_type }}
+                                        </span>
+                                        {% if qual.expiry_date %}
+                                        <small
+                                            class="text-{% if qual.expiry_date > today %}success{% else %}danger{% endif %}">
+                                            有效期至: {{ qual.expiry_date }}
+                                        </small>
                                         {% endif %}
                                     </div>
+                                    {% if qual.qualification_number %}
+                                    <div class="text-muted small">
+                                        证书编号: {{ qual.qualification_number }}
+                                    </div>
+                                    {% endif %}
+                                    {% if qual.issue_authority %}
+                                    <div class="text-muted small">
+                                        发证机构: {{ qual.issue_authority }}
+                                    </div>
+                                    {% endif %}
+                                    {% if qual.issue_date %}
+                                    <div class="text-muted small">
+                                        发证日期: {{ qual.issue_date }}
+                                    </div>
+                                    {% endif %}
                                 </div>
-                                {% endfor %}
                             </div>
+                            {% endfor %}
+                        </div>
                         {% else %}
-                            <div class="text-center text-muted py-4">
-                                <span class="fallback-icon">📝</span>
-                                <p class="mb-0">暂无资质信息</p>
-                            </div>
+                        <div class="text-center text-muted py-4">
+                            <span class="fallback-icon">📝</span>
+                            <p class="mb-0">暂无资质信息</p>
+                        </div>
                         {% endif %}
+                    </div>
+                </div>
+
+                <!-- 修改密码卡片 -->
+                <div class="card profile-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><span class="fallback-icon">🔒</span>修改密码</span>
+                        <button class="btn btn-light btn-sm" onclick="toggleEditMode('passwordChange')">
+                            <span class="fallback-icon">✏️</span>修改
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <form id="passwordChangeForm" method="post" action="/user_profile/change_password">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="info-item">
+                                        <span class="info-label">当前密码</span>
+                                        <div class="info-value">
+                                            <span id="currentPasswordDisplay">••••••••</span>
+                                            <input type="password" class="form-control d-none" id="currentPasswordInput"
+                                                name="current_password" placeholder="请输入当前密码" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="info-item">
+                                        <span class="info-label">新密码</span>
+                                        <div class="info-value">
+                                            <span id="newPasswordDisplay">••••••••</span>
+                                            <input type="password" class="form-control d-none" id="newPasswordInput"
+                                                name="new_password" placeholder="请输入新密码" required>
+                                            <div class="password-strength d-none" id="passwordStrength"></div>
+                                            <div class="password-feedback" id="passwordFeedback"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="info-item">
+                                        <span class="info-label">确认密码</span>
+                                        <div class="info-value">
+                                            <span id="confirmPasswordDisplay">••••••••</span>
+                                            <input type="password" class="form-control d-none" id="confirmPasswordInput"
+                                                name="confirm_password" placeholder="请确认新密码" required>
+                                            <div class="password-feedback" id="confirmPasswordFeedback"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-none mt-3" id="passwordChangeActions">
+                                <button type="submit" class="btn btn-primary me-2" id="passwordSubmitBtn" disabled>确认修改</button>
+                                <button type="button" class="btn btn-secondary"
+                                    onclick="cancelEdit('passwordChange')">取消</button>
+                            </div>
+                        </form>
+                        <div class="password-tips mt-3">
+                            <small class="text-muted">
+                                <span class="fallback-icon">💡</span>密码安全要求：
+                                <ul class="mb-0 mt-1">
+                                    <li>密码长度至少8位</li>
+                                    <li>必须包含字母和数字</li>
+                                    <li>不能与当前密码相同</li>
+                                    <li>建议包含特殊字符</li>
+                                </ul>
+                            </small>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -397,6 +521,11 @@
             displayElements.forEach(el => el.classList.add('d-none'));
             inputElements.forEach(el => el.classList.remove('d-none'));
             actionsElement.classList.remove('d-none');
+
+            // 如果是密码修改模式，初始化验证
+            if (section === 'passwordChange') {
+                validatePassword();
+            }
         }
 
         // 取消编辑
@@ -408,36 +537,190 @@
             displayElements.forEach(el => el.classList.remove('d-none'));
             inputElements.forEach(el => el.classList.add('d-none'));
             actionsElement.classList.add('d-none');
+            
+            // 如果是密码修改，清空输入框和反馈
+            if (section === 'passwordChange') {
+                document.getElementById('currentPasswordInput').value = '';
+                document.getElementById('newPasswordInput').value = '';
+                document.getElementById('confirmPasswordInput').value = '';
+                document.getElementById('passwordStrength').classList.add('d-none');
+                document.getElementById('passwordFeedback').textContent = '';
+                document.getElementById('confirmPasswordFeedback').textContent = '';
+            }
         }
 
-        // 表单提交处理
-        document.addEventListener('DOMContentLoaded', function() {
-            const forms = document.querySelectorAll('form');
-            forms.forEach(form => {
-                form.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    
-                    const formData = new FormData(this);
-                    fetch(this.action, {
-                        method: 'POST',
-                        body: formData
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            alert(data.message);
-                            location.reload();
-                        } else {
-                            alert('保存失败: ' + data.message);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('保存失败，请重试');
-                    });
+        // 联系信息表单提交处理
+        document.getElementById('contactInfoForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            fetch(this.action, {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        location.reload();
+                    } else {
+                        alert('保存失败: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('保存失败，请重试');
                 });
-            });
+        });
+
+        // 密码修改表单提交处理
+        document.getElementById('passwordChangeForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            // 最终验证
+            if (!validatePassword(true)) {
+                return;
+            }
+
+            const formData = new FormData(this);
+            fetch(this.action, {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        // 清空密码输入框
+                        document.getElementById('currentPasswordInput').value = '';
+                        document.getElementById('newPasswordInput').value = '';
+                        document.getElementById('confirmPasswordInput').value = '';
+                        // 退出编辑模式
+                        cancelEdit('passwordChange');
+                    } else {
+                        alert('修改失败: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('修改失败，请重试');
+                });
+        });
+
+        // 实时密码验证函数
+        function validatePassword(isSubmit = false) {
+            const currentPassword = document.getElementById('currentPasswordInput').value;
+            const newPassword = document.getElementById('newPasswordInput').value;
+            const confirmPassword = document.getElementById('confirmPasswordInput').value;
+            const submitBtn = document.getElementById('passwordSubmitBtn');
+            const strengthBar = document.getElementById('passwordStrength');
+            const passwordFeedback = document.getElementById('passwordFeedback');
+            const confirmFeedback = document.getElementById('confirmPasswordFeedback');
+
+            let isValid = true;
+            let strength = 0;
+
+            // 密码强度计算
+            if (newPassword.length >= 8) strength += 1;
+            if (/[A-Za-z]/.test(newPassword)) strength += 1;
+            if (/\d/.test(newPassword)) strength += 1;
+            if (/[^A-Za-z0-9]/.test(newPassword)) strength += 1;
+
+            // 更新强度条
+            if (strengthBar && newPassword.length > 0) {
+                strengthBar.classList.remove('d-none');
+                strengthBar.className = 'password-strength';
+                if (strength <= 1) {
+                    strengthBar.classList.add('strength-weak');
+                    passwordFeedback.textContent = '密码强度：弱';
+                    passwordFeedback.className = 'password-feedback password-invalid';
+                } else if (strength <= 2) {
+                    strengthBar.classList.add('strength-medium');
+                    passwordFeedback.textContent = '密码强度：中';
+                    passwordFeedback.className = 'password-feedback password-valid';
+                } else {
+                    strengthBar.classList.add('strength-strong');
+                    passwordFeedback.textContent = '密码强度：强';
+                    passwordFeedback.className = 'password-feedback password-valid';
+                }
+            } else if (strengthBar) {
+                strengthBar.classList.add('d-none');
+                passwordFeedback.textContent = '';
+            }
+
+            // 验证新密码长度
+            if (newPassword.length > 0 && newPassword.length < 8) {
+                isValid = false;
+                passwordFeedback.textContent = '密码长度至少8位';
+                passwordFeedback.className = 'password-feedback password-invalid';
+            }
+
+            // 验证新密码强度
+            if (newPassword.length >= 8 && (!/[A-Za-z]/.test(newPassword) || !/\d/.test(newPassword))) {
+                isValid = false;
+                passwordFeedback.textContent = '密码必须包含字母和数字';
+                passwordFeedback.className = 'password-feedback password-invalid';
+            }
+
+            // 验证新密码不能与当前密码相同
+            if (newPassword && currentPassword && newPassword === currentPassword) {
+                isValid = false;
+                if (isSubmit) {
+                    alert('新密码不能与当前密码相同');
+                }
+            }
+
+            // 验证密码匹配
+            if (confirmPassword.length > 0) {
+                if (newPassword !== confirmPassword) {
+                    isValid = false;
+                    confirmFeedback.textContent = '密码不匹配';
+                    confirmFeedback.className = 'password-feedback password-invalid';
+                } else {
+                    confirmFeedback.textContent = '密码匹配';
+                    confirmFeedback.className = 'password-feedback password-valid';
+                }
+            } else {
+                confirmFeedback.textContent = '';
+            }
+
+            // 验证当前密码是否填写
+            if (!currentPassword) {
+                isValid = false;
+            }
+
+            // 更新按钮状态
+            if (submitBtn) {
+                submitBtn.disabled = !isValid;
+                if (isValid) {
+                    submitBtn.classList.remove('btn-secondary');
+                    submitBtn.classList.add('btn-primary');
+                } else {
+                    submitBtn.classList.remove('btn-primary');
+                    submitBtn.classList.add('btn-secondary');
+                }
+            }
+
+            return isValid;
+        }
+
+        // 为密码输入框添加输入监听
+        document.addEventListener('DOMContentLoaded', function () {
+            const currentPasswordInput = document.getElementById('currentPasswordInput');
+            const newPasswordInput = document.getElementById('newPasswordInput');
+            const confirmPasswordInput = document.getElementById('confirmPasswordInput');
+
+            if (currentPasswordInput) {
+                currentPasswordInput.addEventListener('input', validatePassword);
+            }
+            if (newPasswordInput) {
+                newPasswordInput.addEventListener('input', validatePassword);
+            }
+            if (confirmPasswordInput) {
+                confirmPasswordInput.addEventListener('input', validatePassword);
+            }
         });
     </script>
 </body>
+
 </html>

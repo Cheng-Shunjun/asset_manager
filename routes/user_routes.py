@@ -142,11 +142,36 @@ async def change_password(
 ):
     """修改用户密码"""
     try:
+        print(current_password)
+        print(new_password)
+        print(new_password)
         # 验证新密码和确认密码是否匹配
         if new_password != confirm_password:
             return JSONResponse({
                 "success": False, 
                 "message": "新密码和确认密码不匹配"
+            }, status_code=400)
+        
+        # 验证密码长度
+        if len(new_password) < 8:
+            return JSONResponse({
+                "success": False,
+                "message": "密码长度至少8位"
+            }, status_code=400)
+        
+        # 可选：验证密码强度（包含字母和数字）
+        import re
+        if not re.search(r'[A-Za-z]', new_password) or not re.search(r'\d', new_password):
+            return JSONResponse({
+                "success": False,
+                "message": "密码应包含字母和数字"
+            }, status_code=400)
+        
+        # 可选：验证不能与当前密码相同
+        if new_password == current_password:
+            return JSONResponse({
+                "success": False,
+                "message": "新密码不能与当前密码相同"
             }, status_code=400)
         
         password_data = {
