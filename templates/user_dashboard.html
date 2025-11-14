@@ -261,7 +261,7 @@
                     <span class="fallback-icon">👤</span>欢迎, {{ user.username }}
                 </span>
                 {% if user.user_type == 'admin' %}
-                <a href="/admin" class="btn btn-light me-2">
+                <a href="/admin_projects" class="btn btn-light me-2">
                     <span class="fallback-icon">⚙️</span>管理后台
                 </a>
                 {% endif %}
@@ -283,6 +283,9 @@
                     <a class="nav-link" href="/user_profile">
                         <span class="fallback-icon">👤</span>个人信息
                     </a>
+                    <a class="nav-link" href="/create_project">
+                        <span class="fallback-icon">➕</span>创建项目
+                    </a>
                 </nav>
             </div>
 
@@ -302,13 +305,17 @@
                                 <div class="row project-stats">
                                     <div class="col-6">
                                         <h6><span class="fallback-icon">⭐</span>负责的项目</h6>
-                                        <p class="mb-1">进行中: <span class="text-primary fw-bold">{{ dashboard_data.responsible_projects.get('active', 0) }}</span></p>
-                                        <p>已完成: <span class="text-success fw-bold">{{ dashboard_data.responsible_projects.get('completed', 0) }}</span></p>
+                                        <p class="mb-1">进行中: <span class="text-primary fw-bold">{{
+                                                dashboard_data.responsible_projects.get('active', 0) }}</span></p>
+                                        <p>已完成: <span class="text-success fw-bold">{{
+                                                dashboard_data.responsible_projects.get('completed', 0) }}</span></p>
                                     </div>
                                     <div class="col-6">
                                         <h6><span class="fallback-icon">👥</span>参与的项目</h6>
-                                        <p class="mb-1">进行中: <span class="text-primary fw-bold">{{ dashboard_data.participated_projects.get('active', 0) }}</span></p>
-                                        <p>已完成: <span class="text-success fw-bold">{{ dashboard_data.participated_projects.get('completed', 0) }}</span></p>
+                                        <p class="mb-1">进行中: <span class="text-primary fw-bold">{{
+                                                dashboard_data.participated_projects.get('active', 0) }}</span></p>
+                                        <p>已完成: <span class="text-success fw-bold">{{
+                                                dashboard_data.participated_projects.get('completed', 0) }}</span></p>
                                     </div>
                                 </div>
                             </div>
@@ -324,11 +331,13 @@
                                 </h5>
                                 <div class="row text-center">
                                     <div class="col-4">
-                                        <div class="stats-number text-primary">{{ dashboard_data.created_reports }}</div>
+                                        <div class="stats-number text-primary">{{ dashboard_data.created_reports }}
+                                        </div>
                                         <div class="stats-label">创建的报告</div>
                                     </div>
                                     <div class="col-4">
-                                        <div class="stats-number text-success">{{ dashboard_data.reviewed_reports }}</div>
+                                        <div class="stats-number text-success">{{ dashboard_data.reviewed_reports }}
+                                        </div>
                                         <div class="stats-label">复核的报告</div>
                                     </div>
                                     <div class="col-4">
@@ -345,16 +354,25 @@
                 <div class="projects-table-container">
                     <div class="table-header">
                         <h5 class="mb-0"><span class="fallback-icon">📋</span>我参与的项目</h5>
+                        <!-- 在表格头部筛选控件部分 -->
                         <div class="filter-controls">
                             <div class="btn-group" role="group">
-                                <input type="radio" class="btn-check" name="statusFilter" id="allProjects" autocomplete="off" checked>
+                                <input type="radio" class="btn-check" name="statusFilter" id="allProjects"
+                                    autocomplete="off" checked>
                                 <label class="btn btn-outline-primary" for="allProjects">全部项目</label>
-                                
-                                <input type="radio" class="btn-check" name="statusFilter" id="activeProjects" autocomplete="off">
+
+                                <input type="radio" class="btn-check" name="statusFilter" id="activeProjects"
+                                    autocomplete="off">
                                 <label class="btn btn-outline-primary" for="activeProjects">进行中</label>
-                                
-                                <input type="radio" class="btn-check" name="statusFilter" id="completedProjects" autocomplete="off">
+
+                                <input type="radio" class="btn-check" name="statusFilter" id="completedProjects"
+                                    autocomplete="off">
                                 <label class="btn btn-outline-primary" for="completedProjects">已完成</label>
+
+                                <!-- 新增已取消选项 -->
+                                <input type="radio" class="btn-check" name="statusFilter" id="cancelledProjects"
+                                    autocomplete="off">
+                                <label class="btn btn-outline-primary" for="cancelledProjects">已取消</label>
                             </div>
                         </div>
                     </div>
@@ -379,15 +397,18 @@
                             </thead>
                             <tbody id="projectsTableBody">
                                 {% for project in dashboard_data.user_projects %}
-                                <tr data-status="{{ project.status }}" onclick="window.location.href='/project/{{ project.id }}'">
+                                <tr data-status="{{ project.status }}"
+                                    onclick="window.location.href='/project/{{ project.id }}'">
                                     <td>{{ project.project_no }}</td>
                                     <td>{{ project.name }}</td>
                                     <td>{{ project.project_type }}</td>
                                     <td>{{ project.client_name }}</td>
                                     <td>
                                         {% if project.market_leader_realname %}
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-person-fill me-1" viewBox="0 0 16 16">
-                                            <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3Zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                            fill="currentColor" class="bi bi-person-fill me-1" viewBox="0 0 16 16">
+                                            <path
+                                                d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3Zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
                                         </svg>
                                         {{ project.market_leader_realname }}
                                         {% else %}
@@ -396,8 +417,10 @@
                                     </td>
                                     <td>
                                         {% if project.project_leader_realname %}
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-person-fill me-1" viewBox="0 0 16 16">
-                                            <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3Zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                            fill="currentColor" class="bi bi-person-fill me-1" viewBox="0 0 16 16">
+                                            <path
+                                                d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3Zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
                                         </svg>
                                         {{ project.project_leader_realname }}
                                         {% else %}
@@ -407,14 +430,14 @@
                                     <td>{{ project.progress }}</td>
                                     <td>
                                         {% if project.report_numbers %}
-                                            {% set reports = project.report_numbers.split(',') %}
-                                            {% for report in reports %}
-                                                {% if report.strip() %}
-                                                <div>{{ loop.index }}. {{ report.strip() }}</div>
-                                                {% endif %}
-                                            {% endfor %}
+                                        {% set reports = project.report_numbers.split(',') %}
+                                        {% for report in reports %}
+                                        {% if report.strip() %}
+                                        <div>{{ loop.index }}. {{ report.strip() }}</div>
+                                        {% endif %}
+                                        {% endfor %}
                                         {% else %}
-                                            <span class="text-muted">无报告</span>
+                                        <span class="text-muted">无报告</span>
                                         {% endif %}
                                     </td>
                                     <td class="amount-cell">
@@ -457,18 +480,19 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // 项目状态筛选
-        document.addEventListener('DOMContentLoaded', function() {
+        // 项目状态筛选
+        document.addEventListener('DOMContentLoaded', function () {
             const statusFilters = document.querySelectorAll('input[name="statusFilter"]');
             const projectRows = document.querySelectorAll('#projectsTableBody tr');
-            
+
             statusFilters.forEach(filter => {
-                filter.addEventListener('change', function() {
+                filter.addEventListener('change', function () {
                     const filterValue = this.id;
-                    
+
                     projectRows.forEach(row => {
                         const status = row.getAttribute('data-status');
-                        
-                        switch(filterValue) {
+
+                        switch (filterValue) {
                             case 'allProjects':
                                 row.style.display = '';
                                 break;
@@ -478,6 +502,9 @@
                             case 'completedProjects':
                                 row.style.display = status === 'completed' ? '' : 'none';
                                 break;
+                            case 'cancelledProjects':
+                                row.style.display = status === 'cancelled' ? '' : 'none';
+                                break;
                         }
                     });
                 });
@@ -485,4 +512,5 @@
         });
     </script>
 </body>
+
 </html>

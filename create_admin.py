@@ -21,7 +21,6 @@ def init_database():
         realname TEXT,
         user_type TEXT,
         password TEXT,
-        -- 新增字段
         phone TEXT,
         email TEXT,
         hire_date TEXT,
@@ -207,7 +206,7 @@ def init_database():
             f"P{current_year}_003", "学校翻新工程", "资产", "中和市教育局",
             "sunqi", "zhouba", "暂停中", "",
             800000.00, "否", "zhangwen", "张文", "2023-09-01", "2024-09-01",
-            "paused", "", "2023-09-01 14:20:45"
+            "cancelled", "", "2023-09-01 14:20:45"
         ),
         (
             f"P{current_year}_004", "新能源车站项目", "资产", "中和交通投资集团",

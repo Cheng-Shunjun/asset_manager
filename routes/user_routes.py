@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Depends, Form
+from fastapi import APIRouter, Request, Depends, Form, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from database.database import db_manager, get_db
@@ -74,7 +74,7 @@ async def user_profile(
         user_qualifications = await user_service.get_user_qualifications(user["username"], db)
         
         # 获取用户统计信息
-        stats = await get_user_basic_stats(user, db)
+        stats = await user_service.get_user_basic_stats(user, db)
 
         today = datetime.now().strftime("%Y-%m-%d")
 
@@ -179,45 +179,168 @@ async def change_password(
         result = await user_service.change_password(user["username"], password_data, db)
         return JSONResponse({"success": True, "message": result["message"]})
     except Exception as e:
-        return JSONResponse({"success": False, "message": str(e)}, status_code=400)
+        return JSONResponse({"success": False, "message": str(e)}, status_code=400)\
 
-# @router.get("/user_profile/data")
-# async def get_user_profile_data(
-#     user: dict = Depends(login_required),
-#     db: sqlite3.Connection = Depends(get_db)
-# ):
-#     """获取用户个人信息数据（API接口）"""
-#     try:
-#         user_profile = await user_service.get_user_profile(user["username"], db)
-#         return JSONResponse({"success": True, "data": user_profile})
-#     except Exception as e:
-#         return JSONResponse({"success": False, "message": str(e)}, status_code=400)
+# 在 user_routes.py 中添加以下路由
 
-async def get_user_basic_stats(user, db):
-    """获取用户基本统计信息"""
-    c = db.cursor()
-    username = user["username"]
+@router.get("/user_manager", response_class=HTMLResponse)
+async def user_manager(
+    request: Request,
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    """用户管理页面"""
+    # 检查用户权限
+    if user.get("user_type") != "admin":
+        return RedirectResponse(url="/user_dashboard")
     
-    # 负责的项目数
-    c.execute("SELECT COUNT(*) FROM projects WHERE project_leader = ?", (username,))
-    responsible_projects = c.fetchone()[0]
+    try:
+        # 获取所有用户信息
+        users = await user_service.get_all_users(db)
+        
+        return templates.TemplateResponse("user_manager.html", {
+            "request": request,
+            "user": user,
+            "users": users,
+            "current_user": user["username"]  # 传递当前登录用户名
+        })
+    except Exception as e:
+        return templates.TemplateResponse("user_manager.html", {
+            "request": request,
+            "user": user,
+            "users": [],
+            "current_user": user["username"],
+            "error": str(e)
+        })
+
+@router.post("/user_manager/create")
+async def create_user_route(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+    realname: str = Form(None),
+    user_type: str = Form(...),
+    phone: str = Form(None),
+    email: str = Form(None),
+    hire_date: str = Form(None),
+    education: str = Form(None),
+    position: str = Form(None),
+    department: str = Form(None),
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    """创建新用户"""
+    # 检查用户权限
+    if user.get("user_type") != "admin":
+        return JSONResponse({"success": False, "message": "权限不足"}, status_code=403)
     
-    # 参与的项目数
-    c.execute("""
-        SELECT COUNT(DISTINCT p.id) FROM projects p
-        LEFT JOIN reports r ON p.id = r.project_id
-        WHERE p.project_leader = ? OR p.market_leader = ? OR p.creator = ?
-           OR r.reviewer1 = ? OR r.reviewer2 = ? OR r.reviewer3 = ?
-           OR r.signer1 = ? OR r.signer2 = ?
-    """, (username, username, username, username, username, username, username, username))
-    participated_projects = c.fetchone()[0]
+    try:
+        user_data = {
+            "username": username,
+            "password": password,
+            "realname": realname,
+            "user_type": user_type,
+            "phone": phone,
+            "email": email,
+            "hire_date": hire_date,
+            "education": education,
+            "position": position,
+            "department": department
+        }
+        
+        result = await user_service.create_user(user_data, db)
+        return JSONResponse({"success": True, "message": result["message"]})
+    except HTTPException as e:
+        return JSONResponse({"success": False, "message": e.detail}, status_code=e.status_code)
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+
+@router.post("/user_manager/update/{username}")
+async def update_user_route(
+    request: Request,
+    username: str,
+    realname: str = Form(None),
+    user_type: str = Form(None),
+    phone: str = Form(None),
+    email: str = Form(None),
+    hire_date: str = Form(None),
+    education: str = Form(None),
+    position: str = Form(None),
+    department: str = Form(None),
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    """更新用户信息"""
+    # 检查用户权限
+    if user.get("user_type") != "admin":
+        return JSONResponse({"success": False, "message": "权限不足"}, status_code=403)
     
-    # 创建的报告数
-    c.execute("SELECT COUNT(*) FROM reports WHERE creator = ?", (username,))
-    created_reports = c.fetchone()[0]
+    try:
+        user_data = {
+            "realname": realname,
+            "user_type": user_type,
+            "phone": phone,
+            "email": email,
+            "hire_date": hire_date,
+            "education": education,
+            "position": position,
+            "department": department
+        }
+        
+        # 移除空值
+        user_data = {k: v for k, v in user_data.items() if v is not None}
+        
+        result = await user_service.update_user(username, user_data, db)
+        return JSONResponse({"success": True, "message": result["message"]})
+    except HTTPException as e:
+        return JSONResponse({"success": False, "message": e.detail}, status_code=e.status_code)
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+
+@router.post("/user_manager/delete/{username}")
+async def delete_user_route(
+    request: Request,
+    username: str,
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    """删除用户"""
+    # 检查用户权限
+    if user.get("user_type") != "admin":
+        return JSONResponse({"success": False, "message": "权限不足"}, status_code=403)
     
-    return {
-        "responsible_projects": responsible_projects,
-        "participated_projects": participated_projects,
-        "created_reports": created_reports
-    }
+    try:
+        result = await user_service.delete_user(username, user["username"], db)
+        return JSONResponse({"success": True, "message": result["message"]})
+    except HTTPException as e:
+        return JSONResponse({"success": False, "message": e.detail}, status_code=e.status_code)
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+
+@router.post("/user_manager/reset_password/{username}")
+async def reset_user_password_route(
+    request: Request,
+    username: str,
+    new_password: str = Form(...),
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    """重置用户密码"""
+    # 检查用户权限
+    if user.get("user_type") != "admin":
+        return JSONResponse({"success": False, "message": "权限不足"}, status_code=403)
+    
+    try:
+        # 验证密码长度
+        if len(new_password) < 8:
+            return JSONResponse({
+                "success": False,
+                "message": "密码长度至少8位"
+            }, status_code=400)
+        
+        result = await user_service.reset_user_password(username, new_password, db)
+        return JSONResponse({"success": True, "message": result["message"]})
+    except HTTPException as e:
+        return JSONResponse({"success": False, "message": e.detail}, status_code=e.status_code)
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)}, status_code=500)

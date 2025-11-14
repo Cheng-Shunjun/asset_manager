@@ -394,5 +394,181 @@ class UserService:
         #print(f"找到 {len(qualifications)} 条资质记录")
         #print(qualifications)
         return qualifications
+    
+    async def get_user_basic_stats(self, user, db):
+        """获取用户基本统计信息"""
+        c = db.cursor()
+        username = user["username"]
+        
+        # 负责的项目数
+        c.execute("SELECT COUNT(*) FROM projects WHERE project_leader = ?", (username,))
+        responsible_projects = c.fetchone()[0]
+        
+        # 参与的项目数
+        c.execute("""
+            SELECT COUNT(DISTINCT p.id) FROM projects p
+            LEFT JOIN reports r ON p.id = r.project_id
+            WHERE p.project_leader = ? OR p.market_leader = ? OR p.creator = ?
+            OR r.reviewer1 = ? OR r.reviewer2 = ? OR r.reviewer3 = ?
+            OR r.signer1 = ? OR r.signer2 = ?
+        """, (username, username, username, username, username, username, username, username))
+        participated_projects = c.fetchone()[0]
+        
+        # 创建的报告数
+        c.execute("SELECT COUNT(*) FROM reports WHERE creator = ?", (username,))
+        created_reports = c.fetchone()[0]
+        
+        return {
+            "responsible_projects": responsible_projects,
+            "participated_projects": participated_projects,
+            "created_reports": created_reports
+        }
+    # 在 user_service.py 的 UserService 类中添加以下方法
+
+    async def get_all_users(self, db):
+        """获取所有用户信息"""
+        try:
+            c = db.cursor()
+            c.execute("""
+                SELECT username, realname, user_type, hire_date, position, department, create_time
+                FROM users 
+                ORDER BY create_time DESC
+            """)
+            
+            users = []
+            for row in c.fetchall():
+                user_dict = dict(zip([col[0] for col in c.description], row))
+                users.append(user_dict)
+            
+            return users
+        except Exception as e:
+            print(f"Error in get_all_users: {e}")
+            raise HTTPException(status_code=500, detail=f"获取用户列表失败: {str(e)}")
+
+    async def create_user(self, user_data: Dict, db):
+        """创建新用户"""
+        c = db.cursor()
+        
+        # 检查用户名是否已存在
+        c.execute("SELECT username FROM users WHERE username = ?", (user_data.get("username"),))
+        if c.fetchone():
+            raise HTTPException(status_code=400, detail="用户名已存在")
+        
+        # 构建插入语句
+        required_fields = ["username", "password", "user_type"]
+        optional_fields = ["realname", "phone", "email", "hire_date", "education", "position", "department"]
+        
+        # 验证必填字段
+        for field in required_fields:
+            if not user_data.get(field):
+                raise HTTPException(status_code=400, detail=f"{field} 是必填字段")
+        
+        # 准备插入数据
+        insert_fields = required_fields + optional_fields
+        insert_values = []
+        placeholders = []
+        
+        for field in insert_fields:
+            if field in user_data:
+                insert_values.append(user_data[field])
+                placeholders.append("?")
+            else:
+                insert_values.append(None)
+                placeholders.append("?")
+        
+        # 执行插入
+        insert_query = f"INSERT INTO users ({', '.join(insert_fields)}) VALUES ({', '.join(placeholders)})"
+        c.execute(insert_query, insert_values)
+        db.commit()
+        
+        return {"message": "用户创建成功"}
+
+    async def update_user(self, username: str, user_data: Dict, db):
+        """更新用户信息"""
+        c = db.cursor()
+        
+        # 检查用户是否存在
+        c.execute("SELECT username FROM users WHERE username = ?", (username,))
+        if not c.fetchone():
+            raise HTTPException(status_code=404, detail="用户不存在")
+        
+        # 构建更新语句
+        update_fields = []
+        update_values = []
+        
+        allowed_fields = ["realname", "user_type", "phone", "email", "hire_date", "education", "position", "department"]
+        for field in allowed_fields:
+            if field in user_data:
+                update_fields.append(f"{field} = ?")
+                update_values.append(user_data[field])
+        
+        if not update_fields:
+            raise HTTPException(status_code=400, detail="没有可更新的字段")
+        
+        # 添加用户名作为WHERE条件
+        update_values.append(username)
+        
+        # 执行更新
+        update_query = f"UPDATE users SET {', '.join(update_fields)}, update_time = CURRENT_TIMESTAMP WHERE username = ?"
+        c.execute(update_query, update_values)
+        db.commit()
+        
+        return {"message": "用户信息更新成功"}
+
+    async def delete_user(self, username: str, current_username: str, db):
+        """删除用户"""
+        c = db.cursor()
+        
+        # 检查用户是否存在
+        c.execute("SELECT username FROM users WHERE username = ?", (username,))
+        if not c.fetchone():
+            raise HTTPException(status_code=404, detail="用户不存在")
+        
+        # 不能删除自己
+        if username == current_username:
+            raise HTTPException(status_code=400, detail="不能删除当前登录用户")
+        
+        # 检查用户是否有关联的项目
+        c.execute("SELECT COUNT(*) FROM projects WHERE creator = ? OR project_leader = ? OR market_leader = ?", 
+                (username, username, username))
+        project_count = c.fetchone()[0]
+        
+        if project_count > 0:
+            raise HTTPException(status_code=400, detail="该用户有关联的项目，无法删除")
+        
+        # 检查用户是否有关联的报告
+        c.execute("""
+            SELECT COUNT(*) FROM reports 
+            WHERE creator = ? OR reviewer1 = ? OR reviewer2 = ? OR reviewer3 = ? OR signer1 = ? OR signer2 = ?
+        """, (username, username, username, username, username, username))
+        report_count = c.fetchone()[0]
+        
+        if report_count > 0:
+            raise HTTPException(status_code=400, detail="该用户有关联的报告，无法删除")
+        
+        # 删除用户资质信息
+        c.execute("DELETE FROM user_qualifications WHERE username = ?", (username,))
+        
+        # 删除用户
+        c.execute("DELETE FROM users WHERE username = ?", (username,))
+        db.commit()
+        
+        return {"message": "用户删除成功"}
+
+    async def reset_user_password(self, username: str, new_password: str, db):
+        """重置用户密码"""
+        c = db.cursor()
+        
+        # 检查用户是否存在
+        c.execute("SELECT username FROM users WHERE username = ?", (username,))
+        if not c.fetchone():
+            raise HTTPException(status_code=404, detail="用户不存在")
+        
+        # 更新密码（实际应用中应该使用密码哈希）
+        c.execute("UPDATE users SET password = ?, update_time = CURRENT_TIMESTAMP WHERE username = ?", 
+                (new_password, username))
+        db.commit()
+        
+        return {"message": "密码重置成功"}
 
 user_service = UserService()

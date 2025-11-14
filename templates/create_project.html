@@ -1,100 +1,407 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
+
 <head>
-  <meta charset="UTF-8">
-  <title>Create Project</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <title>创建项目 - 资产管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.0/font/bootstrap-icons.min.css">
+    <style>
+        :root {
+            --primary-color: #2c80ff;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+            --light-bg: #f5f7fb;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --hover-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        body {
+            background-color: var(--light-bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 0.8rem 0;
+        }
+
+        .sidebar {
+            background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+            min-height: calc(100vh - 76px);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.08);
+            border-right: 1px solid #e9ecef;
+            padding: 0;
+        }
+
+        .nav-link {
+            color: #495057;
+            padding: 0.85rem 1.25rem;
+            border-radius: 0.5rem;
+            margin: 0.2rem 0.75rem;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            border: none;
+        }
+
+        .nav-link:hover {
+            background: linear-gradient(135deg, var(--primary-color), #1a6fd8);
+            color: white;
+            transform: translateX(5px);
+            box-shadow: var(--card-shadow);
+        }
+
+        .nav-link.active {
+            background: linear-gradient(135deg, var(--primary-color), #1a6fd8);
+            color: white;
+            box-shadow: var(--card-shadow);
+        }
+
+        .main-content {
+            padding: 2rem;
+            background-color: var(--light-bg);
+        }
+
+        .page-title {
+            color: #2c3e50;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 3px solid var(--primary-color);
+            display: inline-block;
+        }
+
+        .create-project-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            background: white;
+            margin-bottom: 1.5rem;
+        }
+
+        .create-project-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--hover-shadow);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), #1a6fd8);
+            color: white;
+            border-radius: 12px 12px 0 0 !important;
+            padding: 1.25rem 1.5rem;
+            font-weight: 600;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control, .form-select {
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(44, 128, 255, 0.25);
+        }
+
+        .required-field::after {
+            content: " *";
+            color: #dc3545;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, var(--primary-color), #1a6fd8);
+            border: none;
+            border-radius: 6px;
+            padding: 0.75rem 2rem;
+            color: white;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--card-shadow);
+        }
+
+        .submit-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .fallback-icon {
+            display: inline-block;
+            width: 20px;
+            text-align: center;
+            margin-right: 8px;
+        }
+
+        .form-hint {
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-top: 0.25rem;
+        }
+
+        .readonly-field {
+            background-color: #f8f9fa;
+            color: #6c757d;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                min-height: auto;
+                margin-bottom: 1rem;
+            }
+
+            .main-content {
+                padding: 1rem;
+            }
+        }
+    </style>
 </head>
-<body class="bg-light">
-  <nav class="navbar navbar-dark bg-primary">
+
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-dark bg-primary">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1 fw-bold">
+                <span class="fallback-icon">📊</span>资产管理系统 - 用户中心
+            </span>
+            <div>
+                <span class="text-light me-3">
+                    <span class="fallback-icon">👤</span>欢迎, {{ username }}
+                </span>
+                {% if user.user_type == 'admin' %}
+                <a href="/admin_projects" class="btn btn-light me-2">
+                    <span class="fallback-icon">⚙️</span>管理后台
+                </a>
+                {% endif %}
+                <a href="/logout" class="btn btn-outline-light">
+                    <span class="fallback-icon">🚪</span>退出
+                </a>
+            </div>
+        </div>
+    </nav>
+
     <div class="container-fluid">
-      <span class="navbar-brand mb-0 h1">创建项目</span>
-      <a href="/admin" class="btn btn-light">返回</a>
+        <div class="row">
+            <!-- 侧边栏菜单 -->
+            <div class="col-md-3 col-lg-2 sidebar">
+                <nav class="nav flex-column p-3">
+                    <a class="nav-link" href="/user_dashboard">
+                        <span class="fallback-icon">📊</span>Dashboard
+                    </a>
+                    <a class="nav-link" href="/user_profile">
+                        <span class="fallback-icon">👤</span>个人信息
+                    </a>
+                    <a class="nav-link active" href="/create_project">
+                        <span class="fallback-icon">➕</span>创建项目
+                    </a>
+                </nav>
+            </div>
+
+            <!-- 主内容区 -->
+            <div class="col-md-9 col-lg-10 main-content">
+                <h3 class="page-title">创建项目</h3>
+
+                <!-- 创建项目表单卡片 -->
+                <div class="card create-project-card">
+                    <div class="card-header">
+                        <span><span class="fallback-icon">📋</span>项目信息</span>
+                    </div>
+                    <div class="card-body">
+                        <form action="/create_project" method="POST" enctype="multipart/form-data" id="createProjectForm">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label class="form-label required-field">项目名称</label>
+                                        <input type="text" name="name" class="form-control" 
+                                               placeholder="请输入项目名称" required maxlength="100">
+                                        <div class="form-hint">项目名称最多100个字符</div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="form-label required-field">项目类型</label>
+                                        <select name="project_type" class="form-select" required>
+                                            <option value="">请选择项目类型</option>
+                                            <option value="资产">资产</option>
+                                            <option value="房地产">房地产</option>
+                                            <option value="土地">土地</option>
+                                            <option value="其他">其他类型</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="form-label required-field">甲方名称</label>
+                                        <input type="text" name="client_name" class="form-control" 
+                                               placeholder="请输入甲方单位名称" required maxlength="100">
+                                        <div class="form-hint">请输入完整的单位名称</div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="form-label required-field">市场部负责人</label>
+                                        <select name="market_leader" class="form-select" required>
+                                            <option value="">请选择市场部负责人</option>
+                                            {% for user in users %}
+                                            <option value="{{ user.username }}">{{ user.realname or user.username }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label class="form-label required-field">项目负责人</label>
+                                        <select name="project_leader" class="form-select" required>
+                                            <option value="">请选择项目负责人</option>
+                                            {% for user in users %}
+                                            <option value="{{ user.username }}">{{ user.realname or user.username }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="form-label">合同金额（元）</label>
+                                        <input type="number" name="amount" step="0.01" min="0" 
+                                               class="form-control" value="0" placeholder="0.00">
+                                        <div class="form-hint">请输入合同金额，单位为元</div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="form-label required-field">开始日期</label>
+                                        <input type="date" name="start_date" class="form-control" 
+                                               id="start_date" required>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="form-label">项目创建人</label>
+                                        <input type="text" name="creator" class="form-control readonly-field" 
+                                              value="{{ username }}" readonly>
+                                        <div class="form-hint">系统自动记录项目创建人</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <button type="submit" class="submit-btn" id="submitBtn">
+                                        <span class="fallback-icon">✅</span>创建项目
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 创建说明卡片 -->
+                <div class="card create-project-card">
+                    <div class="card-header">
+                        <span><span class="fallback-icon">💡</span>创建说明</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6><span class="fallback-icon">📝</span>填写说明：</h6>
+                                <ul class="text-muted">
+                                    <li>带 <span class="text-danger">*</span> 的字段为必填项</li>
+                                    <li>项目名称应简洁明了，便于识别</li>
+                                    <li>请准确选择项目负责人和市场部负责人</li>
+                                    <li>合同金额可为0，后续可修改</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6><span class="fallback-icon">⚡</span>创建后：</h6>
+                                <ul class="text-muted">
+                                    <li>系统将自动生成项目编号</li>
+                                    <li>项目初始状态为"进行中"</li>
+                                    <li>项目进度默认为"洽谈中"</li>
+                                    <li>可随时在项目详情页补充信息</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-  </nav>
 
-  <div class="container mt-4">
-    <form action="/create_project" method="POST" enctype="multipart/form-data" class="bg-white p-4 rounded shadow-sm">
-      <h4 class="mb-3">项目信息</h4>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 设置开始日期默认值为今天
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            const todayStr = `${yyyy}-${mm}-${dd}`;
+            
+            document.getElementById('start_date').value = todayStr;
+        });
 
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label class="form-label">项目名称 <span class="text-danger">*</span></label>
-          <input type="text" name="name" class="form-control" required>
-        </div>
+        // 表单验证
+        document.getElementById('createProjectForm').addEventListener('submit', function(e) {
+            const submitBtn = document.getElementById('submitBtn');
+            const formData = new FormData(this);
+            
+            // 禁用提交按钮防止重复提交
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="fallback-icon">⏳</span>创建中...';
+            
+            // 这里可以添加额外的客户端验证逻辑
+            const projectName = formData.get('name');
+            const projectType = formData.get('project_type');
+            const clientName = formData.get('client_name');
+            const marketLeader = formData.get('market_leader');
+            const projectLeader = formData.get('project_leader');
+            const startDate = formData.get('start_date');
+            
+            if (!projectName || !projectType || !clientName || !marketLeader || !projectLeader || !startDate) {
+                e.preventDefault();
+                alert('请填写所有必填字段');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<span class="fallback-icon">✅</span>创建项目';
+                return;
+            }
+            
+            // 如果所有验证通过，表单会正常提交
+        });
 
-        <div class="col-md-6 mb-3">
-          <label class="form-label">项目类型 <span class="text-danger">*</span></label>
-          <select name="project_type" class="form-select" required>
-            <option value="">请选择项目类型</option>
-            <option value="资产">资产</option>
-            <option value="房地产">房地产</option>
-            <option value="土地">土地</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label class="form-label">甲方名称 <span class="text-danger">*</span></label>
-          <input type="text" name="client_name" class="form-control" required>
-        </div>
-
-        <div class="col-md-6 mb-3">
-          <label class="form-label">市场部负责人 <span class="text-danger">*</span></label>
-          <select name="market_leader" class="form-select" required>
-            <option value="">请选择市场部负责人</option>
-            {% for user in users %}
-            <option value="{{ user.username }}">{{ user.username }}</option>
-            {% endfor %}
-          </select>
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label class="form-label">项目负责人 <span class="text-danger">*</span></label>
-          <select name="project_leader" class="form-select" required>
-            <option value="">请选择项目负责人</option>
-            {% for user in users %}
-            <option value="{{ user.username }}">{{ user.username }}</option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <div class="col-md-6 mb-3">
-          <label class="form-label">合同金额</label>
-          <input type="number" name="amount" step="0.01" class="form-control" value="0">
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label class="form-label">开始日期 <span class="text-danger">*</span></label>
-          <input type="date" name="start_date" class="form-control" id="start_date" required>
-        </div>
-
-        <div class="col-md-6 mb-3">
-          <label class="form-label">项目创建人</label>
-          <input type="text" name="creator" class="form-control" value="{{ username }}" readonly>
-        </div>
-      </div>
-
-      <button type="submit" class="btn btn-primary w-100">创建项目</button>
-    </form>
-  </div>
-
-  <script>
-    // 设置开始日期默认值为今天
-    document.addEventListener('DOMContentLoaded', function() {
-      const today = new Date();
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth() + 1).padStart(2, '0');
-      const dd = String(today.getDate()).padStart(2, '0');
-      const todayStr = `${yyyy}-${mm}-${dd}`;
-      
-      document.getElementById('start_date').value = todayStr;
-    });
-  </script>
+        // 为必填字段添加实时验证
+        document.addEventListener('DOMContentLoaded', function() {
+            const requiredFields = document.querySelectorAll('[required]');
+            
+            requiredFields.forEach(field => {
+                field.addEventListener('blur', function() {
+                    if (!this.value.trim()) {
+                        this.classList.add('is-invalid');
+                    } else {
+                        this.classList.remove('is-invalid');
+                    }
+                });
+            });
+        });
+    </script>
 </body>
+
 </html>

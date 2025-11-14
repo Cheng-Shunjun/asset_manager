@@ -46,11 +46,13 @@ class ProjectService:
         c = db.cursor()
         c.execute("SELECT * FROM projects ORDER BY start_date DESC")
         projects = c.fetchall()
+        print(len(projects))
 
         projects_list = []
         years = set()
 
         for p in projects:
+            print(p['name'])
             project_dict = {
                 "id": p["id"],
                 "project_no": p["project_no"],
@@ -92,7 +94,7 @@ class ProjectService:
 
         years_sorted = sorted(years, reverse=True)
 
-        return templates.TemplateResponse("admin.html", {
+        return templates.TemplateResponse("admin_projects.html", {
             "request": request,
             "projects": projects_list,
             "years": years_sorted,
@@ -108,6 +110,7 @@ class ProjectService:
         return templates.TemplateResponse("create_project.html", {
             "request": request,
             "username": user["username"],
+            "user": user,  # 传递完整的用户对象
             "users": users
         })
 
@@ -418,7 +421,7 @@ class ProjectService:
                 raise HTTPException(status_code=404, detail="项目不存在")
             
             status = result[0]
-            if status in ['completed', 'paused', 'cancelled']:
+            if status in ['completed', 'cancelled']:
                 raise HTTPException(status_code=400, detail=f"项目状态为{status}，无法添加合同文件")
             
             form_data = await request.form()

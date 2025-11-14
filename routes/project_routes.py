@@ -19,7 +19,7 @@ def admin_required(user: dict = Depends(login_required)):
         )
     return user
 
-@router.get("/admin", response_class=HTMLResponse)
+@router.get("/admin_projects", response_class=HTMLResponse)
 async def admin(
     request: Request,
     user: dict = Depends(admin_required),  # 使用管理员权限检查
@@ -64,13 +64,13 @@ async def project_info(
 ):
     return await project_service.get_project_info(request, project_id, user, db)
 
-@router.post("/project/{project_id}/pause")
-async def pause_project(
+@router.post("/project/{project_id}/cancel")
+async def cancel_project(
     project_id: int,
     user: dict = Depends(login_required),
     db: sqlite3.Connection = Depends(get_db)
 ):
-    return await project_service.update_project_status(project_id, 'paused', user, db)
+    return await project_service.update_project_status(project_id, 'cancelled', user, db)
 
 @router.post("/project/{project_id}/resume")
 async def resume_project(

@@ -35,7 +35,6 @@ class Database:
                         realname TEXT,
                         user_type TEXT,
                         password TEXT,
-                        -- 新增字段
                         phone TEXT,
                         email TEXT,
                         hire_date TEXT,

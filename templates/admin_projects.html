@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
   <meta charset="UTF-8">
   <title>管理后台 - 资产管理系统</title>
@@ -250,6 +249,25 @@
       margin-right: 8px;
     }
 
+    /* 导航栏用户中心样式 - 白色背景 */
+    .navbar-nav .nav-link.user-center {
+      background-color: white;
+      color: var(--primary-color) !important;
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      transition: all 0.2s ease;
+      font-weight: 500;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      margin-left: 0.5rem;
+    }
+    
+    .navbar-nav .nav-link.user-center:hover {
+      background-color: #f8f9fa;
+      color: #1a6fd8 !important;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      transform: translateY(-1px);
+    }
+
     /* 响应式调整 */
     @media (max-width: 768px) {
       .sidebar {
@@ -269,6 +287,11 @@
       .filter-controls {
         width: 100%;
       }
+      
+      .navbar-nav .nav-link.user-center {
+        margin-top: 0.5rem;
+        text-align: center;
+      }
     }
   </style>
 </head>
@@ -280,6 +303,15 @@
       <span class="navbar-brand mb-0 h1 fw-bold">
         <span class="fallback-icon">📊</span>资产管理系统 - 管理后台
       </span>
+      
+      <!-- 用户中心菜单项 - 已移动到导航栏右侧，白色背景 -->
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link user-center" href="/user_dashboard">
+            <span class="fallback-icon">👤</span>用户中心
+          </a>
+        </li>
+      </ul>
     </div>
   </nav>
 
@@ -291,14 +323,8 @@
           <a class="nav-link active" href="/admin">
             <span class="fallback-icon">📋</span>项目管理
           </a>
-          <a class="nav-link" href="/create_project">
-            <span class="fallback-icon">➕</span>创建项目
-          </a>
           <a class="nav-link" href="/user_manager">
             <span class="fallback-icon">👥</span>用户管理
-          </a>
-          <a class="nav-link" href="/user_dashboard">
-            <span class="fallback-icon">👤</span>用户中心
           </a>
         </nav>
       </div>
@@ -331,6 +357,9 @@
                 
                 <input type="radio" class="btn-check" name="statusFilter" id="completedProjects" autocomplete="off">
                 <label class="btn btn-outline-primary" for="completedProjects">已完成</label>
+                
+                <input type="radio" class="btn-check" name="statusFilter" id="cancelledProjects" autocomplete="off">
+                <label class="btn btn-outline-primary" for="cancelledProjects">已取消</label>
               </div>
             </div>
           </div>
@@ -457,9 +486,8 @@
       // 定义状态优先级
       const statusPriority = {
         'active': 1,
-        'paused': 2,
-        'completed': 3,
-        'cancelled': 4
+        'completed': 2,
+        'cancelled': 3
       };
 
       // 按状态排序
@@ -518,6 +546,9 @@
               case 'completedProjects':
                 row.style.display = status === 'completed' ? '' : 'none';
                 break;
+              case 'cancelledProjects':
+                row.style.display = status === 'cancelled' ? '' : 'none';
+                break;
             }
           });
         });
@@ -525,5 +556,4 @@
     });
   </script>
 </body>
-
 </html>

@@ -346,8 +346,6 @@
                 <span class="badge status-badge status-active fs-6">进行中</span>
                 {% elif project.status == 'completed' %}
                 <span class="badge status-badge status-completed fs-6">已完成</span>
-                {% elif project.status == 'paused' %}
-                <span class="badge status-badge status-paused fs-6">已暂停</span>
                 {% elif project.status == 'cancelled' %}
                 <span class="badge status-badge status-cancelled fs-6">已取消</span>
                 {% else %}
@@ -533,16 +531,6 @@
                         </svg>
                         已完成
                       </span>
-                      {% elif project.status == 'paused' %}
-                      <span class="badge status-badge status-paused">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor"
-                          class="bi bi-pause-circle me-1" viewBox="0 0 16 16">
-                          <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
-                          <path
-                            d="M5 6.25a1.25 1.25 0 1 1 2.5 0v3.5a1.25 1.25 0 1 1-2.5 0v-3.5zm3.5 0a1.25 1.25 0 1 1 2.5 0v3.5a1.25 1.25 0 1 1-2.5 0v-3.5z" />
-                        </svg>
-                        已暂停
-                      </span>
                       {% elif project.status == 'cancelled' %}
                       <span class="badge status-badge status-cancelled">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor"
@@ -674,7 +662,7 @@
             <div class="upload-section">
               <h6 class="section-title">添加合同文件</h6>
 
-              {% if project.status in ['completed', 'paused', 'cancelled'] %}
+              {% if project.status in ['completed', 'cancelled'] %}
               <!-- 禁用状态显示 -->
               <div class="upload-disabled-message">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
@@ -685,8 +673,6 @@
                 <p class="mb-0">
                   {% if project.status == 'completed' %}
                   项目已完成，无法添加文件
-                  {% elif project.status == 'paused' %}
-                  项目已暂停，无法添加文件
                   {% else %}
                   项目已取消，无法添加文件
                   {% endif %}
@@ -1011,7 +997,7 @@
               {% if project_operation_permission %}
               <!-- 进行中项目的按钮 -->
               {% if project.status == 'active' %}
-              <form action="/project/{{ project.id }}/pause" method="post" class="d-inline">
+              <form action="/project/{{ project.id }}/cancel" method="post" class="d-inline">
                 <button type="submit" class="btn btn-warning btn-action">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                     class="bi bi-pause-circle me-1" viewBox="0 0 16 16">
@@ -1019,7 +1005,7 @@
                     <path
                       d="M5 6.25a1.25 1.25 0 1 1 2.5 0v3.5a1.25 1.25 0 1 1-2.5 0v-3.5zm3.5 0a1.25 1.25 0 1 1 2.5 0v3.5a1.25 1.25 0 1 1-2.5 0v-3.5z" />
                   </svg>
-                  暂停项目
+                  取消项目
                 </button>
               </form>
               <form action="/project/{{ project.id }}/complete" method="post" class="d-inline">
@@ -1034,8 +1020,8 @@
                 </button>
               </form>
 
-              <!-- 已暂停项目的按钮 -->
-              {% elif project.status == 'paused' %}
+              <!-- 已取消项目的按钮 -->
+              {% elif project.status == 'cancelled' %}
               <form action="/project/{{ project.id }}/resume" method="post" class="d-inline">
                 <button type="submit" class="btn btn-primary btn-action">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
@@ -1044,7 +1030,7 @@
                     <path
                       d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445z" />
                   </svg>
-                  继续项目
+                  恢复项目
                 </button>
               </form>
               <form action="/project/{{ project.id }}/complete" method="post" class="d-inline">

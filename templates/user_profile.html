@@ -264,7 +264,7 @@
                     <span class="fallback-icon">👤</span>欢迎, {{ user.username }}
                 </span>
                 {% if user.user_type == 'admin' %}
-                <a href="/admin" class="btn btn-light me-2">
+                <a href="/admin_projects" class="btn btn-light me-2">
                     <span class="fallback-icon">⚙️</span>管理后台
                 </a>
                 {% endif %}
@@ -285,6 +285,9 @@
                     </a>
                     <a class="nav-link active" href="/user_profile">
                         <span class="fallback-icon">👤</span>个人信息
+                    </a>
+                    <a class="nav-link" href="/create_project">
+                        <span class="fallback-icon">➕</span>创建项目
                     </a>
                 </nav>
             </div>
@@ -488,7 +491,8 @@
                                 </div>
                             </div>
                             <div class="d-none mt-3" id="passwordChangeActions">
-                                <button type="submit" class="btn btn-primary me-2" id="passwordSubmitBtn" disabled>确认修改</button>
+                                <button type="submit" class="btn btn-primary me-2" id="passwordSubmitBtn"
+                                    disabled>确认修改</button>
                                 <button type="button" class="btn btn-secondary"
                                     onclick="cancelEdit('passwordChange')">取消</button>
                             </div>
@@ -537,7 +541,7 @@
             displayElements.forEach(el => el.classList.remove('d-none'));
             inputElements.forEach(el => el.classList.add('d-none'));
             actionsElement.classList.add('d-none');
-            
+
             // 如果是密码修改，清空输入框和反馈
             if (section === 'passwordChange') {
                 document.getElementById('currentPasswordInput').value = '';
