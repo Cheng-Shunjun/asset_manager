@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="UTF-8">
   <title>用户管理 - 资产管理系统</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.0/font/bootstrap-icons.min.css">
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.0/font/bootstrap-icons.min.css">
   <style>
     :root {
       --primary-color: #2c80ff;
@@ -159,7 +161,7 @@
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       margin-left: 0.5rem;
     }
-    
+
     .navbar-nav .nav-link.user-center:hover {
       background-color: #f8f9fa;
       color: #1a6fd8 !important;
@@ -197,7 +199,7 @@
       .filter-controls {
         width: 100%;
       }
-      
+
       .navbar-nav .nav-link.user-center {
         margin-top: 0.5rem;
         text-align: center;
@@ -206,6 +208,131 @@
       .action-buttons {
         flex-direction: column;
       }
+    }
+
+    /* 在 user_manager.html 的 CSS 部分添加状态样式 */
+    .status-badge {
+      font-size: 0.75rem;
+      padding: 0.35em 0.65em;
+    }
+
+    .status-active {
+      background-color: #198754;
+      color: white;
+    }
+
+    .status-inactive {
+      background-color: #6c757d;
+      color: white;
+    }
+
+    /* 在 user_manager.html 的 CSS 部分添加以下样式 */
+
+    /* 模态框样式 */
+    .modal-header {
+      background: linear-gradient(135deg, var(--primary-color), #1a6fd8);
+      color: white;
+      border-bottom: none;
+    }
+
+    .modal-title {
+      font-weight: 600;
+    }
+
+    .required-field::after {
+      content: " *";
+      color: #dc3545;
+    }
+
+    /* 表单样式 */
+    .form-label {
+      font-weight: 600;
+      color: #495057;
+      margin-bottom: 0.5rem;
+    }
+
+    .form-control,
+    .form-select {
+      border: 1px solid #e9ecef;
+      border-radius: 6px;
+      padding: 0.75rem;
+      transition: all 0.3s ease;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 0.2rem rgba(44, 128, 255, 0.25);
+    }
+
+    .form-text {
+      font-size: 0.8rem;
+      color: #6c757d;
+      margin-top: 0.25rem;
+    }
+
+    /* 按钮样式 */
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary-color), #1a6fd8);
+      border: none;
+      border-radius: 6px;
+      padding: 0.5rem 1.5rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--card-shadow);
+    }
+
+    .btn-secondary {
+      border-radius: 6px;
+      padding: 0.5rem 1.5rem;
+      font-weight: 500;
+    }
+
+    /* 添加联系方式样式 */
+    .contact-info {
+      font-size: 0.85rem;
+    }
+
+    .contact-info small {
+      font-size: 0.75rem;
+    }
+
+    /* 调整表格列宽 */
+    .table th:nth-child(6),
+    /* 学历列 */
+    .table td:nth-child(6) {
+      min-width: 80px;
+      max-width: 100px;
+    }
+
+    .table th:nth-child(9),
+    /* 联系方式列 */
+    .table td:nth-child(9) {
+      min-width: 120px;
+      max-width: 150px;
+    }
+
+    .table th:nth-child(10),
+    /* 操作列 */
+    .table td:nth-child(10) {
+      min-width: 200px;
+      max-width: 250px;
+    }
+
+    /* 确保表格容器有足够的宽度 */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .table {
+      min-width: 1400px;
+      /* 增加最小宽度以适应新列 */
+      table-layout: auto;
     }
   </style>
 </head>
@@ -217,7 +344,7 @@
       <span class="navbar-brand mb-0 h1 fw-bold">
         <span class="fallback-icon">📊</span>资产管理系统 - 管理后台
       </span>
-      
+
       <!-- 用户中心菜单项 -->
       <ul class="navbar-nav ms-auto">
         <li class="nav-item">
@@ -251,37 +378,49 @@
         <div class="table-container">
           <div class="table-header">
             <h5 class="mb-0"><span class="fallback-icon">👥</span>用户列表</h5>
+            <!-- 在 user_manager.html 的筛选控件部分更新 -->
             <div class="filter-controls">
               <div class="btn-group" role="group">
                 <input type="radio" class="btn-check" name="userTypeFilter" id="allUsers" autocomplete="off" checked>
                 <label class="btn btn-outline-primary" for="allUsers">全部用户</label>
-                
+
                 <input type="radio" class="btn-check" name="userTypeFilter" id="adminUsers" autocomplete="off">
                 <label class="btn btn-outline-primary" for="adminUsers">管理员</label>
-                
+
                 <input type="radio" class="btn-check" name="userTypeFilter" id="normalUsers" autocomplete="off">
                 <label class="btn btn-outline-primary" for="normalUsers">普通用户</label>
+
+                <input type="radio" class="btn-check" name="userTypeFilter" id="activeUsers" autocomplete="off">
+                <label class="btn btn-outline-primary" for="activeUsers">在职</label>
+
+                <input type="radio" class="btn-check" name="userTypeFilter" id="inactiveUsers" autocomplete="off">
+                <label class="btn btn-outline-primary" for="inactiveUsers">离职</label>
               </div>
             </div>
           </div>
 
           {% if users %}
           <div class="table-container">
+            <!-- 在 user_manager.html 的表格部分更新 -->
+            <!-- 更新表格头部 -->
             <table class="table table-hover bg-white rounded shadow-sm">
               <thead class="table-primary">
                 <tr>
                   <th>用户名</th>
                   <th>真实姓名</th>
                   <th>用户类型</th>
+                  <th>状态</th>
                   <th>入职日期</th>
+                  <th>学历</th>
                   <th>职位</th>
                   <th>部门</th>
+                  <th>联系方式</th>
                   <th>操作</th>
                 </tr>
               </thead>
               <tbody id="usersTableBody">
                 {% for user in users %}
-                <tr data-user-type="{{ user.user_type }}">
+                <tr data-user-type="{{ user.user_type }}" data-user-status="{{ user.status }}">
                   <td>
                     <strong>{{ user.username }}</strong>
                   </td>
@@ -300,8 +439,22 @@
                     {% endif %}
                   </td>
                   <td>
-                    {% if user.join_date %}
-                    {{ user.join_date }}
+                    {% if user.status == 'active' %}
+                    <span class="badge status-badge status-active">在职</span>
+                    {% else %}
+                    <span class="badge status-badge status-inactive">离职</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if user.hire_date %}
+                    {{ user.hire_date }}
+                    {% else %}
+                    <span class="text-muted">未设置</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if user.education %}
+                    {{ user.education }}
                     {% else %}
                     <span class="text-muted">未设置</span>
                     {% endif %}
@@ -321,9 +474,35 @@
                     {% endif %}
                   </td>
                   <td>
+                    <div class="contact-info">
+                      {% if user.phone %}
+                      <div class="mb-1">
+                        <small class="text-muted">电话:</small>
+                        <span>{{ user.phone }}</span>
+                      </div>
+                      {% endif %}
+                      {% if user.email %}
+                      <div>
+                        <small class="text-muted">邮箱:</small>
+                        <span>{{ user.email }}</span>
+                      </div>
+                      {% endif %}
+                      {% if not user.phone and not user.email %}
+                      <span class="text-muted">未设置</span>
+                      {% endif %}
+                    </div>
+                  </td>
+                  <td>
                     <div class="action-buttons">
                       <button class="btn btn-sm btn-outline-primary" onclick="editUser('{{ user.username }}')">
                         <span class="fallback-icon">✏️</span>编辑
+                      </button>
+                      <button class="btn btn-sm btn-outline-warning" onclick="toggleUserStatus('{{ user.username }}')">
+                        {% if user.status == 'active' %}
+                        <span class="fallback-icon">🚪</span>设为离职
+                        {% else %}
+                        <span class="fallback-icon">✅</span>设为在职
+                        {% endif %}
                       </button>
                       {% if user.username != current_user %}
                       <button class="btn btn-sm btn-outline-danger" onclick="deleteUser('{{ user.username }}')">
@@ -354,75 +533,545 @@
       </div>
     </div>
   </div>
+  <!-- 在 user_manager.html 的 </body> 标签前添加添加用户模态框 -->
+  <!-- 添加用户模态框 -->
+  <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addUserModalLabel">
+            <span class="fallback-icon">➕</span>添加新用户
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="addUserForm" onsubmit="submitAddUserForm(event)">
+          <div class="modal-body">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="username" class="form-label required-field">用户名</label>
+                  <input type="text" class="form-control" id="username" name="username" required>
+                  <div class="form-text">用户名用于登录系统，创建后不可修改</div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="password" class="form-label required-field">密码</label>
+                  <input type="password" class="form-control" id="password" name="password" required minlength="8">
+                  <div class="form-text">密码长度至少8位</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="realname" class="form-label">真实姓名</label>
+                  <input type="text" class="form-control" id="realname" name="realname">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="user_type" class="form-label required-field">用户类型</label>
+                  <select class="form-select" id="user_type" name="user_type" required>
+                    <option value="">请选择用户类型</option>
+                    <option value="user">普通用户</option>
+                    <option value="admin">管理员</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="phone" class="form-label">手机号码</label>
+                  <input type="tel" class="form-control" id="phone" name="phone">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="email" class="form-label">邮箱</label>
+                  <input type="email" class="form-control" id="email" name="email">
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="hire_date" class="form-label">入职日期</label>
+                  <input type="date" class="form-control" id="hire_date" name="hire_date">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="education" class="form-label">学历</label>
+                  <select class="form-select" id="education" name="education">
+                    <option value="">请选择学历</option>
+                    <option value="专科">专科</option>
+                    <option value="本科">本科</option>
+                    <option value="硕士">硕士</option>
+                    <option value="博士">博士</option>
+                    <option value="其他">其他</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="position" class="form-label">职位</label>
+                  <input type="text" class="form-control" id="position" name="position" placeholder="例如：项目经理">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="department" class="form-label">部门</label>
+                  <input type="text" class="form-control" id="department" name="department" placeholder="例如：技术部">
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="status" class="form-label">用户状态</label>
+              <select class="form-select" id="status" name="status">
+                <option value="active" selected>在职</option>
+                <option value="inactive">离职</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+            <button type="submit" class="btn btn-primary" id="addUserSubmitBtn">
+              <span class="fallback-icon">✅</span>创建用户
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 在添加用户模态框后面添加编辑用户模态框 -->
+  <!-- 编辑用户模态框 -->
+  <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="editUserModalLabel">
+            <span class="fallback-icon">✏️</span>编辑用户信息
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="editUserForm" onsubmit="submitEditUserForm(event)">
+          <div class="modal-body">
+            <input type="hidden" id="edit_username" name="username">
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label class="form-label">用户名</label>
+                  <input type="text" class="form-control" id="edit_username_display" readonly>
+                  <div class="form-text">用户名不可修改</div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="edit_user_type" class="form-label required-field">用户类型</label>
+                  <select class="form-select" id="edit_user_type" name="user_type" required>
+                    <option value="">请选择用户类型</option>
+                    <option value="user">普通用户</option>
+                    <option value="admin">管理员</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="edit_realname" class="form-label">真实姓名</label>
+                  <input type="text" class="form-control" id="edit_realname" name="realname">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="edit_status" class="form-label">用户状态</label>
+                  <select class="form-select" id="edit_status" name="status">
+                    <option value="active">在职</option>
+                    <option value="inactive">离职</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="edit_phone" class="form-label">手机号码</label>
+                  <input type="tel" class="form-control" id="edit_phone" name="phone">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="edit_email" class="form-label">邮箱</label>
+                  <input type="email" class="form-control" id="edit_email" name="email">
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="edit_hire_date" class="form-label">入职日期</label>
+                  <input type="date" class="form-control" id="edit_hire_date" name="hire_date">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="edit_education" class="form-label">学历</label>
+                  <select class="form-select" id="edit_education" name="education">
+                    <option value="">请选择学历</option>
+                    <option value="专科">专科</option>
+                    <option value="本科">本科</option>
+                    <option value="硕士">硕士</option>
+                    <option value="博士">博士</option>
+                    <option value="其他">其他</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="edit_position" class="form-label">职位</label>
+                  <input type="text" class="form-control" id="edit_position" name="position">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="edit_department" class="form-label">部门</label>
+                  <input type="text" class="form-control" id="edit_department" name="department">
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-3 p-3 bg-light rounded">
+              <h6><span class="fallback-icon">🔐</span>密码管理</h6>
+              <button type="button" class="btn btn-outline-warning btn-sm" onclick="resetPasswordFromEdit()">
+                <span class="fallback-icon">🔄</span>重置密码
+              </button>
+              <div class="form-text">重置密码后，用户需要使用新密码登录</div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+            <button type="submit" class="btn btn-primary" id="editUserSubmitBtn">
+              <span class="fallback-icon">💾</span>保存修改
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <!-- 在 user_manager.html 的 JavaScript 部分更新函数 -->
 
-<script>
-    // 编辑用户函数
-    function editUser(username) {
-        // 这里可以打开编辑模态框或跳转到编辑页面
-        // 示例：打开编辑模态框
-        $('#editUserModal').modal('show');
-        // 在实际实现中，你需要填充模态框的表单数据
-    }
-
+  <script>
     // 删除用户函数
     function deleteUser(username) {
-        if (confirm('确定要删除用户 "' + username + '" 吗？此操作不可恢复！')) {
-            fetch('/user_manager/delete/' + username, { 
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert(data.message);
-                    location.reload();
-                } else {
-                    alert('删除失败: ' + data.message);
-                }
-            })
-            .catch(error => {
-                alert('删除失败: ' + error);
-            });
-        }
+      if (confirm('确定要删除用户 "' + username + '" 吗？此操作不可恢复！')) {
+        fetch('/user_manager/delete/' + username, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          }
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              alert(data.message);
+              location.reload();
+            } else {
+              alert('删除失败: ' + data.message);
+            }
+          })
+          .catch(error => {
+            alert('删除失败: ' + error);
+          });
+      }
     }
 
-    // 添加用户函数
+    // 修复添加用户函数 - 使用纯 JavaScript 方式
     function addUser() {
-        // 打开添加用户模态框
-        $('#addUserModal').modal('show');
+      // 使用 Bootstrap 5 的纯 JavaScript 方式打开模态框
+      const addUserModal = new bootstrap.Modal(document.getElementById('addUserModal'));
+      addUserModal.show();
     }
 
     // 重置密码函数
     function resetPassword(username) {
-        const newPassword = prompt('请输入新密码（至少8位）:');
-        if (newPassword && newPassword.length >= 8) {
-            fetch('/user_manager/reset_password/' + username, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: 'new_password=' + encodeURIComponent(newPassword)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert(data.message);
-                } else {
-                    alert('密码重置失败: ' + data.message);
-                }
-            })
-            .catch(error => {
-                alert('密码重置失败: ' + error);
-            });
-        } else if (newPassword) {
-            alert('密码长度至少8位');
-        }
+      const newPassword = prompt('请输入新密码（至少8位）:');
+      if (newPassword && newPassword.length >= 8) {
+        fetch('/user_manager/reset_password/' + username, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: 'new_password=' + encodeURIComponent(newPassword)
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              alert(data.message);
+            } else {
+              alert('密码重置失败: ' + data.message);
+            }
+          })
+          .catch(error => {
+            alert('密码重置失败: ' + error);
+          });
+      } else if (newPassword) {
+        alert('密码长度至少8位');
+      }
     }
-</script>
+
+    // 切换用户状态函数
+    function toggleUserStatus(username) {
+      const action = confirm(`确定要切换用户 "${username}" 的状态吗？`);
+      if (action) {
+        fetch('/user_manager/toggle_status/' + username, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          }
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              alert(data.message);
+              location.reload();
+            } else {
+              alert('状态切换失败: ' + data.message);
+            }
+          })
+          .catch(error => {
+            alert('状态切换失败: ' + error);
+          });
+      }
+    }
+
+    // 用户筛选功能
+    document.addEventListener('DOMContentLoaded', function () {
+      const userTypeFilters = document.querySelectorAll('input[name="userTypeFilter"]');
+      const userRows = document.querySelectorAll('#usersTableBody tr');
+
+      userTypeFilters.forEach(filter => {
+        filter.addEventListener('change', function () {
+          const filterValue = this.id;
+
+          userRows.forEach(row => {
+            const userType = row.getAttribute('data-user-type');
+            const userStatus = row.getAttribute('data-user-status');
+
+            switch (filterValue) {
+              case 'allUsers':
+                row.style.display = '';
+                break;
+              case 'adminUsers':
+                row.style.display = userType === 'admin' ? '' : 'none';
+                break;
+              case 'normalUsers':
+                row.style.display = userType === 'user' ? '' : 'none';
+                break;
+              case 'activeUsers':
+                row.style.display = userStatus === 'active' ? '' : 'none';
+                break;
+              case 'inactiveUsers':
+                row.style.display = userStatus === 'inactive' ? '' : 'none';
+                break;
+            }
+          });
+        });
+      });
+
+      // 设置入职日期默认值为今天
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('hire_date').value = today;
+    });
+
+    // 添加用户表单提交
+    function submitAddUserForm(event) {
+      event.preventDefault();
+
+      const submitBtn = document.getElementById('addUserSubmitBtn');
+      const originalText = submitBtn.innerHTML;
+
+      // 禁用提交按钮防止重复提交
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 创建中...';
+
+      const formData = new FormData(event.target);
+
+      // 验证表单数据
+      const username = formData.get('username');
+      const password = formData.get('password');
+      const userType = formData.get('user_type');
+
+      if (!username || !password || !userType) {
+        alert('请填写所有必填字段');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+        return;
+      }
+
+      if (password.length < 8) {
+        alert('密码长度至少8位');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+        return;
+      }
+
+      // 发送创建用户请求
+      fetch('/user_manager/create', {
+        method: 'POST',
+        body: new URLSearchParams(formData)
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            alert(data.message);
+            // 关闭模态框
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addUserModal'));
+            modal.hide();
+            // 刷新页面
+            location.reload();
+          } else {
+            alert('创建失败: ' + data.message);
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+          }
+        })
+        .catch(error => {
+          alert('创建失败: ' + error);
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalText;
+        });
+    }
+
+    // 模态框关闭时重置表单
+    document.getElementById('addUserModal').addEventListener('hidden.bs.modal', function () {
+      document.getElementById('addUserForm').reset();
+      const submitBtn = document.getElementById('addUserSubmitBtn');
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<span class="fallback-icon">✅</span>创建用户';
+
+      // 重新设置今天的日期
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('hire_date').value = today;
+    });
+
+    // 编辑用户功能
+    let currentEditUser = '';
+
+    // 更新编辑用户功能
+    async function editUser(username) {
+      currentEditUser = username;
+
+      try {
+        // 显示加载状态
+        const modal = new bootstrap.Modal(document.getElementById('editUserModal'));
+        modal.show();
+
+        // 设置基本信息
+        document.getElementById('edit_username').value = username;
+        document.getElementById('edit_username_display').value = username;
+
+        // 从服务器获取完整的用户信息
+        const response = await fetch(`/user_manager/get_user/${username}`);
+        const data = await response.json();
+
+        if (data.success) {
+          const user = data.user;
+
+          // 填充表单
+          document.getElementById('edit_realname').value = user.realname || '';
+          document.getElementById('edit_user_type').value = user.user_type || 'user';
+          document.getElementById('edit_status').value = user.status || 'active';
+          document.getElementById('edit_phone').value = user.phone || '';
+          document.getElementById('edit_email').value = user.email || '';
+          document.getElementById('edit_hire_date').value = user.hire_date || '';
+          document.getElementById('edit_education').value = user.education || '';
+          document.getElementById('edit_position').value = user.position || '';
+          document.getElementById('edit_department').value = user.department || '';
+        } else {
+          alert('获取用户信息失败: ' + data.message);
+          modal.hide();
+        }
+      } catch (error) {
+        alert('获取用户信息失败: ' + error);
+        const modal = bootstrap.Modal.getInstance(document.getElementById('editUserModal'));
+        modal.hide();
+      }
+    }
+
+    function submitEditUserForm(event) {
+      event.preventDefault();
+
+      const submitBtn = document.getElementById('editUserSubmitBtn');
+      const originalText = submitBtn.innerHTML;
+
+      // 禁用提交按钮防止重复提交
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 保存中...';
+
+      const formData = new FormData(event.target);
+      const username = formData.get('username');
+
+      fetch(`/user_manager/update/${username}`, {
+        method: 'POST',
+        body: new URLSearchParams(formData)
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            alert(data.message);
+            // 关闭模态框
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editUserModal'));
+            modal.hide();
+            // 刷新页面
+            location.reload();
+          } else {
+            alert('保存失败: ' + data.message);
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+          }
+        })
+        .catch(error => {
+          alert('保存失败: ' + error);
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalText;
+        });
+    }
+
+    function resetPasswordFromEdit() {
+      const username = document.getElementById('edit_username').value;
+      if (username) {
+        resetPassword(username);
+      }
+    }
+
+    // 编辑模态框关闭时重置
+    document.getElementById('editUserModal').addEventListener('hidden.bs.modal', function () {
+      const submitBtn = document.getElementById('editUserSubmitBtn');
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<span class="fallback-icon">💾</span>保存修改';
+      currentEditUser = '';
+    });
+  </script>
 </body>
+
 </html>

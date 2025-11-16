@@ -423,14 +423,14 @@ class UserService:
             "participated_projects": participated_projects,
             "created_reports": created_reports
         }
-    # 在 user_service.py 的 UserService 类中添加以下方法
 
     async def get_all_users(self, db):
         """获取所有用户信息"""
         try:
             c = db.cursor()
             c.execute("""
-                SELECT username, realname, user_type, hire_date, position, department, create_time
+                SELECT username, realname, user_type, hire_date, education, 
+                    position, department, status, phone, email, create_time
                 FROM users 
                 ORDER BY create_time DESC
             """)
@@ -445,6 +445,7 @@ class UserService:
             print(f"Error in get_all_users: {e}")
             raise HTTPException(status_code=500, detail=f"获取用户列表失败: {str(e)}")
 
+    # 在 create_user 方法中确保状态字段被设置
     async def create_user(self, user_data: Dict, db):
         """创建新用户"""
         c = db.cursor()
@@ -456,12 +457,16 @@ class UserService:
         
         # 构建插入语句
         required_fields = ["username", "password", "user_type"]
-        optional_fields = ["realname", "phone", "email", "hire_date", "education", "position", "department"]
+        optional_fields = ["realname", "phone", "email", "hire_date", "education", "position", "department", "status"]
         
         # 验证必填字段
         for field in required_fields:
             if not user_data.get(field):
                 raise HTTPException(status_code=400, detail=f"{field} 是必填字段")
+        
+        # 设置默认状态
+        if "status" not in user_data or not user_data["status"]:
+            user_data["status"] = "active"
         
         # 准备插入数据
         insert_fields = required_fields + optional_fields
@@ -483,6 +488,7 @@ class UserService:
         
         return {"message": "用户创建成功"}
 
+    # 在 update_user 方法中添加状态字段
     async def update_user(self, username: str, user_data: Dict, db):
         """更新用户信息"""
         c = db.cursor()
@@ -496,7 +502,7 @@ class UserService:
         update_fields = []
         update_values = []
         
-        allowed_fields = ["realname", "user_type", "phone", "email", "hire_date", "education", "position", "department"]
+        allowed_fields = ["realname", "user_type", "phone", "email", "hire_date", "education", "position", "department", "status"]
         for field in allowed_fields:
             if field in user_data:
                 update_fields.append(f"{field} = ?")
@@ -514,6 +520,28 @@ class UserService:
         db.commit()
         
         return {"message": "用户信息更新成功"}
+
+    # 添加切换用户状态的方法
+    async def toggle_user_status(self, username: str, db):
+        """切换用户状态（在职/离职）"""
+        c = db.cursor()
+        
+        # 检查用户是否存在
+        c.execute("SELECT username, status FROM users WHERE username = ?", (username,))
+        user = c.fetchone()
+        if not user:
+            raise HTTPException(status_code=404, detail="用户不存在")
+        
+        current_status = user[1] if user[1] else "active"
+        new_status = "inactive" if current_status == "active" else "active"
+        
+        # 更新状态
+        c.execute("UPDATE users SET status = ?, update_time = CURRENT_TIMESTAMP WHERE username = ?", 
+                (new_status, username))
+        db.commit()
+        
+        status_text = "在职" if new_status == "active" else "离职"
+        return {"message": f"用户状态已更新为{status_text}", "new_status": new_status}
 
     async def delete_user(self, username: str, current_username: str, db):
         """删除用户"""
@@ -570,5 +598,29 @@ class UserService:
         db.commit()
         
         return {"message": "密码重置成功"}
+    async def get_user_details(self, username: str, db):
+        """获取用户详细信息"""
+        try:
+            c = db.cursor()
+            c.execute("""
+                SELECT username, realname, user_type, phone, email, hire_date, 
+                    education, position, department, status
+                FROM users 
+                WHERE username = ?
+            """, (username,))
+            
+            user_data = c.fetchone()
+            if not user_data:
+                raise HTTPException(status_code=404, detail="用户不存在")
+            
+            # 转换为字典
+            column_names = [col[0] for col in c.description]
+            user_dict = dict(zip(column_names, user_data))
+            
+            return user_dict
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"获取用户信息失败: {str(e)}")
 
 user_service = UserService()

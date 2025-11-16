@@ -14,10 +14,10 @@ def init_database():
     c = conn.cursor()
 
     # ========= 创建 users 表 =========
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS users (
+    # 在 database.py 的 init_db 方法中更新 users 表
+    c.execute('''CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE NOT NULL,
+        username TEXT UNIQUE,
         realname TEXT,
         user_type TEXT,
         password TEXT,
@@ -27,10 +27,10 @@ def init_database():
         education TEXT,
         position TEXT,
         department TEXT,
+        status TEXT DEFAULT 'active',  -- active-在职, inactive-离职
         create_time TEXT DEFAULT CURRENT_TIMESTAMP,
         update_time TEXT DEFAULT CURRENT_TIMESTAMP
-    )
-    """)
+    )''')
     print("✅ users 表创建完成。")
 
     # ========= 创建 projects 表 =========

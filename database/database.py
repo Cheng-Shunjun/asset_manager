@@ -28,22 +28,22 @@ class Database:
         c = conn.cursor()
         
         # 用户表
-        # 用户表 - 扩展字段
         c.execute('''CREATE TABLE IF NOT EXISTS users (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        username TEXT UNIQUE,
-                        realname TEXT,
-                        user_type TEXT,
-                        password TEXT,
-                        phone TEXT,
-                        email TEXT,
-                        hire_date TEXT,
-                        education TEXT,
-                        position TEXT,
-                        department TEXT,
-                        create_time TEXT DEFAULT CURRENT_TIMESTAMP,
-                        update_time TEXT DEFAULT CURRENT_TIMESTAMP
-                    )''')
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE,
+            realname TEXT,
+            user_type TEXT,
+            password TEXT,
+            phone TEXT,
+            email TEXT,
+            hire_date TEXT,
+            education TEXT,
+            position TEXT,
+            department TEXT,
+            status TEXT DEFAULT 'active',  -- active-在职, inactive-离职
+            create_time TEXT DEFAULT CURRENT_TIMESTAMP,
+            update_time TEXT DEFAULT CURRENT_TIMESTAMP
+        )''')
 
         # 用户资质表（多对多关系）
         c.execute("""
@@ -62,59 +62,59 @@ class Database:
         
         # 项目表
         c.execute('''CREATE TABLE IF NOT EXISTS projects (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        project_no TEXT,
-                        name TEXT,
-                        project_type TEXT,
-                        client_name TEXT,
-                        market_leader TEXT,
-                        project_leader TEXT,
-                        progress TEXT,
-                        report_numbers TEXT,
-                        amount REAL,
-                        is_paid TEXT,
-                        creator TEXT,
-                        creator_realname TEXT,
-                        start_date TEXT,
-                        end_date TEXT,
-                        status TEXT,
-                        contract_file TEXT,
-                        create_date TEXT
-                    )''')
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_no TEXT,
+            name TEXT,
+            project_type TEXT,
+            client_name TEXT,
+            market_leader TEXT,
+            project_leader TEXT,
+            progress TEXT,
+            report_numbers TEXT,
+            amount REAL,
+            is_paid TEXT,
+            creator TEXT,
+            creator_realname TEXT,
+            start_date TEXT,
+            end_date TEXT,
+            status TEXT,
+            contract_file TEXT,
+            create_date TEXT
+        )''')
         
         # 报告表
         # ========= 创建 reports 表 =========
         c.execute("""
         CREATE TABLE IF NOT EXISTS reports (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        report_no TEXT NOT NULL,         -- 报告号
-                        project_id INTEGER,              -- 关联的项目ID
-                        report_type TEXT,                -- 报告类型（新增字段）
-                        file_paths TEXT,                 -- 文件路径（多个以逗号分隔）
-                        creator TEXT,                    -- 创建人用户名
-                        creator_realname TEXT,           -- 创建人真实姓名
-                        create_date TEXT,                -- 创建日期
-                        reviewer1 TEXT,                  -- 复核人1用户名
-                        reviewer2 TEXT,                  -- 复核人2用户名
-                        reviewer3 TEXT,                  -- 复核人3用户名
-                        signer1 TEXT,                    -- 签字人1用户名
-                        signer2 TEXT,                    -- 签字人2用户名
-                        FOREIGN KEY (project_id) REFERENCES projects (id)
-                    )
-                    """)
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            report_no TEXT NOT NULL,         -- 报告号
+            project_id INTEGER,              -- 关联的项目ID
+            report_type TEXT,                -- 报告类型（新增字段）
+            file_paths TEXT,                 -- 文件路径（多个以逗号分隔）
+            creator TEXT,                    -- 创建人用户名
+            creator_realname TEXT,           -- 创建人真实姓名
+            create_date TEXT,                -- 创建日期
+            reviewer1 TEXT,                  -- 复核人1用户名
+            reviewer2 TEXT,                  -- 复核人2用户名
+            reviewer3 TEXT,                  -- 复核人3用户名
+            signer1 TEXT,                    -- 签字人1用户名
+            signer2 TEXT,                    -- 签字人2用户名
+            FOREIGN KEY (project_id) REFERENCES projects (id)
+        )
+        """)
         
         # 报告文件表
         c.execute('''CREATE TABLE IF NOT EXISTS report_files (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        report_id INTEGER,
-                        file_path TEXT NOT NULL,
-                        file_name TEXT NOT NULL,
-                        uploader_username TEXT NOT NULL,
-                        uploader_realname TEXT NOT NULL,
-                        upload_time TEXT NOT NULL,
-                        file_size INTEGER,
-                        FOREIGN KEY (report_id) REFERENCES reports (id)
-                    )''')
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            report_id INTEGER,
+            file_path TEXT NOT NULL,
+            file_name TEXT NOT NULL,
+            uploader_username TEXT NOT NULL,
+            uploader_realname TEXT NOT NULL,
+            upload_time TEXT NOT NULL,
+            file_size INTEGER,
+            FOREIGN KEY (report_id) REFERENCES reports (id)
+        )''')
         # ========= 创建 contract_files 表 =========
         c.execute("""
         CREATE TABLE IF NOT EXISTS contract_files (
