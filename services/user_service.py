@@ -14,12 +14,14 @@ class UserService:
 
     async def get_user_profile(self, username: str, db):
         """获取用户个人信息"""
-        #print(f"get_user_profile method called with username: {username}")
         try:
             c = db.cursor()
-            # 使用正确的字段名 - 将 created_at 改为 create_time
+            # 修改查询，使用 datetime 函数转换时区
             c.execute("""
-                SELECT username, user_type, realname, email, phone, department, position, education, hire_date, create_time
+                SELECT username, user_type, realname, email, phone, department, 
+                    position, education, hire_date,
+                    datetime(create_time, 'localtime') as create_time,
+                    datetime(update_time, 'localtime') as update_time
                 FROM users 
                 WHERE username = ?
             """, (username,))
@@ -27,18 +29,14 @@ class UserService:
             user_data = c.fetchone()
             
             if not user_data:
-                print("User not found in database")
                 raise HTTPException(status_code=404, detail="用户不存在")
             
             # 转换为字典格式
             column_names = [col[0] for col in c.description]
             user_profile = dict(zip(column_names, user_data))
-            #print(f"Final user_profile data: {user_profile}")
+            
             return user_profile
-        except HTTPException:
-            raise
         except Exception as e:
-            print(f"Error in get_user_profile: {e}")
             raise HTTPException(status_code=500, detail=f"获取用户信息失败: {str(e)}")
 
     async def update_user_profile(self, username: str, profile_data: Dict, db):
@@ -428,9 +426,12 @@ class UserService:
         """获取所有用户信息"""
         try:
             c = db.cursor()
+            # 修改查询，使用 datetime 函数转换时区
             c.execute("""
                 SELECT username, realname, user_type, hire_date, education, 
-                    position, department, status, phone, email, create_time
+                    position, department, status, phone, email,
+                    datetime(create_time, 'localtime') as create_time,
+                    datetime(update_time, 'localtime') as update_time
                 FROM users 
                 ORDER BY create_time DESC
             """)
@@ -602,9 +603,12 @@ class UserService:
         """获取用户详细信息"""
         try:
             c = db.cursor()
+            # 修改查询，使用 datetime 函数转换时区
             c.execute("""
                 SELECT username, realname, user_type, phone, email, hire_date, 
-                    education, position, department, status
+                    education, position, department, status,
+                    datetime(create_time, 'localtime') as create_time,
+                    datetime(update_time, 'localtime') as update_time
                 FROM users 
                 WHERE username = ?
             """, (username,))
@@ -622,5 +626,51 @@ class UserService:
             raise
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"获取用户信息失败: {str(e)}")
+    
+    async def add_user_qualification(self, username: str, qualification_data: Dict, db):
+        """添加用户资质"""
+        c = db.cursor()
+        
+        # 检查用户是否存在
+        c.execute("SELECT username FROM users WHERE username = ?", (username,))
+        if not c.fetchone():
+            raise HTTPException(status_code=404, detail="用户不存在")
+        
+        # 插入资质信息
+        c.execute("""
+            INSERT INTO user_qualifications 
+            (username, qualification_type, qualification_number, issue_authority, issue_date, expiry_date)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (
+            username,
+            qualification_data.get("qualification_type"),
+            qualification_data.get("qualification_number"),
+            qualification_data.get("issue_authority"),
+            qualification_data.get("issue_date"),
+            qualification_data.get("expiry_date")
+        ))
+        db.commit()
+        
+        return {"message": "资质添加成功"}
+
+    async def delete_user_qualification(self, username: str, qualification_type: str, qualification_number: str, db):
+        """删除用户资质"""
+        c = db.cursor()
+        
+        # 删除资质信息
+        if qualification_number:
+            c.execute("""
+                DELETE FROM user_qualifications 
+                WHERE username = ? AND qualification_type = ? AND qualification_number = ?
+            """, (username, qualification_type, qualification_number))
+        else:
+            c.execute("""
+                DELETE FROM user_qualifications 
+                WHERE username = ? AND qualification_type = ?
+            """, (username, qualification_type))
+        
+        db.commit()
+        
+        return {"message": "资质删除成功"}
 
 user_service = UserService()

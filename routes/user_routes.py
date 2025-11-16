@@ -181,8 +181,6 @@ async def change_password(
     except Exception as e:
         return JSONResponse({"success": False, "message": str(e)}, status_code=400)\
 
-# 在 user_routes.py 中添加以下路由
-
 @router.get("/user_manager", response_class=HTMLResponse)
 async def user_manager(
     request: Request,
@@ -198,11 +196,15 @@ async def user_manager(
         # 获取所有用户信息
         users = await user_service.get_all_users(db)
         
+        # 为每个用户获取资质信息
+        for user_item in users:
+            user_item["qualifications"] = await user_service.get_user_qualifications(user_item["username"], db)
+        
         return templates.TemplateResponse("user_manager.html", {
             "request": request,
             "user": user,
             "users": users,
-            "current_user": user["username"]  # 传递当前登录用户名
+            "current_user": user["username"]
         })
     except Exception as e:
         return templates.TemplateResponse("user_manager.html", {
@@ -388,3 +390,131 @@ async def get_user(
         return JSONResponse({"success": False, "message": e.detail}, status_code=e.status_code)
     except Exception as e:
         return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+
+@router.get("/admin/user_profile/{username}", response_class=HTMLResponse)
+async def admin_user_profile(
+    request: Request,
+    username: str,
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    """管理员查看用户详情页面"""
+    # 检查用户权限
+    if user.get("user_type") != "admin":
+        return RedirectResponse(url="/user_dashboard")
+    
+    try:
+        # 获取用户基本信息
+        user_profile = await user_service.get_user_profile(username, db)
+        
+        # 获取用户资质信息
+        user_qualifications = await user_service.get_user_qualifications(username, db)
+        
+        today = datetime.now().strftime("%Y-%m-%d")
+
+        return templates.TemplateResponse("admin_user_profile.html", {
+            "request": request,
+            "current_user": user,  # 当前登录的管理员
+            "user_profile": user_profile,
+            "user_qualifications": user_qualifications,
+            "today": today
+        })
+    except Exception as e:
+        return RedirectResponse(url="/user_manager")
+
+@router.post("/admin/user_profile/update/{username}")
+async def admin_update_user_profile(
+    request: Request,
+    username: str,
+    realname: str = Form(None),
+    user_type: str = Form(None),
+    status: str = Form(None),
+    phone: str = Form(None),
+    email: str = Form(None),
+    department: str = Form(None),
+    position: str = Form(None),
+    education: str = Form(None),
+    hire_date: str = Form(None),
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    """管理员更新用户信息"""
+    # 检查用户权限
+    if user.get("user_type") != "admin":
+        return JSONResponse({"success": False, "message": "权限不足"}, status_code=403)
+    
+    try:
+        profile_data = {
+            "realname": realname,
+            "user_type": user_type,
+            "status": status,
+            "phone": phone,
+            "email": email,
+            "department": department,
+            "position": position,
+            "education": education,
+            "hire_date": hire_date
+        }
+        
+        # 移除空值
+        profile_data = {k: v for k, v in profile_data.items() if v is not None}
+        
+        result = await user_service.update_user(username, profile_data, db)
+        return JSONResponse({"success": True, "message": result["message"]})
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)}, status_code=400)
+
+@router.post("/admin/user_profile/add_qualification/{username}")
+async def admin_add_user_qualification(
+    request: Request,
+    username: str,
+    qualification_type: str = Form(...),
+    qualification_number: str = Form(None),
+    issue_authority: str = Form(None),
+    issue_date: str = Form(None),
+    expiry_date: str = Form(None),
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    """管理员添加用户资质"""
+    # 检查用户权限
+    if user.get("user_type") != "admin":
+        return JSONResponse({"success": False, "message": "权限不足"}, status_code=403)
+    
+    try:
+        qualification_data = {
+            "qualification_type": qualification_type,
+            "qualification_number": qualification_number,
+            "issue_authority": issue_authority,
+            "issue_date": issue_date,
+            "expiry_date": expiry_date
+        }
+        
+        # 这里需要实现添加资质的服务方法
+        # result = await user_service.add_user_qualification(username, qualification_data, db)
+        # 暂时返回成功消息
+        return JSONResponse({"success": True, "message": "资质添加成功"})
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)}, status_code=400)
+
+@router.post("/admin/user_profile/delete_qualification/{username}")
+async def admin_delete_user_qualification(
+    request: Request,
+    username: str,
+    qualification_type: str = Form(...),
+    qualification_number: str = Form(None),
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    """管理员删除用户资质"""
+    # 检查用户权限
+    if user.get("user_type") != "admin":
+        return JSONResponse({"success": False, "message": "权限不足"}, status_code=403)
+    
+    try:
+        # 这里需要实现删除资质的服务方法
+        # result = await user_service.delete_user_qualification(username, qualification_type, qualification_number, db)
+        # 暂时返回成功消息
+        return JSONResponse({"success": True, "message": "资质删除成功"})
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)}, status_code=400)

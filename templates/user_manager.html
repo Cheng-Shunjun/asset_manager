@@ -334,6 +334,32 @@
       /* 增加最小宽度以适应新列 */
       table-layout: auto;
     }
+
+    /* 资质信息样式 */
+    .qualification-badge {
+      font-size: 0.7rem;
+      margin: 0.1rem;
+      display: inline-block;
+    }
+
+    .qualifications-container {
+      max-width: 200px;
+    }
+
+    /* 调整表格列宽 */
+    .table th:nth-child(8),
+    /* 资质信息列 */
+    .table td:nth-child(8) {
+      min-width: 150px;
+      max-width: 200px;
+    }
+
+    .table th:nth-child(9),
+    /* 操作列 */
+    .table td:nth-child(9) {
+      min-width: 200px;
+      max-width: 250px;
+    }
   </style>
 </head>
 
@@ -411,16 +437,16 @@
                   <th>用户类型</th>
                   <th>状态</th>
                   <th>入职日期</th>
-                  <th>学历</th>
                   <th>职位</th>
                   <th>部门</th>
-                  <th>联系方式</th>
+                  <th>资质信息</th> <!-- 新增列 -->
                   <th>操作</th>
                 </tr>
               </thead>
               <tbody id="usersTableBody">
                 {% for user in users %}
-                <tr data-user-type="{{ user.user_type }}" data-user-status="{{ user.status }}">
+                <tr data-user-type="{{ user.user_type }}" data-user-status="{{ user.status }}"
+                  onclick="viewUserDetail('{{ user.username }}')" style="cursor: pointer;">
                   <td>
                     <strong>{{ user.username }}</strong>
                   </td>
@@ -453,13 +479,6 @@
                     {% endif %}
                   </td>
                   <td>
-                    {% if user.education %}
-                    {{ user.education }}
-                    {% else %}
-                    <span class="text-muted">未设置</span>
-                    {% endif %}
-                  </td>
-                  <td>
                     {% if user.position %}
                     {{ user.position }}
                     {% else %}
@@ -474,29 +493,21 @@
                     {% endif %}
                   </td>
                   <td>
-                    <div class="contact-info">
-                      {% if user.phone %}
-                      <div class="mb-1">
-                        <small class="text-muted">电话:</small>
-                        <span>{{ user.phone }}</span>
-                      </div>
-                      {% endif %}
-                      {% if user.email %}
-                      <div>
-                        <small class="text-muted">邮箱:</small>
-                        <span>{{ user.email }}</span>
-                      </div>
-                      {% endif %}
-                      {% if not user.phone and not user.email %}
-                      <span class="text-muted">未设置</span>
+                    <div class="qualifications-container">
+                      {% if user.qualifications %}
+                      {% for qual in user.qualifications %}
+                      <span class="badge bg-info qualification-badge"
+                        title="{{ qual.qualification_type }} - {{ qual.qualification_number }} ({{ qual.issue_date }} 至 {{ qual.expiry_date }})">
+                        {{ qual.qualification_type }}
+                      </span>
+                      {% endfor %}
+                      {% else %}
+                      <span class="text-muted">无资质</span>
                       {% endif %}
                     </div>
                   </td>
                   <td>
                     <div class="action-buttons">
-                      <button class="btn btn-sm btn-outline-primary" onclick="editUser('{{ user.username }}')">
-                        <span class="fallback-icon">✏️</span>编辑
-                      </button>
                       <button class="btn btn-sm btn-outline-warning" onclick="toggleUserStatus('{{ user.username }}')">
                         {% if user.status == 'active' %}
                         <span class="fallback-icon">🚪</span>设为离职
@@ -974,103 +985,15 @@
       document.getElementById('hire_date').value = today;
     });
 
-    // 编辑用户功能
-    let currentEditUser = '';
-
-    // 更新编辑用户功能
-    async function editUser(username) {
-      currentEditUser = username;
-
-      try {
-        // 显示加载状态
-        const modal = new bootstrap.Modal(document.getElementById('editUserModal'));
-        modal.show();
-
-        // 设置基本信息
-        document.getElementById('edit_username').value = username;
-        document.getElementById('edit_username_display').value = username;
-
-        // 从服务器获取完整的用户信息
-        const response = await fetch(`/user_manager/get_user/${username}`);
-        const data = await response.json();
-
-        if (data.success) {
-          const user = data.user;
-
-          // 填充表单
-          document.getElementById('edit_realname').value = user.realname || '';
-          document.getElementById('edit_user_type').value = user.user_type || 'user';
-          document.getElementById('edit_status').value = user.status || 'active';
-          document.getElementById('edit_phone').value = user.phone || '';
-          document.getElementById('edit_email').value = user.email || '';
-          document.getElementById('edit_hire_date').value = user.hire_date || '';
-          document.getElementById('edit_education').value = user.education || '';
-          document.getElementById('edit_position').value = user.position || '';
-          document.getElementById('edit_department').value = user.department || '';
-        } else {
-          alert('获取用户信息失败: ' + data.message);
-          modal.hide();
-        }
-      } catch (error) {
-        alert('获取用户信息失败: ' + error);
-        const modal = bootstrap.Modal.getInstance(document.getElementById('editUserModal'));
-        modal.hide();
-      }
-    }
-
-    function submitEditUserForm(event) {
-      event.preventDefault();
-
-      const submitBtn = document.getElementById('editUserSubmitBtn');
-      const originalText = submitBtn.innerHTML;
-
-      // 禁用提交按钮防止重复提交
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 保存中...';
-
-      const formData = new FormData(event.target);
-      const username = formData.get('username');
-
-      fetch(`/user_manager/update/${username}`, {
-        method: 'POST',
-        body: new URLSearchParams(formData)
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            alert(data.message);
-            // 关闭模态框
-            const modal = bootstrap.Modal.getInstance(document.getElementById('editUserModal'));
-            modal.hide();
-            // 刷新页面
-            location.reload();
-          } else {
-            alert('保存失败: ' + data.message);
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = originalText;
-          }
-        })
-        .catch(error => {
-          alert('保存失败: ' + error);
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = originalText;
-        });
-    }
-
     function resetPasswordFromEdit() {
       const username = document.getElementById('edit_username').value;
       if (username) {
         resetPassword(username);
       }
     }
-
-    // 编辑模态框关闭时重置
-    document.getElementById('editUserModal').addEventListener('hidden.bs.modal', function () {
-      const submitBtn = document.getElementById('editUserSubmitBtn');
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = '<span class="fallback-icon">💾</span>保存修改';
-      currentEditUser = '';
-    });
+    function viewUserDetail(username) {
+      window.location.href = `/admin/user_profile/${username}`;
+    }
   </script>
 </body>
 
