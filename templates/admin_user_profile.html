@@ -1,753 +1,770 @@
-< !DOCTYPE html>
-    <html lang="zh-CN">
+<!DOCTYPE html>
+<html lang="zh-CN">
 
-    <head>
-        <meta charset="UTF-8">
-        <title>用户详情 - 资产管理系统</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-        <link rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.0/font/bootstrap-icons.min.css">
-        <style>
-            :root {
-                --primary-color: #2c80ff;
-                --secondary-color: #6c757d;
-                --success-color: #28a745;
-                --warning-color: #ffc107;
-                --info-color: #17a2b8;
-                --light-bg: #f5f7fb;
-                --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-                --hover-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
-            }
+<head>
+    <meta charset="UTF-8">
+    <title>用户详情 - 资产管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.0/font/bootstrap-icons.min.css">
+    <style>
+        :root {
+            --primary-color: #2c80ff;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+            --light-bg: #f5f7fb;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --hover-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+        }
 
-            body {
-                background-color: var(--light-bg);
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            }
+        body {
+            background-color: var(--light-bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
-            .navbar {
-                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                padding: 0.8rem 0;
-            }
+        .navbar {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 0.8rem 0;
+        }
 
+        .sidebar {
+            background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+            min-height: calc(100vh - 76px);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.08);
+            border-right: 1px solid #e9ecef;
+            padding: 0;
+        }
+
+        .nav-link {
+            color: #495057;
+            padding: 0.85rem 1.25rem;
+            border-radius: 0.5rem;
+            margin: 0.2rem 0.75rem;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            border: none;
+        }
+
+        .nav-link:hover {
+            background: linear-gradient(135deg, var(--primary-color), #1a6fd8);
+            color: white;
+            transform: translateX(5px);
+            box-shadow: var(--card-shadow);
+        }
+
+        .nav-link.active {
+            background: linear-gradient(135deg, var(--primary-color), #1a6fd8);
+            color: white;
+            box-shadow: var(--card-shadow);
+        }
+
+        .main-content {
+            padding: 2rem;
+            background-color: var(--light-bg);
+        }
+
+        .page-title {
+            color: #2c3e50;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 3px solid var(--primary-color);
+            display: inline-block;
+        }
+
+        .profile-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            background: white;
+            margin-bottom: 1.5rem;
+        }
+
+        .profile-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--hover-shadow);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), #1a6fd8);
+            color: white;
+            border-radius: 12px 12px 0 0 !important;
+            padding: 1.25rem 1.5rem;
+            font-weight: 600;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #f1f3f4;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #495057;
+            min-width: 120px;
+            margin-right: 1rem;
+        }
+
+        .info-value {
+            color: #6c757d;
+            flex: 1;
+        }
+
+        .qualification-badge {
+            background: linear-gradient(135deg, var(--success-color), #1e7e34);
+            color: white;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin: 0.25rem;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .qualification-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .edit-btn {
+            background: linear-gradient(135deg, var(--primary-color), #1a6fd8);
+            border: none;
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+            color: white;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .edit-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--card-shadow);
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(44, 128, 255, 0.25);
+        }
+
+        .fallback-icon {
+            display: inline-block;
+            width: 20px;
+            text-align: center;
+            margin-right: 8px;
+        }
+
+        .non-editable {
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.35em 0.65em;
+        }
+
+        .status-active {
+            background-color: #198754;
+            color: white;
+        }
+
+        .status-inactive {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
             .sidebar {
-                background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
-                min-height: calc(100vh - 76px);
-                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.08);
-                border-right: 1px solid #e9ecef;
-                padding: 0;
-            }
-
-            .nav-link {
-                color: #495057;
-                padding: 0.85rem 1.25rem;
-                border-radius: 0.5rem;
-                margin: 0.2rem 0.75rem;
-                transition: all 0.3s ease;
-                font-weight: 500;
-                border: none;
-            }
-
-            .nav-link:hover {
-                background: linear-gradient(135deg, var(--primary-color), #1a6fd8);
-                color: white;
-                transform: translateX(5px);
-                box-shadow: var(--card-shadow);
-            }
-
-            .nav-link.active {
-                background: linear-gradient(135deg, var(--primary-color), #1a6fd8);
-                color: white;
-                box-shadow: var(--card-shadow);
+                min-height: auto;
+                margin-bottom: 1rem;
             }
 
             .main-content {
-                padding: 2rem;
-                background-color: var(--light-bg);
-            }
-
-            .page-title {
-                color: #2c3e50;
-                font-weight: 700;
-                margin-bottom: 1.5rem;
-                padding-bottom: 0.5rem;
-                border-bottom: 3px solid var(--primary-color);
-                display: inline-block;
-            }
-
-            .profile-card {
-                border: none;
-                border-radius: 12px;
-                box-shadow: var(--card-shadow);
-                transition: all 0.3s ease;
-                background: white;
-                margin-bottom: 1.5rem;
-            }
-
-            .profile-card:hover {
-                transform: translateY(-2px);
-                box-shadow: var(--hover-shadow);
-            }
-
-            .card-header {
-                background: linear-gradient(135deg, var(--primary-color), #1a6fd8);
-                color: white;
-                border-radius: 12px 12px 0 0 !important;
-                padding: 1.25rem 1.5rem;
-                font-weight: 600;
-            }
-
-            .card-body {
-                padding: 1.5rem;
+                padding: 1rem;
             }
 
             .info-item {
-                display: flex;
-                align-items: center;
-                padding: 0.75rem 0;
-                border-bottom: 1px solid #f1f3f4;
-            }
-
-            .info-item:last-child {
-                border-bottom: none;
+                flex-direction: column;
+                align-items: flex-start;
             }
 
             .info-label {
-                font-weight: 600;
-                color: #495057;
-                min-width: 120px;
-                margin-right: 1rem;
+                min-width: auto;
+                margin-bottom: 0.25rem;
             }
+        }
 
-            .info-value {
-                color: #6c757d;
-                flex: 1;
-            }
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
 
-            .qualification-badge {
-                background: linear-gradient(135deg, var(--success-color), #1e7e34);
-                color: white;
-                padding: 0.4rem 0.8rem;
-                border-radius: 20px;
-                font-size: 0.85rem;
-                font-weight: 500;
-                margin: 0.25rem;
-                display: inline-flex;
-                align-items: center;
-            }
+        .required-field::after {
+            content: " *";
+            color: #dc3545;
+        }
 
-            .qualification-item {
-                background: #f8f9fa;
-                border-radius: 8px;
-                padding: 1rem;
-                margin-bottom: 0.75rem;
-                border-left: 4px solid var(--primary-color);
-            }
+        /* 资质模态框样式 */
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary-color), #1a6fd8);
+            color: white;
+            border-bottom: none;
+        }
 
-            .edit-btn {
-                background: linear-gradient(135deg, var(--primary-color), #1a6fd8);
-                border: none;
-                border-radius: 6px;
-                padding: 0.5rem 1rem;
-                color: white;
-                font-weight: 500;
-                transition: all 0.3s ease;
-            }
+        .modal-title {
+            font-weight: 600;
+        }
 
-            .edit-btn:hover {
-                transform: translateY(-1px);
-                box-shadow: var(--card-shadow);
-            }
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(44, 128, 255, 0.25);
+        }
+    </style>
+</head>
 
-            .form-control:focus {
-                border-color: var(--primary-color);
-                box-shadow: 0 0 0 0.2rem rgba(44, 128, 255, 0.25);
-            }
-
-            .fallback-icon {
-                display: inline-block;
-                width: 20px;
-                text-align: center;
-                margin-right: 8px;
-            }
-
-            .non-editable {
-                color: #6c757d;
-                font-style: italic;
-            }
-
-            .status-badge {
-                font-size: 0.75rem;
-                padding: 0.35em 0.65em;
-            }
-
-            .status-active {
-                background-color: #198754;
-                color: white;
-            }
-
-            .status-inactive {
-                background-color: #6c757d;
-                color: white;
-            }
-
-            @media (max-width: 768px) {
-                .sidebar {
-                    min-height: auto;
-                    margin-bottom: 1rem;
-                }
-
-                .main-content {
-                    padding: 1rem;
-                }
-
-                .info-item {
-                    flex-direction: column;
-                    align-items: flex-start;
-                }
-
-                .info-label {
-                    min-width: auto;
-                    margin-bottom: 0.25rem;
-                }
-            }
-
-            .action-buttons {
-                display: flex;
-                gap: 0.5rem;
-                margin-top: 1rem;
-            }
-
-            .required-field::after {
-                content: " *";
-                color: #dc3545;
-            }
-
-            /* 资质模态框样式 */
-            .modal-header {
-                background: linear-gradient(135deg, var(--primary-color), #1a6fd8);
-                color: white;
-                border-bottom: none;
-            }
-
-            .modal-title {
-                font-weight: 600;
-            }
-
-            .form-control:focus,
-            .form-select:focus {
-                border-color: var(--primary-color);
-                box-shadow: 0 0 0 0.2rem rgba(44, 128, 255, 0.25);
-            }
-        </style>
-    </head>
-
-    <body> <!-- 导航栏 -->
-        <nav class="navbar navbar-dark bg-primary">
-            <div class="container-fluid"> <span class="navbar-brand mb-0 h1 fw-bold"> <span
-                        class="fallback-icon">📊</span>资产管理系统 - 管理后台 </span>
-                <div> <span class="text-light me-3"> <span class="fallback-icon">👤</span>管理员, {{ current_user.username
-                        }} </span> <a href="/logout" class="btn btn-outline-light"> <span
-                            class="fallback-icon">🚪</span>退出 </a> </div>
-            </div>
-        </nav>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-dark bg-primary">
         <div class="container-fluid">
-            <div class="row">
-                <!-- 侧边栏菜单 -->
-                <div class="col-md-3 col-lg-2 sidebar">
-                    <nav class="nav flex-column p-3">
-                        <a class="nav-link" href="/admin_projects">
-                            <span class="fallback-icon">📋</span>项目管理
-                        </a>
-                        <a class="nav-link" href="/user_manager">
-                            <span class="fallback-icon">👥</span>用户管理
-                        </a>
-                        <a class="nav-link active" href="#">
-                            <span class="fallback-icon">👤</span>用户信息
-                        </a>
-                    </nav>
+            <span class="navbar-brand mb-0 h1 fw-bold">
+                <span class="fallback-icon">📊</span>资产管理系统 - 管理后台
+            </span>
+            <div>
+                <span class="text-light me-3">
+                    <span class="fallback-icon">👤</span>管理员, {{ current_user.username }}
+                </span>
+                <a href="/logout" class="btn btn-outline-light">
+                    <span class="fallback-icon">🚪</span>退出
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- 侧边栏菜单 -->
+            <div class="col-md-3 col-lg-2 sidebar">
+                <nav class="nav flex-column p-3">
+                    <a class="nav-link" href="/admin_projects">
+                        <span class="fallback-icon">📋</span>项目管理
+                    </a>
+                    <a class="nav-link" href="/user_manager">
+                        <span class="fallback-icon">👥</span>用户管理
+                    </a>
+                    <a class="nav-link active" href="#">
+                        <span class="fallback-icon">👤</span>用户信息
+                    </a>
+                </nav>
+            </div>
+
+            <!-- 主内容区 -->
+            <div class="col-md-9 col-lg-10 main-content">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="page-title">用户详情 - {{ user_profile.username }}</h3>
+                    <a href="/user_manager" class="btn btn-outline-primary">
+                        <span class="fallback-icon">⬅️</span>返回用户列表
+                    </a>
                 </div>
 
-                <!-- 主内容区 -->
-                <div class="col-md-9 col-lg-10 main-content">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3 class="page-title">用户详情 - {{ user_profile.username }}</h3>
-                        <a href="/user_manager" class="btn btn-outline-primary">
-                            <span class="fallback-icon">⬅️</span>返回用户列表
-                        </a>
+                <!-- 基本信息卡片 -->
+                <div class="card profile-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><span class="fallback-icon">👤</span>基本信息</span>
+                        <button class="btn btn-light btn-sm" onclick="toggleEditMode('basicInfo')">
+                            <span class="fallback-icon">✏️</span>编辑
+                        </button>
                     </div>
-
-                    <!-- 基本信息卡片 -->
-                    <div class="card profile-card">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <span><span class="fallback-icon">👤</span>基本信息</span>
-                            <button class="btn btn-light btn-sm" onclick="toggleEditMode('basicInfo')">
-                                <span class="fallback-icon">✏️</span>编辑
-                            </button>
-                        </div>
-                        <div class="card-body">
-                            <form id="basicInfoForm" method="post"
-                                action="/admin/user_profile/update/{{ user_profile.username }}">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="info-item">
-                                            <span class="info-label">用户名</span>
-                                            <span class="info-value non-editable">{{ user_profile.username }}</span>
-                                        </div>
-                                        <div class="info-item">
-                                            <span class="info-label">姓名</span>
-                                            <div class="info-value">
-                                                <span id="realnameDisplay">{{ user_profile.realname or '未设置' }}</span>
-                                                <input type="text" class="form-control d-none" id="realnameInput"
-                                                    name="realname" value="{{ user_profile.realname or '' }}">
-                                            </div>
-                                        </div>
-                                        <div class="info-item">
-                                            <span class="info-label">用户类型</span>
-                                            <div class="info-value">
-                                                <span id="userTypeDisplay">
-                                                    {% if user_profile.user_type == 'admin' %}
-                                                    <span class="badge bg-danger">管理员</span>
-                                                    {% else %}
-                                                    <span class="badge bg-primary">普通用户</span>
-                                                    {% endif %}
-                                                </span>
-                                                <select class="form-select d-none" id="userTypeInput" name="user_type">
-                                                    <option value="user" {% if user_profile.user_type=='user'
-                                                        %}selected{% endif %}>普通用户</option>
-                                                    <option value="admin" {% if user_profile.user_type=='admin'
-                                                        %}selected{% endif %}>管理员</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="info-item">
-                                            <span class="info-label">用户状态</span>
-                                            <div class="info-value">
-                                                <span id="statusDisplay">
-                                                    {% if user_profile.status == 'active' %}
-                                                    <span class="badge status-badge status-active">在职</span>
-                                                    {% else %}
-                                                    <span class="badge status-badge status-inactive">离职</span>
-                                                    {% endif %}
-                                                </span>
-                                                <select class="form-select d-none" id="statusInput" name="status">
-                                                    <option value="active" {% if user_profile.status=='active'
-                                                        %}selected{% endif %}>在职</option>
-                                                    <option value="inactive" {% if user_profile.status=='inactive'
-                                                        %}selected{% endif %}>离职</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="info-item">
-                                            <span class="info-label">部门</span>
-                                            <div class="info-value">
-                                                <span id="departmentDisplay">{{ user_profile.department or '未设置'
-                                                    }}</span>
-                                                <input type="text" class="form-control d-none" id="departmentInput"
-                                                    name="department" value="{{ user_profile.department or '' }}">
-                                            </div>
-                                        </div>
-                                        <div class="info-item">
-                                            <span class="info-label">职位</span>
-                                            <div class="info-value">
-                                                <span id="positionDisplay">{{ user_profile.position or '未设置' }}</span>
-                                                <input type="text" class="form-control d-none" id="positionInput"
-                                                    name="position" value="{{ user_profile.position or '' }}">
-                                            </div>
-                                        </div>
-                                        <div class="info-item">
-                                            <span class="info-label">学历</span>
-                                            <div class="info-value">
-                                                <span id="educationDisplay">{{ user_profile.education or '未设置' }}</span>
-                                                <select class="form-select d-none" id="educationInput" name="education">
-                                                    <option value="">请选择学历</option>
-                                                    <option value="专科" {% if user_profile.education=='专科' %}selected{%
-                                                        endif %}>专科</option>
-                                                    <option value="本科" {% if user_profile.education=='本科' %}selected{%
-                                                        endif %}>本科</option>
-                                                    <option value="硕士" {% if user_profile.education=='硕士' %}selected{%
-                                                        endif %}>硕士</option>
-                                                    <option value="博士" {% if user_profile.education=='博士' %}selected{%
-                                                        endif %}>博士</option>
-                                                    <option value="其他" {% if user_profile.education=='其他' %}selected{%
-                                                        endif %}>其他</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="info-item">
-                                            <span class="info-label">入职日期</span>
-                                            <div class="info-value">
-                                                <span id="hireDateDisplay">{{ user_profile.hire_date or '未设置' }}</span>
-                                                <input type="date" class="form-control d-none" id="hireDateInput"
-                                                    name="hire_date" value="{{ user_profile.hire_date or '' }}">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="d-none mt-3" id="basicInfoActions">
-                                    <button type="submit" class="btn btn-primary me-2">保存</button>
-                                    <button type="button" class="btn btn-secondary"
-                                        onclick="cancelEdit('basicInfo')">取消</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-
-                    <!-- 联系信息卡片 -->
-                    <div class="card profile-card">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <span><span class="fallback-icon">📞</span>联系信息</span>
-                            <button class="btn btn-light btn-sm" onclick="toggleEditMode('contactInfo')">
-                                <span class="fallback-icon">✏️</span>编辑
-                            </button>
-                        </div>
-                        <div class="card-body">
-                            <form id="contactInfoForm" method="post"
-                                action="/admin/user_profile/update/{{ user_profile.username }}">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="info-item">
-                                            <span class="info-label">手机号码</span>
-                                            <div class="info-value">
-                                                <span id="phoneDisplay">{{ user_profile.phone or '未设置' }}</span>
-                                                <input type="tel" class="form-control d-none" id="phoneInput"
-                                                    name="phone" value="{{ user_profile.phone or '' }}">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="info-item">
-                                            <span class="info-label">邮箱</span>
-                                            <div class="info-value">
-                                                <span id="emailDisplay">{{ user_profile.email or '未设置' }}</span>
-                                                <input type="email" class="form-control d-none" id="emailInput"
-                                                    name="email" value="{{ user_profile.email or '' }}">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="d-none mt-3" id="contactInfoActions">
-                                    <button type="submit" class="btn btn-primary me-2">保存</button>
-                                    <button type="button" class="btn btn-secondary"
-                                        onclick="cancelEdit('contactInfo')">取消</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-
-                    <!-- 系统信息卡片 -->
-                    <div class="card profile-card">
-                        <div class="card-header">
-                            <span><span class="fallback-icon">⚙️</span>系统信息</span>
-                        </div>
-                        <div class="card-body">
+                    <div class="card-body">
+                        <form id="basicInfoForm" method="post" action="/admin/user_profile/update/{{ user_profile.username }}">
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="info-item">
-                                        <span class="info-label">创建时间</span>
-                                        <span class="info-value">{{ user_profile.create_time or '未设置' }}</span>
+                                        <span class="info-label">用户名</span>
+                                        <span class="info-value non-editable">{{ user_profile.username }}</span>
                                     </div>
-                                </div>
-                                <div class="col-md-6">
                                     <div class="info-item">
-                                        <span class="info-label">更新时间</span>
-                                        <span class="info-value">{{ user_profile.update_time or '未设置' }}</span>
+                                        <span class="info-label">姓名</span>
+                                        <div class="info-value">
+                                            <span id="realnameDisplay">{{ user_profile.realname or '未设置' }}</span>
+                                            <input type="text" class="form-control d-none" id="realnameInput" name="realname"
+                                                value="{{ user_profile.realname or '' }}">
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 资质信息卡片 -->
-                    <div class="card profile-card">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <span><span class="fallback-icon">🏆</span>资质信息</span>
-                            <button class="btn btn-light btn-sm" onclick="showAddQualificationModal()">
-                                <span class="fallback-icon">➕</span>添加资质
-                            </button>
-                        </div>
-                        <div class="card-body">
-                            {% if user_qualifications %}
-                            <div class="row">
-                                {% for qual in user_qualifications %}
-                                <div class="col-md-6 mb-3">
-                                    <div class="qualification-item">
-                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                            <span class="qualification-badge">
-                                                <span class="fallback-icon">📜</span>{{ qual.qualification_type }}
+                                    <div class="info-item">
+                                        <span class="info-label">用户类型</span>
+                                        <div class="info-value">
+                                            <span id="userTypeDisplay">
+                                                {% if user_profile.user_type == 'admin' %}
+                                                <span class="badge bg-danger">管理员</span>
+                                                {% else %}
+                                                <span class="badge bg-primary">普通用户</span>
+                                                {% endif %}
                                             </span>
-                                            <div>
-                                                <button class="btn btn-sm btn-outline-warning me-1"
-                                                    onclick="editQualification('{{ qual.qualification_type }}', '{{ qual.qualification_number }}', '{{ qual.issue_date }}', '{{ qual.expiry_date }}', '{{ qual.issue_authority }}')">
-                                                    <span class="fallback-icon">✏️</span>
-                                                </button>
-                                                <button class="btn btn-sm btn-outline-danger"
-                                                    onclick="deleteQualification('{{ qual.qualification_type }}', '{{ qual.qualification_number }}')">
-                                                    <span class="fallback-icon">🗑️</span>
-                                                </button>
-                                            </div>
+                                            <select class="form-select d-none" id="userTypeInput" name="user_type">
+                                                <option value="user" {% if user_profile.user_type == 'user' %}selected{% endif %}>普通用户</option>
+                                                <option value="admin" {% if user_profile.user_type == 'admin' %}selected{% endif %}>管理员</option>
+                                            </select>
                                         </div>
-                                        {% if qual.qualification_number %}
-                                        <div class="text-muted small">
-                                            证书编号: {{ qual.qualification_number }}
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">用户状态</span>
+                                        <div class="info-value">
+                                            <span id="statusDisplay">
+                                                {% if user_profile.status == 'active' %}
+                                                <span class="badge status-badge status-active">在职</span>
+                                                {% else %}
+                                                <span class="badge status-badge status-inactive">离职</span>
+                                                {% endif %}
+                                            </span>
+                                            <select class="form-select d-none" id="statusInput" name="status">
+                                                <option value="active" {% if user_profile.status == 'active' %}selected{% endif %}>在职</option>
+                                                <option value="inactive" {% if user_profile.status == 'inactive' %}selected{% endif %}>离职</option>
+                                            </select>
                                         </div>
-                                        {% endif %}
-                                        {% if qual.issue_authority %}
-                                        <div class="text-muted small">
-                                            发证机构: {{ qual.issue_authority }}
-                                        </div>
-                                        {% endif %}
-                                        {% if qual.issue_date %}
-                                        <div class="text-muted small">
-                                            发证日期: {{ qual.issue_date }}
-                                        </div>
-                                        {% endif %}
-                                        {% if qual.expiry_date %}
-                                        <div class="text-muted small">
-                                            有效期至: {{ qual.expiry_date }}
-                                            {% if qual.expiry_date > today %}
-                                            <span class="badge bg-success ms-1">有效</span>
-                                            {% else %}
-                                            <span class="badge bg-danger ms-1">过期</span>
-                                            {% endif %}
-                                        </div>
-                                        {% endif %}
                                     </div>
                                 </div>
-                                {% endfor %}
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <span class="info-label">部门</span>
+                                        <div class="info-value">
+                                            <span id="departmentDisplay">{{ user_profile.department or '未设置' }}</span>
+                                            <input type="text" class="form-control d-none" id="departmentInput" name="department"
+                                                value="{{ user_profile.department or '' }}">
+                                        </div>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">职位</span>
+                                        <div class="info-value">
+                                            <span id="positionDisplay">{{ user_profile.position or '未设置' }}</span>
+                                            <input type="text" class="form-control d-none" id="positionInput" name="position"
+                                                value="{{ user_profile.position or '' }}">
+                                        </div>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">学历</span>
+                                        <div class="info-value">
+                                            <span id="educationDisplay">{{ user_profile.education or '未设置' }}</span>
+                                            <select class="form-select d-none" id="educationInput" name="education">
+                                                <option value="">请选择学历</option>
+                                                <option value="专科" {% if user_profile.education == '专科' %}selected{% endif %}>专科</option>
+                                                <option value="本科" {% if user_profile.education == '本科' %}selected{% endif %}>本科</option>
+                                                <option value="硕士" {% if user_profile.education == '硕士' %}selected{% endif %}>硕士</option>
+                                                <option value="博士" {% if user_profile.education == '博士' %}selected{% endif %}>博士</option>
+                                                <option value="其他" {% if user_profile.education == '其他' %}selected{% endif %}>其他</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">入职日期</span>
+                                        <div class="info-value">
+                                            <span id="hireDateDisplay">{{ user_profile.hire_date or '未设置' }}</span>
+                                            <input type="date" class="form-control d-none" id="hireDateInput" name="hire_date"
+                                                value="{{ user_profile.hire_date or '' }}">
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            {% else %}
-                            <div class="text-center text-muted py-4">
-                                <span class="fallback-icon">📝</span>
-                                <p class="mb-0">暂无资质信息</p>
+                            <div class="d-none mt-3" id="basicInfoActions">
+                                <button type="submit" class="btn btn-primary me-2">保存</button>
+                                <button type="button" class="btn btn-secondary"
+                                    onclick="cancelEdit('basicInfo')">取消</button>
                             </div>
-                            {% endif %}
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 联系信息卡片 -->
+                <div class="card profile-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><span class="fallback-icon">📞</span>联系信息</span>
+                        <button class="btn btn-light btn-sm" onclick="toggleEditMode('contactInfo')">
+                            <span class="fallback-icon">✏️</span>编辑
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <form id="contactInfoForm" method="post" action="/admin/user_profile/update/{{ user_profile.username }}">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <span class="info-label">手机号码</span>
+                                        <div class="info-value">
+                                            <span id="phoneDisplay">{{ user_profile.phone or '未设置' }}</span>
+                                            <input type="tel" class="form-control d-none" id="phoneInput" name="phone"
+                                                value="{{ user_profile.phone or '' }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <span class="info-label">邮箱</span>
+                                        <div class="info-value">
+                                            <span id="emailDisplay">{{ user_profile.email or '未设置' }}</span>
+                                            <input type="email" class="form-control d-none" id="emailInput" name="email"
+                                                value="{{ user_profile.email or '' }}">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-none mt-3" id="contactInfoActions">
+                                <button type="submit" class="btn btn-primary me-2">保存</button>
+                                <button type="button" class="btn btn-secondary"
+                                    onclick="cancelEdit('contactInfo')">取消</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 系统信息卡片 -->
+                <div class="card profile-card">
+                    <div class="card-header">
+                        <span><span class="fallback-icon">⚙️</span>系统信息</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <span class="info-label">创建时间</span>
+                                    <span class="info-value">{{ user_profile.create_time or '未设置' }}</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <span class="info-label">更新时间</span>
+                                    <span class="info-value">{{ user_profile.update_time or '未设置' }}</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- 操作按钮 -->
-                    <div class="action-buttons">
-                        <button class="btn btn-warning" onclick="resetPassword('{{ user_profile.username }}')">
-                            <span class="fallback-icon">🔄</span>重置密码
+                <!-- 资质信息卡片 -->
+                <div class="card profile-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><span class="fallback-icon">🏆</span>资质信息</span>
+                        <button class="btn btn-light btn-sm" onclick="showAddQualificationModal()">
+                            <span class="fallback-icon">➕</span>添加资质
                         </button>
-                        {% if user_profile.username != current_user.username %}
-                        <button class="btn btn-danger" onclick="deleteUser('{{ user_profile.username }}')">
-                            <span class="fallback-icon">🗑️</span>删除用户
-                        </button>
+                    </div>
+                    <div class="card-body">
+                        {% if user_qualifications %}
+                        <div class="row">
+                            {% for qual in user_qualifications %}
+                            <div class="col-md-6 mb-3">
+                                <div class="qualification-item">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <span class="qualification-badge">
+                                            <span class="fallback-icon">📜</span>{{ qual.qualification_type }}
+                                        </span>
+                                        <div>
+                                            <button class="btn btn-sm btn-outline-danger"
+                                                    onclick="deleteQualification('{{ qual.qualification_type }}', '{{ qual.qualification_number }}')">
+                                                <span class="fallback-icon">🗑️</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {% if qual.qualification_number %}
+                                    <div class="text-muted small">
+                                        证书编号: {{ qual.qualification_number }}
+                                    </div>
+                                    {% endif %}
+                                    {% if qual.issue_authority %}
+                                    <div class="text-muted small">
+                                        发证机构: {{ qual.issue_authority }}
+                                    </div>
+                                    {% endif %}
+                                    {% if qual.issue_date %}
+                                    <div class="text-muted small">
+                                        发证日期: {{ qual.issue_date }}
+                                    </div>
+                                    {% endif %}
+                                    {% if qual.expiry_date %}
+                                    <div class="text-muted small">
+                                        有效期至: {{ qual.expiry_date }}
+                                        {% if qual.expiry_date > today %}
+                                        <span class="badge bg-success ms-1">有效</span>
+                                        {% else %}
+                                        <span class="badge bg-danger ms-1">过期</span>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center text-muted py-4">
+                            <span class="fallback-icon">📝</span>
+                            <p class="mb-0">暂无资质信息</p>
+                        </div>
                         {% endif %}
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- 添加资质模态框 -->
-        <div class="modal fade" id="addQualificationModal" tabindex="-1" aria-labelledby="addQualificationModalLabel"
-            aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="addQualificationModalLabel">
-                            <span class="fallback-icon">➕</span>添加资质
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <form id="addQualificationForm" method="post"
-                        action="/admin/user_profile/add_qualification/{{ user_profile.username }}">
-                        <div class="modal-body">
-                            <div class="mb-3">
-                                <label for="qualification_type" class="form-label required-field">资质类型</label>
-                                <select class="form-select" id="qualification_type" name="qualification_type" required>
-                                    <option value="">请选择资质类型</option>
-                                    <option value="土地估价师">土地估价师</option>
-                                    <option value="资产评估师">资产评估师</option>
-                                    <option value="房地产估价师">房地产估价师</option>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label for="qualification_number" class="form-label">证书编号</label>
-                                <input type="text" class="form-control" id="qualification_number"
-                                    name="qualification_number" placeholder="请输入证书编号">
-                            </div>
-                            <div class="mb-3">
-                                <label for="issue_authority" class="form-label">发证机构</label>
-                                <input type="text" class="form-control" id="issue_authority" name="issue_authority"
-                                    placeholder="请输入发证机构">
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="issue_date" class="form-label">发证日期</label>
-                                        <input type="date" class="form-control" id="issue_date" name="issue_date">
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="expiry_date" class="form-label">有效期至</label>
-                                        <input type="date" class="form-control" id="expiry_date" name="expiry_date">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                            <button type="submit" class="btn btn-primary">添加</button>
-                        </div>
-                    </form>
+                <!-- 操作按钮 -->
+                <div class="action-buttons">
+                    <button class="btn btn-warning" onclick="resetPassword('{{ user_profile.username }}')">
+                        <span class="fallback-icon">🔄</span>重置密码
+                    </button>
+                    {% if user_profile.username != current_user.username %}
+                    <button class="btn btn-danger" onclick="deleteUser('{{ user_profile.username }}')">
+                        <span class="fallback-icon">🗑️</span>删除用户
+                    </button>
+                    {% endif %}
                 </div>
             </div>
         </div>
+    </div>
 
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-        <script>
-            // 编辑模式切换
-            function toggleEditMode(section) {
-                const displayElements = document.querySelectorAll(`#${section}Form .info-value span`);
-                const inputElements = document.querySelectorAll(`#${section}Form .info-value input, #${section}Form .info-value select`);
-                const actionsElement = document.getElementById(`${section}Actions`);
+    <!-- 添加资质模态框 -->
+    <div class="modal fade" id="addQualificationModal" tabindex="-1" aria-labelledby="addQualificationModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addQualificationModalLabel">
+                        <span class="fallback-icon">➕</span>添加资质
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="addQualificationForm" method="post" action="/admin/user_profile/add_qualification/{{ user_profile.username }}">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="qualification_type" class="form-label required-field">资质类型</label>
+                            <select class="form-select" id="qualification_type" name="qualification_type" required>
+                                <option value="">请选择资质类型</option>
+                                <option value="土地估价师">土地估价师</option>
+                                <option value="资产评估师">资产评估师</option>
+                                <option value="房地产估价师">房地产估价师</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="qualification_number" class="form-label">证书编号</label>
+                            <input type="text" class="form-control" id="qualification_number" name="qualification_number" 
+                                   placeholder="请输入证书编号">
+                        </div>
+                        <div class="mb-3">
+                            <label for="issue_authority" class="form-label">发证机构</label>
+                            <input type="text" class="form-control" id="issue_authority" name="issue_authority" 
+                                   placeholder="请输入发证机构">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="issue_date" class="form-label">发证日期</label>
+                                    <input type="date" class="form-control" id="issue_date" name="issue_date">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="expiry_date" class="form-label">有效期至</label>
+                                    <input type="date" class="form-control" id="expiry_date" name="expiry_date">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="submit" class="btn btn-primary">添加</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
-                displayElements.forEach(el => el.classList.add('d-none'));
-                inputElements.forEach(el => el.classList.remove('d-none'));
-                actionsElement.classList.remove('d-none');
-            }
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 编辑模式切换
+        function toggleEditMode(section) {
+            const displayElements = document.querySelectorAll(`#${section}Form .info-value span`);
+            const inputElements = document.querySelectorAll(`#${section}Form .info-value input, #${section}Form .info-value select`);
+            const actionsElement = document.getElementById(`${section}Actions`);
 
-            // 取消编辑
-            function cancelEdit(section) {
-                const displayElements = document.querySelectorAll(`#${section}Form .info-value span`);
-                const inputElements = document.querySelectorAll(`#${section}Form .info-value input, #${section}Form .info-value select`);
-                const actionsElement = document.getElementById(`${section}Actions`);
+            displayElements.forEach(el => el.classList.add('d-none'));
+            inputElements.forEach(el => el.classList.remove('d-none'));
+            actionsElement.classList.remove('d-none');
+        }
 
-                displayElements.forEach(el => el.classList.remove('d-none'));
-                inputElements.forEach(el => el.classList.add('d-none'));
-                actionsElement.classList.add('d-none');
-            }
+        // 取消编辑
+        function cancelEdit(section) {
+            const displayElements = document.querySelectorAll(`#${section}Form .info-value span`);
+            const inputElements = document.querySelectorAll(`#${section}Form .info-value input, #${section}Form .info-value select`);
+            const actionsElement = document.getElementById(`${section}Actions`);
 
-            // 表单提交处理
-            function setupFormSubmit(formId) {
-                document.getElementById(formId).addEventListener('submit', function (e) {
-                    e.preventDefault();
+            displayElements.forEach(el => el.classList.remove('d-none'));
+            inputElements.forEach(el => el.classList.add('d-none'));
+            actionsElement.classList.add('d-none');
+        }
 
-                    const formData = new FormData(this);
-                    fetch(this.action, {
-                        method: 'POST',
-                        body: formData
-                    })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                alert(data.message);
-                                location.reload();
-                            } else {
-                                alert('保存失败: ' + data.message);
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            alert('保存失败，请重试');
-                        });
-                });
-            }
+        // 表单提交处理
+        function setupFormSubmit(formId) {
+            document.getElementById(formId).addEventListener('submit', function (e) {
+                e.preventDefault();
 
-            // 初始化表单提交
-            document.addEventListener('DOMContentLoaded', function () {
-                setupFormSubmit('basicInfoForm');
-                setupFormSubmit('contactInfoForm');
-                setupFormSubmit('addQualificationForm');
-            });
-
-            // 显示添加资质模态框
-            function showAddQualificationModal() {
-                const modal = new bootstrap.Modal(document.getElementById('addQualificationModal'));
-                modal.show();
-            }
-
-            // 编辑资质
-            function editQualification(type, number, issueDate, expiryDate, authority) {
-                // 这里可以实现编辑资质的逻辑
-                alert('编辑资质功能待实现: ' + type);
-            }
-
-            // 删除资质
-            // 删除资质
-            function deleteQualification(type, number) {
-                const message = number
-                    ? `确定要删除资质 "${type}" (编号: ${number}) 吗？`
-                    : `确定要删除资质 "${type}" 吗？`;
-
-                if (confirm(message)) {
-                    fetch(`/admin/user_profile/delete_qualification/{{ user_profile.username }}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                        body: `qualification_type=${encodeURIComponent(type)}&qualification_number=${encodeURIComponent(number || '')}`
-                    })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                alert(data.message);
-                                location.reload();
-                            } else {
-                                alert('删除失败: ' + data.message);
-                            }
-                        })
-                        .catch(error => {
-                            alert('删除失败: ' + error);
-                        });
-                }
-            }
-
-            // 重置密码
-            function resetPassword(username) {
-                const newPassword = prompt('请输入新密码（至少8位）:');
-                if (newPassword && newPassword.length >= 8) {
-                    fetch(`/user_manager/reset_password/${username}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                        body: 'new_password=' + encodeURIComponent(newPassword)
-                    })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                alert(data.message);
-                            } else {
-                                alert('密码重置失败: ' + data.message);
-                            }
-                        })
-                        .catch(error => {
-                            alert('密码重置失败: ' + error);
-                        });
-                } else if (newPassword) {
-                    alert('密码长度至少8位');
-                }
-            }
-
-            // 删除用户
-            function deleteUser(username) {
-                if (confirm('确定要删除用户 "' + username + '" 吗？此操作不可恢复！')) {
-                    fetch(`/user_manager/delete/${username}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
+                const formData = new FormData(this);
+                fetch(this.action, {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(data.message);
+                            location.reload();
+                        } else {
+                            alert('保存失败: ' + data.message);
                         }
                     })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                alert(data.message);
-                                window.location.href = '/user_manager';
-                            } else {
-                                alert('删除失败: ' + data.message);
-                            }
-                        })
-                        .catch(error => {
-                            alert('删除失败: ' + error);
-                        });
-                }
-            }
-        </script>
-    </body>
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('保存失败，请重试');
+                    });
+            });
+        }
 
-    </html>
+        // 初始化表单提交
+        document.addEventListener('DOMContentLoaded', function () {
+            setupFormSubmit('basicInfoForm');
+            setupFormSubmit('contactInfoForm');
+            setupFormSubmit('addQualificationForm');
+        });
+
+        // 显示添加资质模态框
+        function showAddQualificationModal() {
+            const modal = new bootstrap.Modal(document.getElementById('addQualificationModal'));
+            modal.show();
+        }
+
+        // 删除资质
+        function deleteQualification(type, number) {
+            const message = number 
+                ? `确定要删除资质 "${type}" (编号: ${number}) 吗？`
+                : `确定要删除资质 "${type}" 吗？`;
+            
+            if (confirm(message)) {
+                fetch(`/admin/user_profile/delete_qualification/{{ user_profile.username }}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `qualification_type=${encodeURIComponent(type)}&qualification_number=${encodeURIComponent(number || '')}`
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(data.message);
+                            location.reload();
+                        } else {
+                            alert('删除失败: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        alert('删除失败: ' + error);
+                    });
+            }
+        }
+
+        // 重置密码
+        function resetPassword(username) {
+            const newPassword = prompt('请输入新密码（至少8位）:');
+            if (newPassword && newPassword.length >= 8) {
+                fetch(`/user_manager/reset_password/${username}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'new_password=' + encodeURIComponent(newPassword)
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(data.message);
+                        } else {
+                            alert('密码重置失败: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        alert('密码重置失败: ' + error);
+                    });
+            } else if (newPassword) {
+                alert('密码长度至少8位');
+            }
+        }
+
+        // 删除用户
+        function deleteUser(username) {
+            if (confirm('确定要删除用户 "' + username + '" 吗？此操作不可恢复！')) {
+                fetch(`/user_manager/delete/${username}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(data.message);
+                            window.location.href = '/user_manager';
+                        } else {
+                            alert('删除失败: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        alert('删除失败: ' + error);
+                    });
+            }
+        }
+
+        // 资质表单提交处理
+        document.getElementById('addQualificationForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            fetch(this.action, {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        // 关闭模态框
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('addQualificationModal'));
+                        modal.hide();
+                        // 刷新页面
+                        location.reload();
+                    } else {
+                        alert('添加失败: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('添加失败，请重试');
+                });
+        });
+
+        // 模态框关闭时重置表单
+        document.getElementById('addQualificationModal').addEventListener('hidden.bs.modal', function () {
+            document.getElementById('addQualificationForm').reset();
+        });
+    </script>
+</body>
+
+</html>
