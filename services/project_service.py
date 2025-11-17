@@ -46,13 +46,11 @@ class ProjectService:
         c = db.cursor()
         c.execute("SELECT * FROM projects ORDER BY start_date DESC")
         projects = c.fetchall()
-        print(len(projects))
 
         projects_list = []
         years = set()
 
         for p in projects:
-            print(p['name'])
             project_dict = {
                 "id": p["id"],
                 "project_no": p["project_no"],

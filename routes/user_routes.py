@@ -490,12 +490,12 @@ async def admin_add_user_qualification(
             "expiry_date": expiry_date
         }
         
-        # 这里需要实现添加资质的服务方法
-        # result = await user_service.add_user_qualification(username, qualification_data, db)
-        # 暂时返回成功消息
-        return JSONResponse({"success": True, "message": "资质添加成功"})
+        result = await user_service.add_user_qualification(username, qualification_data, db)
+        return JSONResponse({"success": True, "message": result["message"]})
+    except HTTPException as e:
+        return JSONResponse({"success": False, "message": e.detail}, status_code=e.status_code)
     except Exception as e:
-        return JSONResponse({"success": False, "message": str(e)}, status_code=400)
+        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
 
 @router.post("/admin/user_profile/delete_qualification/{username}")
 async def admin_delete_user_qualification(
@@ -512,9 +512,9 @@ async def admin_delete_user_qualification(
         return JSONResponse({"success": False, "message": "权限不足"}, status_code=403)
     
     try:
-        # 这里需要实现删除资质的服务方法
-        # result = await user_service.delete_user_qualification(username, qualification_type, qualification_number, db)
-        # 暂时返回成功消息
-        return JSONResponse({"success": True, "message": "资质删除成功"})
+        result = await user_service.delete_user_qualification(username, qualification_type, qualification_number, db)
+        return JSONResponse({"success": True, "message": result["message"]})
+    except HTTPException as e:
+        return JSONResponse({"success": False, "message": e.detail}, status_code=e.status_code)
     except Exception as e:
-        return JSONResponse({"success": False, "message": str(e)}, status_code=400)
+        return JSONResponse({"success": False, "message": str(e)}, status_code=500)

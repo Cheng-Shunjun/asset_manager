@@ -216,6 +216,28 @@
                 gap: 0.5rem;
                 margin-top: 1rem;
             }
+
+            .required-field::after {
+                content: " *";
+                color: #dc3545;
+            }
+
+            /* 资质模态框样式 */
+            .modal-header {
+                background: linear-gradient(135deg, var(--primary-color), #1a6fd8);
+                color: white;
+                border-bottom: none;
+            }
+
+            .modal-title {
+                font-weight: 600;
+            }
+
+            .form-control:focus,
+            .form-select:focus {
+                border-color: var(--primary-color);
+                box-shadow: 0 0 0 0.2rem rgba(44, 128, 255, 0.25);
+            }
         </style>
     </head>
 
@@ -534,18 +556,23 @@
                         action="/admin/user_profile/add_qualification/{{ user_profile.username }}">
                         <div class="modal-body">
                             <div class="mb-3">
-                                <label for="qualification_type" class="form-label">资质类型</label>
-                                <input type="text" class="form-control" id="qualification_type"
-                                    name="qualification_type" required>
+                                <label for="qualification_type" class="form-label required-field">资质类型</label>
+                                <select class="form-select" id="qualification_type" name="qualification_type" required>
+                                    <option value="">请选择资质类型</option>
+                                    <option value="土地估价师">土地估价师</option>
+                                    <option value="资产评估师">资产评估师</option>
+                                    <option value="房地产估价师">房地产估价师</option>
+                                </select>
                             </div>
                             <div class="mb-3">
                                 <label for="qualification_number" class="form-label">证书编号</label>
                                 <input type="text" class="form-control" id="qualification_number"
-                                    name="qualification_number">
+                                    name="qualification_number" placeholder="请输入证书编号">
                             </div>
                             <div class="mb-3">
                                 <label for="issue_authority" class="form-label">发证机构</label>
-                                <input type="text" class="form-control" id="issue_authority" name="issue_authority">
+                                <input type="text" class="form-control" id="issue_authority" name="issue_authority"
+                                    placeholder="请输入发证机构">
                             </div>
                             <div class="row">
                                 <div class="col-md-6">
@@ -641,14 +668,19 @@
             }
 
             // 删除资质
+            // 删除资质
             function deleteQualification(type, number) {
-                if (confirm(`确定要删除资质 "${type}" 吗？`)) {
+                const message = number
+                    ? `确定要删除资质 "${type}" (编号: ${number}) 吗？`
+                    : `确定要删除资质 "${type}" 吗？`;
+
+                if (confirm(message)) {
                     fetch(`/admin/user_profile/delete_qualification/{{ user_profile.username }}`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/x-www-form-urlencoded',
                         },
-                        body: `qualification_type=${encodeURIComponent(type)}&qualification_number=${encodeURIComponent(number)}`
+                        body: `qualification_type=${encodeURIComponent(type)}&qualification_number=${encodeURIComponent(number || '')}`
                     })
                         .then(response => response.json())
                         .then(data => {

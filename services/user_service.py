@@ -636,6 +636,20 @@ class UserService:
         if not c.fetchone():
             raise HTTPException(status_code=404, detail="用户不存在")
         
+        # 检查资质类型是否有效
+        valid_qualifications = ["土地估价师", "资产评估师", "房地产估价师"]
+        if qualification_data.get("qualification_type") not in valid_qualifications:
+            raise HTTPException(status_code=400, detail="无效的资质类型")
+        
+        # 检查是否已存在相同类型的资质
+        c.execute("""
+            SELECT id FROM user_qualifications 
+            WHERE username = ? AND qualification_type = ?
+        """, (username, qualification_data.get("qualification_type")))
+        
+        if c.fetchone():
+            raise HTTPException(status_code=400, detail="该用户已拥有此类型资质")
+        
         # 插入资质信息
         c.execute("""
             INSERT INTO user_qualifications 
@@ -656,6 +670,21 @@ class UserService:
     async def delete_user_qualification(self, username: str, qualification_type: str, qualification_number: str, db):
         """删除用户资质"""
         c = db.cursor()
+        
+        # 检查资质是否存在
+        if qualification_number:
+            c.execute("""
+                SELECT id FROM user_qualifications 
+                WHERE username = ? AND qualification_type = ? AND qualification_number = ?
+            """, (username, qualification_type, qualification_number))
+        else:
+            c.execute("""
+                SELECT id FROM user_qualifications 
+                WHERE username = ? AND qualification_type = ?
+            """, (username, qualification_type))
+        
+        if not c.fetchone():
+            raise HTTPException(status_code=404, detail="资质不存在")
         
         # 删除资质信息
         if qualification_number:
