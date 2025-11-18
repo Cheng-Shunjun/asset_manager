@@ -294,7 +294,8 @@
                         </button>
                     </div>
                     <div class="card-body">
-                        <form id="basicInfoForm" method="post" action="/admin/user_profile/update/{{ user_profile.username }}">
+                        <form id="basicInfoForm" method="post"
+                            action="/admin/user_profile/update/{{ user_profile.username }}">
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="info-item">
@@ -305,8 +306,8 @@
                                         <span class="info-label">姓名</span>
                                         <div class="info-value">
                                             <span id="realnameDisplay">{{ user_profile.realname or '未设置' }}</span>
-                                            <input type="text" class="form-control d-none" id="realnameInput" name="realname"
-                                                value="{{ user_profile.realname or '' }}">
+                                            <input type="text" class="form-control d-none" id="realnameInput"
+                                                name="realname" value="{{ user_profile.realname or '' }}">
                                         </div>
                                     </div>
                                     <div class="info-item">
@@ -320,8 +321,10 @@
                                                 {% endif %}
                                             </span>
                                             <select class="form-select d-none" id="userTypeInput" name="user_type">
-                                                <option value="user" {% if user_profile.user_type == 'user' %}selected{% endif %}>普通用户</option>
-                                                <option value="admin" {% if user_profile.user_type == 'admin' %}selected{% endif %}>管理员</option>
+                                                <option value="user" {% if user_profile.user_type=='user' %}selected{%
+                                                    endif %}>普通用户</option>
+                                                <option value="admin" {% if user_profile.user_type=='admin' %}selected{%
+                                                    endif %}>管理员</option>
                                             </select>
                                         </div>
                                     </div>
@@ -336,8 +339,10 @@
                                                 {% endif %}
                                             </span>
                                             <select class="form-select d-none" id="statusInput" name="status">
-                                                <option value="active" {% if user_profile.status == 'active' %}selected{% endif %}>在职</option>
-                                                <option value="inactive" {% if user_profile.status == 'inactive' %}selected{% endif %}>离职</option>
+                                                <option value="active" {% if user_profile.status=='active' %}selected{%
+                                                    endif %}>在职</option>
+                                                <option value="inactive" {% if user_profile.status=='inactive'
+                                                    %}selected{% endif %}>离职</option>
                                             </select>
                                         </div>
                                     </div>
@@ -347,16 +352,16 @@
                                         <span class="info-label">部门</span>
                                         <div class="info-value">
                                             <span id="departmentDisplay">{{ user_profile.department or '未设置' }}</span>
-                                            <input type="text" class="form-control d-none" id="departmentInput" name="department"
-                                                value="{{ user_profile.department or '' }}">
+                                            <input type="text" class="form-control d-none" id="departmentInput"
+                                                name="department" value="{{ user_profile.department or '' }}">
                                         </div>
                                     </div>
                                     <div class="info-item">
                                         <span class="info-label">职位</span>
                                         <div class="info-value">
                                             <span id="positionDisplay">{{ user_profile.position or '未设置' }}</span>
-                                            <input type="text" class="form-control d-none" id="positionInput" name="position"
-                                                value="{{ user_profile.position or '' }}">
+                                            <input type="text" class="form-control d-none" id="positionInput"
+                                                name="position" value="{{ user_profile.position or '' }}">
                                         </div>
                                     </div>
                                     <div class="info-item">
@@ -365,11 +370,16 @@
                                             <span id="educationDisplay">{{ user_profile.education or '未设置' }}</span>
                                             <select class="form-select d-none" id="educationInput" name="education">
                                                 <option value="">请选择学历</option>
-                                                <option value="专科" {% if user_profile.education == '专科' %}selected{% endif %}>专科</option>
-                                                <option value="本科" {% if user_profile.education == '本科' %}selected{% endif %}>本科</option>
-                                                <option value="硕士" {% if user_profile.education == '硕士' %}selected{% endif %}>硕士</option>
-                                                <option value="博士" {% if user_profile.education == '博士' %}selected{% endif %}>博士</option>
-                                                <option value="其他" {% if user_profile.education == '其他' %}selected{% endif %}>其他</option>
+                                                <option value="专科" {% if user_profile.education=='专科' %}selected{% endif
+                                                    %}>专科</option>
+                                                <option value="本科" {% if user_profile.education=='本科' %}selected{% endif
+                                                    %}>本科</option>
+                                                <option value="硕士" {% if user_profile.education=='硕士' %}selected{% endif
+                                                    %}>硕士</option>
+                                                <option value="博士" {% if user_profile.education=='博士' %}selected{% endif
+                                                    %}>博士</option>
+                                                <option value="其他" {% if user_profile.education=='其他' %}selected{% endif
+                                                    %}>其他</option>
                                             </select>
                                         </div>
                                     </div>
@@ -377,8 +387,8 @@
                                         <span class="info-label">入职日期</span>
                                         <div class="info-value">
                                             <span id="hireDateDisplay">{{ user_profile.hire_date or '未设置' }}</span>
-                                            <input type="date" class="form-control d-none" id="hireDateInput" name="hire_date"
-                                                value="{{ user_profile.hire_date or '' }}">
+                                            <input type="date" class="form-control d-none" id="hireDateInput"
+                                                name="hire_date" value="{{ user_profile.hire_date or '' }}">
                                         </div>
                                     </div>
                                 </div>
@@ -401,7 +411,8 @@
                         </button>
                     </div>
                     <div class="card-body">
-                        <form id="contactInfoForm" method="post" action="/admin/user_profile/update/{{ user_profile.username }}">
+                        <form id="contactInfoForm" method="post"
+                            action="/admin/user_profile/update/{{ user_profile.username }}">
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="info-item">
@@ -476,7 +487,7 @@
                                         </span>
                                         <div>
                                             <button class="btn btn-sm btn-outline-danger"
-                                                    onclick="deleteQualification('{{ qual.qualification_type }}', '{{ qual.qualification_number }}')">
+                                                onclick="deleteQualification('{{ qual.qualification_type }}', '{{ qual.qualification_number }}')">
                                                 <span class="fallback-icon">🗑️</span>
                                             </button>
                                         </div>
@@ -535,7 +546,8 @@
     </div>
 
     <!-- 添加资质模态框 -->
-    <div class="modal fade" id="addQualificationModal" tabindex="-1" aria-labelledby="addQualificationModalLabel" aria-hidden="true">
+    <div class="modal fade" id="addQualificationModal" tabindex="-1" aria-labelledby="addQualificationModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -544,7 +556,8 @@
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form id="addQualificationForm" method="post" action="/admin/user_profile/add_qualification/{{ user_profile.username }}">
+                <form id="addQualificationForm" method="post"
+                    action="/admin/user_profile/add_qualification/{{ user_profile.username }}">
                     <div class="modal-body">
                         <div class="mb-3">
                             <label for="qualification_type" class="form-label required-field">资质类型</label>
@@ -557,13 +570,13 @@
                         </div>
                         <div class="mb-3">
                             <label for="qualification_number" class="form-label">证书编号</label>
-                            <input type="text" class="form-control" id="qualification_number" name="qualification_number" 
-                                   placeholder="请输入证书编号">
+                            <input type="text" class="form-control" id="qualification_number"
+                                name="qualification_number" placeholder="请输入证书编号">
                         </div>
                         <div class="mb-3">
                             <label for="issue_authority" class="form-label">发证机构</label>
-                            <input type="text" class="form-control" id="issue_authority" name="issue_authority" 
-                                   placeholder="请输入发证机构">
+                            <input type="text" class="form-control" id="issue_authority" name="issue_authority"
+                                placeholder="请输入发证机构">
                         </div>
                         <div class="row">
                             <div class="col-md-6">
@@ -615,8 +628,21 @@
 
         // 表单提交处理
         function setupFormSubmit(formId) {
-            document.getElementById(formId).addEventListener('submit', function (e) {
+            const form = document.getElementById(formId);
+            if (!form) return;
+
+            form.addEventListener('submit', function (e) {
                 e.preventDefault();
+                e.stopPropagation(); // 阻止事件冒泡
+
+                const submitBtn = this.querySelector('button[type="submit"]');
+                const originalText = submitBtn ? submitBtn.innerHTML : '';
+
+                // 禁用提交按钮防止重复点击
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 提交中...';
+                }
 
                 const formData = new FormData(this);
                 fetch(this.action, {
@@ -627,23 +653,38 @@
                     .then(data => {
                         if (data.success) {
                             alert(data.message);
+                            if (formId === 'addQualificationForm') {
+                                // 关闭模态框
+                                const modal = bootstrap.Modal.getInstance(document.getElementById('addQualificationModal'));
+                                modal.hide();
+                            }
                             location.reload();
                         } else {
-                            alert('保存失败: ' + data.message);
+                            alert('操作失败: ' + data.message);
+                            // 重新启用提交按钮
+                            if (submitBtn) {
+                                submitBtn.disabled = false;
+                                submitBtn.innerHTML = originalText;
+                            }
                         }
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        alert('保存失败，请重试');
+                        alert('操作失败，请重试');
+                        // 重新启用提交按钮
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = originalText;
+                        }
                     });
             });
         }
 
-        // 初始化表单提交
+        // 初始化表单提交 - 只初始化一次
         document.addEventListener('DOMContentLoaded', function () {
             setupFormSubmit('basicInfoForm');
             setupFormSubmit('contactInfoForm');
-            setupFormSubmit('addQualificationForm');
+            setupFormSubmit('addQualificationForm'); // 只在这里初始化一次
         });
 
         // 显示添加资质模态框
@@ -654,10 +695,10 @@
 
         // 删除资质
         function deleteQualification(type, number) {
-            const message = number 
+            const message = number
                 ? `确定要删除资质 "${type}" (编号: ${number}) 吗？`
                 : `确定要删除资质 "${type}" 吗？`;
-            
+
             if (confirm(message)) {
                 fetch(`/admin/user_profile/delete_qualification/{{ user_profile.username }}`, {
                     method: 'POST',
@@ -732,37 +773,15 @@
             }
         }
 
-        // 资质表单提交处理
-        document.getElementById('addQualificationForm').addEventListener('submit', function (e) {
-            e.preventDefault();
-
-            const formData = new FormData(this);
-            fetch(this.action, {
-                method: 'POST',
-                body: formData
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert(data.message);
-                        // 关闭模态框
-                        const modal = bootstrap.Modal.getInstance(document.getElementById('addQualificationModal'));
-                        modal.hide();
-                        // 刷新页面
-                        location.reload();
-                    } else {
-                        alert('添加失败: ' + data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('添加失败，请重试');
-                });
-        });
-
         // 模态框关闭时重置表单
         document.getElementById('addQualificationModal').addEventListener('hidden.bs.modal', function () {
             document.getElementById('addQualificationForm').reset();
+            // 重置提交按钮状态
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '添加';
+            }
         });
     </script>
 </body>
