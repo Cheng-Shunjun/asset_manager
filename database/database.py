@@ -60,6 +60,18 @@ class Database:
             UNIQUE(username, qualification_type)
         )
         """)
+        # 公司资质表
+        c.execute('''CREATE TABLE IF NOT EXISTS company_qualifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            certificate_name TEXT NOT NULL,
+            category TEXT NOT NULL,
+            owner TEXT,
+            file_path TEXT NOT NULL,
+            file_name TEXT NOT NULL,
+            update_time TEXT DEFAULT CURRENT_TIMESTAMP,
+            uploader_username TEXT,
+            status TEXT DEFAULT 'active'
+        )''')
         
         # 项目表
         c.execute('''CREATE TABLE IF NOT EXISTS projects (

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>公司资质 - 资产管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.0/font/bootstrap-icons.min.css">
+    <style>
+        :root {
+            --primary-color: #2c80ff;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+            --light-bg: #f5f7fb;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --hover-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        body {
+            background-color: var(--light-bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 0.8rem 0;
+        }
+
+        .sidebar {
+            background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+            min-height: calc(100vh - 76px);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.08);
+            border-right: 1px solid #e9ecef;
+            padding: 0;
+        }
+
+        .nav-link {
+            color: #495057;
+            padding: 0.85rem 1.25rem;
+            border-radius: 0.5rem;
+            margin: 0.2rem 0.75rem;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            border: none;
+        }
+
+        .nav-link:hover {
+            background: linear-gradient(135deg, var(--primary-color), #1a6fd8);
+            color: white;
+            transform: translateX(5px);
+            box-shadow: var(--card-shadow);
+        }
+
+        .nav-link.active {
+            background: linear-gradient(135deg, var(--primary-color), #1a6fd8);
+            color: white;
+            box-shadow: var(--card-shadow);
+        }
+
+        .main-content {
+            padding: 2rem;
+            background-color: var(--light-bg);
+        }
+
+        .page-title {
+            color: #2c3e50;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 3px solid var(--primary-color);
+            display: inline-block;
+        }
+
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            background: white;
+            margin-bottom: 1.5rem;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--hover-shadow);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), #1a6fd8);
+            color: white;
+            border-radius: 12px 12px 0 0 !important;
+            padding: 1.25rem 1.5rem;
+            font-weight: 600;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .filter-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-label {
+            font-weight: 600;
+            color: #495057;
+            margin-right: 1rem;
+        }
+
+        .filter-badge {
+            background: white;
+            border: 1px solid #dee2e6;
+            color: #495057;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .filter-badge:hover {
+            background: #e9ecef;
+        }
+
+        .filter-badge.active {
+            background: linear-gradient(135deg, var(--primary-color), #1a6fd8);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table th {
+            background-color: #f8f9fa;
+            border-top: none;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .table td {
+            vertical-align: middle;
+            border-color: #f1f3f4;
+        }
+
+        .table tbody tr:hover {
+            background-color: rgba(44, 128, 255, 0.05);
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, var(--success-color), #1e7e34);
+            border: none;
+            border-radius: 6px;
+            padding: 0.4rem 0.8rem;
+            color: white;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--card-shadow);
+            color: white;
+        }
+
+        .badge-category {
+            background: linear-gradient(135deg, var(--info-color), #138496);
+            color: white;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .fallback-icon {
+            display: inline-block;
+            width: 20px;
+            text-align: center;
+            margin-right: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                min-height: auto;
+                margin-bottom: 1rem;
+            }
+
+            .main-content {
+                padding: 1rem;
+            }
+
+            .filter-badge {
+                display: block;
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-dark bg-primary">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1 fw-bold">
+                <span class="fallback-icon">📊</span>资产管理系统 - 用户中心
+            </span>
+            <div>
+                <span class="text-light me-3">
+                    <span class="fallback-icon">👤</span>欢迎, {{ user.username }}
+                </span>
+                {% if user.user_type == 'admin' %}
+                <a href="/admin_projects" class="btn btn-light me-2">
+                    <span class="fallback-icon">⚙️</span>管理后台
+                </a>
+                {% endif %}
+                <a href="/logout" class="btn btn-outline-light">
+                    <span class="fallback-icon">🚪</span>退出
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-3 col-lg-2 sidebar">
+                <nav class="nav flex-column p-3">
+                    <a class="nav-link" href="/user_dashboard">
+                        <span class="fallback-icon">📊</span>Dashboard
+                    </a>
+                    <a class="nav-link" href="/user_profile">
+                        <span class="fallback-icon">👤</span>个人信息
+                    </a>
+                    <a class="nav-link active" href="/company_qualifications">
+                        <span class="fallback-icon">📜</span>公司资质
+                    </a>
+                    <a class="nav-link" href="/create_project">
+                        <span class="fallback-icon">➕</span>创建项目
+                    </a>
+                </nav>
+            </div>
+
+            <!-- 主内容区 -->
+            <div class="col-md-9 col-lg-10 main-content">
+                <h3 class="page-title">公司资质</h3>
+
+                <!-- 筛选器卡片 -->
+                <div class="card">
+                    <div class="card-header">
+                        <span><span class="fallback-icon">🔍</span>资质筛选</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="filter-section">
+                            <div class="d-flex flex-wrap align-items-center">
+                                <span class="filter-label">证书类别:</span>
+                                <a href="/company_qualifications" class="filter-badge {% if not current_category or current_category == 'all' %}active{% endif %}">
+                                    全部
+                                </a>
+                                <a href="/company_qualifications?category=营业执照" class="filter-badge {% if current_category == '营业执照' %}active{% endif %}">
+                                    营业执照
+                                </a>
+                                <a href="/company_qualifications?category=房地产估价师" class="filter-badge {% if current_category == '房地产估价师' %}active{% endif %}">
+                                    房地产估价师
+                                </a>
+                                <a href="/company_qualifications?category=土地估价师" class="filter-badge {% if current_category == '土地估价师' %}active{% endif %}">
+                                    土地估价师
+                                </a>
+                                <a href="/company_qualifications?category=资产评估师" class="filter-badge {% if current_category == '资产评估师' %}active{% endif %}">
+                                    资产评估师
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 资质列表卡片 -->
+                <div class="card">
+                    <div class="card-header">
+                        <span><span class="fallback-icon">📋</span>资质证书列表</span>
+                    </div>
+                    <div class="card-body">
+                        {% if qualifications %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th width="15%">证书名称</th>
+                                        <th width="15%">类别</th>
+                                        <th width="20%">拥有人</th>
+                                        <th width="15%">更新时间</th>
+                                        <th width="15%">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="qualificationsTable">
+                                    {% for qual in qualifications %}
+                                    <tr>
+                                        <td>
+                                            <span class="fallback-icon">
+                                                {% if qual.category == '营业执照' %}📄
+                                                {% elif qual.category == '房地产估价师' %}🏠
+                                                {% elif qual.category == '土地估价师' %}🌱
+                                                {% elif qual.category == '资产评估师' %}💰
+                                                {% else %}📋{% endif %}
+                                            </span>
+                                            {{ qual.certificate_name }}
+                                        </td>
+                                        <td>
+                                            <span class="badge-category">{{ qual.category }}</span>
+                                        </td>
+                                        <td>{{ qual.owner or '公司' }}</td>
+                                        <td>{{ qual.update_time }}</td>
+                                        <td>
+                                            <a href="/company_qualifications/download/{{ qual.id }}"
+                                                class="download-btn" target="_blank">
+                                                <span class="fallback-icon">⬇️</span>下载
+                                            </a>
+                                            <!-- 只有管理员才能看到编辑和删除按钮 -->
+                                            {% if user.user_type == 'admin' %}
+                                            <button class="btn btn-sm btn-outline-warning ms-1"
+                                                onclick="editQualification({{ qual.id }})">
+                                                <span class="fallback-icon">✏️</span>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger ms-1"
+                                                onclick="deleteQualification({{ qual.id }})">
+                                                <span class="fallback-icon">🗑️</span>
+                                            </button>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <!-- 空状态提示 -->
+                        <div id="noResults" class="text-center text-muted py-4">
+                            <span class="fallback-icon">🔍</span>
+                            <p class="mb-0">没有找到符合条件的资质证书</p>
+                            {% if current_category and current_category != 'all' %}
+                            <p class="small mt-2">当前筛选: {{ current_category }}</p>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 管理员功能函数
+        function editQualification(qualificationId) {
+            alert('编辑资质功能 - ID: ' + qualificationId);
+            // 这里可以添加编辑资质的逻辑
+        }
+
+        function deleteQualification(qualificationId) {
+            if (confirm('确定要删除这个资质证书吗？')) {
+                alert('删除资质功能 - ID: ' + qualificationId);
+                // 这里可以添加删除资质的逻辑
+            }
+        }
+    </script>
+</body>
+
+</html>

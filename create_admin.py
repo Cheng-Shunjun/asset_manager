@@ -127,6 +127,19 @@ def init_database():
     """)
     print("✅ user_qualifications 表创建完成。")
 
+    # 公司资质表
+    c.execute('''CREATE TABLE IF NOT EXISTS company_qualifications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        certificate_name TEXT NOT NULL,
+        category TEXT NOT NULL,
+        owner TEXT,
+        file_path TEXT NOT NULL,
+        file_name TEXT NOT NULL,
+        update_time TEXT DEFAULT CURRENT_TIMESTAMP,
+        uploader_username TEXT,
+        status TEXT DEFAULT 'active'
+    )''')
+
     # ========= 插入管理员用户 =========
     admin_user = (
         "zhangwen", "张文", "admin", "123456",
@@ -379,6 +392,23 @@ def init_database():
             c.execute("UPDATE projects SET report_numbers = ? WHERE id = ?", (report_numbers, project_id))
     
     print("✅ 项目报告号已更新。")
+
+    sample_data = [
+        ('公司营业执照', '营业执照', '公司法人', '/downloads/business_license.pdf', '营业执照.pdf'),
+        ('房地产估价师证书 - 张三', '房地产估价师', '张三', '/downloads/real_estate_zhangsan.pdf', '张三_房地产估价师.pdf'),
+        ('房地产估价师证书 - 李四', '房地产估价师', '李四', '/downloads/real_estate_lisi.pdf', '李四_房地产估价师.pdf'),
+        ('土地估价师证书 - 王五', '土地估价师', '王五', '/downloads/land_wangwu.pdf', '王五_土地估价师.pdf'),
+        ('土地估价师证书 - 赵六', '土地估价师', '赵六', '/downloads/land_zhaoliu.pdf', '赵六_土地估价师.pdf'),
+        ('资产评估师证书 - 钱七', '资产评估师', '钱七', '/downloads/asset_qianqi.pdf', '钱七_资产评估师.pdf'),
+        ('资产评估师证书 - 孙八', '资产评估师', '孙八', '/downloads/asset_sunba.pdf', '孙八_资产评估师.pdf'),
+    ]
+    
+    for data in sample_data:
+        c.execute("""
+            INSERT INTO company_qualifications 
+            (certificate_name, category, owner, file_path, file_name, uploader_username)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (*data, 'admin'))
 
     conn.commit()
     conn.close()

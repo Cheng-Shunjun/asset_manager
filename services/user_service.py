@@ -702,4 +702,138 @@ class UserService:
         
         return {"message": "资质删除成功"}
 
+    async def get_company_qualifications(self, category: str = None, db=None):
+        """获取公司资质列表"""
+        try:
+            c = db.cursor()
+            
+            if category and category != 'all':
+                c.execute("""
+                    SELECT id, certificate_name, category, owner, file_path, file_name,
+                        datetime(update_time, 'localtime') as update_time,
+                        uploader_username, status
+                    FROM company_qualifications 
+                    WHERE category = ? AND status = 'active'
+                    ORDER BY update_time DESC
+                """, (category,))
+            else:
+                c.execute("""
+                    SELECT id, certificate_name, category, owner, file_path, file_name,
+                        datetime(update_time, 'localtime') as update_time,
+                        uploader_username, status
+                    FROM company_qualifications 
+                    WHERE status = 'active'
+                    ORDER BY update_time DESC
+                """)
+            
+            qualifications = []
+            for row in c.fetchall():
+                qual_dict = dict(zip([col[0] for col in c.description], row))
+                qualifications.append(qual_dict)
+            
+            return qualifications
+        except Exception as e:
+            print(f"获取公司资质失败: {e}")
+            return []
+
+    async def add_company_qualification(self, qualification_data: Dict, db=None):
+        """添加公司资质"""
+        try:
+            c = db.cursor()
+            
+            # 检查是否已存在相同名称的证书
+            c.execute("""
+                SELECT id FROM company_qualifications 
+                WHERE certificate_name = ? AND status = 'active'
+            """, (qualification_data.get("certificate_name"),))
+            
+            if c.fetchone():
+                raise HTTPException(status_code=400, detail="已存在相同名称的证书")
+            
+            # 插入新资质
+            c.execute("""
+                INSERT INTO company_qualifications 
+                (certificate_name, category, owner, file_path, file_name, uploader_username)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (
+                qualification_data.get("certificate_name"),
+                qualification_data.get("category"),
+                qualification_data.get("owner"),
+                qualification_data.get("file_path"),
+                qualification_data.get("file_name"),
+                qualification_data.get("uploader_username")
+            ))
+            
+            db.commit()
+            return {"message": "公司资质添加成功"}
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"添加公司资质失败: {str(e)}")
+
+    async def update_company_qualification(self, qualification_id: int, qualification_data: Dict, db=None):
+        """更新公司资质"""
+        try:
+            c = db.cursor()
+            
+            # 检查资质是否存在
+            c.execute("SELECT id FROM company_qualifications WHERE id = ? AND status = 'active'", (qualification_id,))
+            if not c.fetchone():
+                raise HTTPException(status_code=404, detail="资质不存在")
+            
+            # 构建更新语句
+            update_fields = []
+            update_values = []
+            
+            allowed_fields = ["certificate_name", "category", "owner", "file_path", "file_name"]
+            for field in allowed_fields:
+                if field in qualification_data:
+                    update_fields.append(f"{field} = ?")
+                    update_values.append(qualification_data[field])
+            
+            if not update_fields:
+                raise HTTPException(status_code=400, detail="没有可更新的字段")
+            
+            update_values.append(qualification_id)
+            
+            # 执行更新
+            update_query = f"UPDATE company_qualifications SET {', '.join(update_fields)}, update_time = CURRENT_TIMESTAMP WHERE id = ?"
+            c.execute(update_query, update_values)
+            db.commit()
+            
+            return {"message": "公司资质更新成功"}
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"更新公司资质失败: {str(e)}")
+
+    async def delete_company_qualification(self, qualification_id: int, db=None):
+        """删除公司资质（软删除）"""
+        try:
+            c = db.cursor()
+            
+            # 检查资质是否存在
+            c.execute("SELECT id FROM company_qualifications WHERE id = ? AND status = 'active'", (qualification_id,))
+            if not c.fetchone():
+                raise HTTPException(status_code=404, detail="资质不存在")
+            
+            # 软删除
+            c.execute("UPDATE company_qualifications SET status = 'inactive' WHERE id = ?", (qualification_id,))
+            db.commit()
+            
+            return {"message": "公司资质删除成功"}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"删除公司资质失败: {str(e)}")
+
+    async def get_qualification_categories(self, db=None):
+        """获取资质类别列表"""
+        try:
+            c = db.cursor()
+            c.execute("SELECT DISTINCT category FROM company_qualifications WHERE status = 'active' ORDER BY category")
+            categories = [row[0] for row in c.fetchall()]
+            return categories
+        except Exception as e:
+            print(f"获取资质类别失败: {e}")
+            return []
+
 user_service = UserService()
