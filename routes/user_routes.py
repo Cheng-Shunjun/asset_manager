@@ -5,6 +5,7 @@ from database.database import db_manager, get_db
 from auth.auth import login_required
 from datetime import datetime
 import sqlite3
+from fastapi import UploadFile, File
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -552,7 +553,7 @@ async def company_qualifications(
             "error": str(e)
         })
 
-@router.post("/company_qualifications/download/{qualification_id}")
+@router.get("/company_qualifications/download/{qualification_id}")
 async def download_company_qualification(
     request: Request,
     qualification_id: int,
@@ -576,37 +577,55 @@ async def download_company_qualification(
         file_name = result[1]
         certificate_name = result[2]
         
-        # 这里应该返回文件流
-        # 暂时返回文件路径信息
-        return JSONResponse({
-            "success": True,
-            "file_path": file_path,
-            "file_name": file_name,
-            "certificate_name": certificate_name
-        })
+        # 检查文件是否存在
+        import os
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail="文件不存在")
+        
+        # 返回文件流
+        from fastapi.responses import FileResponse
+        return FileResponse(
+            path=file_path,
+            filename=file_name,
+            media_type='application/octet-stream'
+        )
         
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"下载文件失败: {str(e)}")
 
-# 管理员操作路由
 @router.post("/admin/company_qualifications/add")
 async def admin_add_company_qualification(
     request: Request,
     certificate_name: str = Form(...),
     category: str = Form(...),
     owner: str = Form(None),
-    file_path: str = Form(...),
+    certificate_file: UploadFile = File(...),
     file_name: str = Form(...),
     user: dict = Depends(login_required),
     db: sqlite3.Connection = Depends(get_db)
 ):
-    """管理员添加公司资质"""
+    """管理员添加公司资质（支持文件上传）"""
     if user.get("user_type") != "admin":
         return JSONResponse({"success": False, "message": "权限不足"}, status_code=403)
     
     try:
+        # 创建上传目录
+        import os
+        upload_dir = "uploads/company_qualifications"
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        # 生成文件路径
+        file_extension = certificate_file.filename.split('.')[-1]
+        safe_filename = f"{certificate_name.replace(' ', '_')}.{file_extension}"
+        file_path = f"{upload_dir}/{safe_filename}"
+        
+        # 保存文件
+        with open(file_path, "wb") as buffer:
+            content = await certificate_file.read()
+            buffer.write(content)
+        
         qualification_data = {
             "certificate_name": certificate_name,
             "category": category,
@@ -623,40 +642,6 @@ async def admin_add_company_qualification(
     except Exception as e:
         return JSONResponse({"success": False, "message": str(e)}, status_code=500)
 
-@router.post("/admin/company_qualifications/update/{qualification_id}")
-async def admin_update_company_qualification(
-    request: Request,
-    qualification_id: int,
-    certificate_name: str = Form(None),
-    category: str = Form(None),
-    owner: str = Form(None),
-    file_path: str = Form(None),
-    file_name: str = Form(None),
-    user: dict = Depends(login_required),
-    db: sqlite3.Connection = Depends(get_db)
-):
-    """管理员更新公司资质"""
-    if user.get("user_type") != "admin":
-        return JSONResponse({"success": False, "message": "权限不足"}, status_code=403)
-    
-    try:
-        qualification_data = {
-            "certificate_name": certificate_name,
-            "category": category,
-            "owner": owner,
-            "file_path": file_path,
-            "file_name": file_name
-        }
-        
-        # 移除空值
-        qualification_data = {k: v for k, v in qualification_data.items() if v is not None}
-        
-        result = await user_service.update_company_qualification(qualification_id, qualification_data, db)
-        return JSONResponse({"success": True, "message": result["message"]})
-    except HTTPException as e:
-        return JSONResponse({"success": False, "message": e.detail}, status_code=e.status_code)
-    except Exception as e:
-        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
 
 @router.post("/admin/company_qualifications/delete/{qualification_id}")
 async def admin_delete_company_qualification(
