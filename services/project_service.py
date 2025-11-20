@@ -438,7 +438,7 @@ class ProjectService:
             for contract_file in contract_files:
                 if contract_file.filename:
                     contract_filename = secure_filename(contract_file.filename)
-                    contract_path = os.path.join('static/uploads', contract_filename)
+                    contract_path = os.path.join('static/uploads/', contract_filename)
                     
                     with open(contract_path, "wb") as f:
                         content = await contract_file.read()

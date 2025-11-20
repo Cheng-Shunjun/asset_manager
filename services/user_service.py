@@ -772,20 +772,36 @@ class UserService:
             raise HTTPException(status_code=500, detail=f"添加公司资质失败: {str(e)}")
 
     async def delete_company_qualification(self, qualification_id: int, db=None):
-        """删除公司资质（软删除）"""
+        """删除公司资质（硬删除）"""
         try:
             c = db.cursor()
             
             # 检查资质是否存在
-            c.execute("SELECT id FROM company_qualifications WHERE id = ? AND status = 'active'", (qualification_id,))
-            if not c.fetchone():
+            c.execute("SELECT id, file_path FROM company_qualifications WHERE id = ?", (qualification_id,))
+            result = c.fetchone()
+            if not result:
                 raise HTTPException(status_code=404, detail="资质不存在")
             
-            # 软删除
-            c.execute("UPDATE company_qualifications SET status = 'inactive' WHERE id = ?", (qualification_id,))
+            # 获取文件路径用于删除物理文件
+            file_path = result[1]
+            
+            # 硬删除数据库记录
+            c.execute("DELETE FROM company_qualifications WHERE id = ?", (qualification_id,))
             db.commit()
             
+            # 删除物理文件
+            try:
+                import os
+                if file_path and os.path.exists(file_path):
+                    os.remove(file_path)
+                    print(f"已删除物理文件: {file_path}")
+            except Exception as file_error:
+                print(f"删除物理文件失败: {file_error}")
+                # 文件删除失败不影响数据库操作，继续执行
+            
             return {"message": "公司资质删除成功"}
+        except HTTPException:
+            raise
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"删除公司资质失败: {str(e)}")
 

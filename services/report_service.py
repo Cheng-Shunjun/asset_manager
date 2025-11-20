@@ -61,7 +61,7 @@ class ReportService:
             for report_file in report_files:
                 if report_file.filename:
                     report_filename = secure_filename(report_file.filename)
-                    report_path = os.path.join('static/uploads', report_filename)
+                    report_path = os.path.join('static/uploads/reports/report_no', report_filename)
                     
                     with open(report_path, "wb") as f:
                         content = await report_file.read()

@@ -613,7 +613,7 @@ async def admin_add_company_qualification(
     try:
         # 创建上传目录
         import os
-        upload_dir = "uploads/company_qualifications"
+        upload_dir = "static/uploads/company_qualifications"
         os.makedirs(upload_dir, exist_ok=True)
         
         # 生成文件路径
