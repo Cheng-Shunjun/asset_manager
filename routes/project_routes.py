@@ -55,90 +55,90 @@ async def create_project(
         amount, creator, start_date, user, db
     )
 
-@router.get("/project/{project_id}", response_class=HTMLResponse)
+@router.get("/project/{project_no}", response_class=HTMLResponse)
 async def project_info(
     request: Request,
-    project_id: int,
+    project_no: str,
     user: dict = Depends(login_required),
     db: sqlite3.Connection = Depends(get_db)
 ):
-    return await project_service.get_project_info(request, project_id, user, db)
+    return await project_service.get_project_info(request, project_no, user, db)
 
-@router.post("/project/{project_id}/cancel")
+@router.post("/project/{project_no}/cancel")
 async def cancel_project(
-    project_id: int,
+    project_no: str,
     user: dict = Depends(login_required),
     db: sqlite3.Connection = Depends(get_db)
 ):
-    return await project_service.update_project_status(project_id, 'cancelled', user, db)
+    return await project_service.update_project_status(project_no, 'cancelled', user, db)
 
-@router.post("/project/{project_id}/resume")
+@router.post("/project/{project_no}/resume")
 async def resume_project(
-    project_id: int,
+    project_no: str,
     user: dict = Depends(login_required),
     db: sqlite3.Connection = Depends(get_db)
 ):
-    return await project_service.update_project_status(project_id, 'active', user, db)
+    return await project_service.update_project_status(project_no, 'active', user, db)
 
-@router.post("/project/{project_id}/complete")
+@router.post("/project/{project_no}/complete")
 async def complete_project(
-    project_id: int,
+    project_no: str,
     user: dict = Depends(login_required),
     db: sqlite3.Connection = Depends(get_db)
 ):
-    return await project_service.update_project_status(project_id, 'completed', user, db)
+    return await project_service.update_project_status(project_no, 'completed', user, db)
 
-@router.post("/project/{project_id}/reopen")
+@router.post("/project/{project_no}/reopen")
 async def reopen_project(
-    project_id: int,
+    project_no: str,
     user: dict = Depends(login_required),
     db: sqlite3.Connection = Depends(get_db)
 ):
-    return await project_service.update_project_status(project_id, 'active', user, db)
+    return await project_service.update_project_status(project_no, 'active', user, db)
 
-@router.post("/project/{project_id}/update_progress")
+@router.post("/project/{project_no}/update_progress")
 async def update_progress(
-    project_id: int,
+    project_no: str,
     request: Request,
     user: dict = Depends(login_required),
     db: sqlite3.Connection = Depends(get_db)
 ):
     form_data = await request.form()
     progress = form_data.get("progress", "").strip()
-    return await project_service.update_project_progress(project_id, progress, user, db)
+    return await project_service.update_project_progress(project_no, progress, user, db)
 
-@router.post("/project/{project_id}/add_contract")
+@router.post("/project/{project_no}/add_contract")
 async def add_contract_files(
     request: Request,
-    project_id: int,
+    project_no: str,
     contract_files: list[UploadFile] = File(...),
     user: dict = Depends(login_required),
     db: sqlite3.Connection = Depends(get_db)
 ):
     print("add contract router")
-    return await project_service.add_contract_files(project_id, request, user, db)
+    return await project_service.add_contract_files(project_no, request, user, db)
 
-@router.post("/project/{project_id}/delete_contract_file/{file_id}")
+@router.post("/project/{project_no}/delete_contract_file/{file_id}")
 async def delete_contract_file(
-    project_id: int,
+    project_no: str,
     file_id: int,
     user: dict = Depends(login_required),
     db: sqlite3.Connection = Depends(get_db)
 ):
-    return await project_service.delete_contract_file(project_id, file_id, user, db)
+    return await project_service.delete_contract_file(project_no, file_id, user, db)
 
-@router.get("/project/{project_id}/edit")
+@router.get("/project/{project_no}/edit")
 async def edit_project_page(
-    project_id: int,
+    project_no: str,
     request: Request,
     user: dict = Depends(login_required),
     db: sqlite3.Connection = Depends(get_db)
 ):
-    return await project_service.get_edit_project_page(request, project_id, user, db)
+    return await project_service.get_edit_project_page(request, project_no, user, db)
 
-@router.post("/project/{project_id}/edit")
+@router.post("/project/{project_no}/edit")
 async def update_project(
-    project_id: int,
+    project_no: str,
     request: Request,
     name: str = Form(...),
     project_type: str = Form(...),
@@ -153,7 +153,7 @@ async def update_project(
 ):
     print(project_leader, market_leader)
     return await project_service.update_project(
-        project_id, name, project_type, client_name, market_leader,
+        project_no, name, project_type, client_name, market_leader,
         project_leader, amount, is_paid, start_date, user, db
     )
 

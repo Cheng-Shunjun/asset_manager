@@ -9,11 +9,12 @@ class ReportService:
     def __check_report_permission(self, user, project_creator, project_leader, report_creator):
         return (user.get("user_type") == "admin" or user.get("username") == report_creator)
 
-    async def update_report(self, project_id, report_no, reviewer1, reviewer2, reviewer3,
+    async def update_report(self, project_no, report_no, reviewer1, reviewer2, reviewer3,
                       signer1, signer2, report_files, user, db):
         try:
             c = db.cursor()
-            c.execute("SELECT status FROM projects WHERE id = ?", (project_id,))
+            # 使用 project_no 查询项目状态
+            c.execute("SELECT status FROM projects WHERE project_no = ?", (project_no,))
             result = c.fetchone()
             
             if not result:
@@ -28,8 +29,8 @@ class ReportService:
                 SELECT id, file_paths, reviewer1, reviewer2, reviewer3, signer1, signer2, 
                     creator, report_type 
                 FROM reports 
-                WHERE report_no = ? AND project_id = ?
-            """, (report_no, project_id))
+                WHERE report_no = ? AND project_no = ?
+            """, (report_no, project_no))
             result = c.fetchone()
             
             if not result:
@@ -43,10 +44,10 @@ class ReportService:
             existing_signer1 = result[5]
             existing_signer2 = result[6]
             report_creator = result[7]
-            report_type = result[8]  # 获取报告类型用于资质验证
+            report_type = result[8]
             
             # 权限验证：只有管理员、项目创建人、项目负责人或报告创建人可以编辑
-            c.execute("SELECT creator, project_leader FROM projects WHERE id = ?", (project_id,))
+            c.execute("SELECT creator, project_leader FROM projects WHERE project_no = ?", (project_no,))
             project_result = c.fetchone()
             if not project_result:
                 raise HTTPException(status_code=404, detail="项目不存在")
@@ -61,7 +62,9 @@ class ReportService:
             for report_file in report_files:
                 if report_file.filename:
                     report_filename = secure_filename(report_file.filename)
-                    report_path = os.path.join('static/uploads/reports/report_no', report_filename)
+                    # 修改文件路径，使用 project_no 而不是 project_id
+                    report_path = os.path.join('static/uploads/reports', project_no, report_filename)
+                    os.makedirs(os.path.dirname(report_path), exist_ok=True)
                     
                     with open(report_path, "wb") as f:
                         content = await report_file.read()
@@ -113,11 +116,9 @@ class ReportService:
                 raise HTTPException(status_code=400, detail="签字人不能重复，请选择2个不同的签字人")
             
             # 新增：签字人资质验证
-            # 需要签字的报告类型
             signature_required_types = ["房地产估价报告", "资产评估报告", "土地报告"]
             
             if report_type in signature_required_types:
-                # 报告类型与所需资质的映射
                 qualification_map = {
                     "资产评估报告": "资产评估师",
                     "房地产估价报告": "房地产估价师", 
@@ -143,7 +144,6 @@ class ReportService:
                     if not signer1_qualified or not signer2_qualified:
                         unqualified_signers = []
                         if not signer1_qualified:
-                            # 获取签字人真实姓名用于错误提示
                             c.execute("SELECT realname FROM users WHERE username = ?", (final_signer1,))
                             signer1_realname_result = c.fetchone()
                             signer1_realname = signer1_realname_result[0] if signer1_realname_result else final_signer1
@@ -164,15 +164,15 @@ class ReportService:
                 UPDATE reports 
                 SET reviewer1 = ?, reviewer2 = ?, reviewer3 = ?, 
                     signer1 = ?, signer2 = ?, file_paths = ?
-                WHERE report_no = ? AND project_id = ?
+                WHERE report_no = ? AND project_no = ?
             """, (
                 final_reviewer1, final_reviewer2, final_reviewer3,
                 final_signer1, final_signer2, all_files,
-                report_no, project_id
+                report_no, project_no
             ))
             
             db.commit()
-            return RedirectResponse(url=f"/project/{project_id}", status_code=303)
+            return RedirectResponse(url=f"/project/{project_no}", status_code=303)
             
         except HTTPException:
             raise
@@ -180,17 +180,19 @@ class ReportService:
             db.rollback()
             raise HTTPException(status_code=500, detail=f"更新报告失败: {str(e)}")
 
-    async def generate_report_no(self, project_id, report_type, is_filing, reviewer1, reviewer2,
+    async def generate_report_no(self, project_no, report_type, is_filing, reviewer1, reviewer2,
                        reviewer3, signer1, signer2, user, db):
         try:
             c = db.cursor()
-            c.execute("SELECT status FROM projects WHERE id = ?", (project_id,))
+            # 使用 project_no 查询项目状态
+            c.execute("SELECT id, status FROM projects WHERE project_no = ?", (project_no,))
             result = c.fetchone()
             
             if not result:
                 raise HTTPException(status_code=404, detail="项目不存在")
             
-            status = result[0]
+            project_id = result[0]  # 获取项目ID用于关联
+            status = result[1]
             if status != 'active':
                 raise HTTPException(status_code=400, detail="只有进行中的项目可以生成报告号")
             
@@ -199,15 +201,12 @@ class ReportService:
             
             # 对于需要签字的报告类型，验证签字人资质
             if report_type in signature_required_types:
-                # 验证签字人是否设置
                 if not signer1 or not signer2:
                     raise HTTPException(status_code=400, detail=f"{report_type}需要设置2个签字人")
                 
-                # 验证签字人不能重复
                 if signer1 == signer2:
                     raise HTTPException(status_code=400, detail="签字人不能重复，请选择2个不同的签字人")
                 
-                # 验证签字人资质
                 qualification_map = {
                     "资产评估报告": "资产评估师",
                     "房地产估价报告": "房地产估价师", 
@@ -233,7 +232,6 @@ class ReportService:
                     if not signer1_qualified or not signer2_qualified:
                         unqualified_signers = []
                         if not signer1_qualified:
-                            # 获取签字人真实姓名用于错误提示
                             c.execute("SELECT realname FROM users WHERE username = ?", (signer1,))
                             signer1_realname_result = c.fetchone()
                             signer1_realname = signer1_realname_result[0] if signer1_realname_result else signer1
@@ -290,8 +288,8 @@ class ReportService:
             
             c.execute("""
                 SELECT report_no FROM reports 
-                WHERE report_no LIKE ? AND project_id = ?
-            """, (pattern, project_id))
+                WHERE report_no LIKE ? AND project_no = ?
+            """, (pattern, project_no))
             
             existing_reports = c.fetchall()
             
@@ -333,15 +331,15 @@ class ReportService:
             
             c.execute("""
                 INSERT INTO reports (
-                    report_no, project_id, report_type, file_paths, creator, creator_realname, create_date,
+                    report_no, project_no, project_id, report_type, file_paths, creator, creator_realname, create_date,
                     reviewer1, reviewer2, reviewer3, signer1, signer2
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
-                report_no, project_id, report_type, "", user["username"], creator_realname, create_date,
+                report_no, project_no, project_id, report_type, "", user["username"], creator_realname, create_date,
                 reviewer1, reviewer2, reviewer3, signer1, signer2
             ))
             
-            c.execute("SELECT report_numbers FROM projects WHERE id = ?", (project_id,))
+            c.execute("SELECT report_numbers FROM projects WHERE project_no = ?", (project_no,))
             result = c.fetchone()
             existing_report_numbers = result[0] if result and result[0] else ""
             
@@ -350,7 +348,7 @@ class ReportService:
             else:
                 new_report_numbers = report_no
             
-            c.execute("UPDATE projects SET report_numbers = ? WHERE id = ?", (new_report_numbers, project_id))
+            c.execute("UPDATE projects SET report_numbers = ? WHERE project_no = ?", (new_report_numbers, project_no))
             
             db.commit()
             
@@ -360,11 +358,11 @@ class ReportService:
             db.rollback()
             raise HTTPException(status_code=500, detail=f"生成报告号失败: {str(e)}")
 
-    async def delete_report(self, project_id, report_no, user, db):
+    async def delete_report(self, project_no, report_no, user, db):
         try:
             c = db.cursor()
             
-            c.execute("SELECT status FROM projects WHERE id = ?", (project_id,))
+            c.execute("SELECT status FROM projects WHERE project_no = ?", (project_no,))
             result = c.fetchone()
             
             if not result:
@@ -375,7 +373,7 @@ class ReportService:
                 raise HTTPException(status_code=400, detail="只有进行中的项目可以删除报告")
             
             # 获取报告信息，包括创建人
-            c.execute("SELECT id, file_paths, creator FROM reports WHERE report_no = ? AND project_id = ?", (report_no, project_id))
+            c.execute("SELECT id, file_paths, creator FROM reports WHERE report_no = ? AND project_no = ?", (report_no, project_no))
             result = c.fetchone()
             
             if not result:
@@ -386,7 +384,7 @@ class ReportService:
             report_creator = result[2]
             
             # 权限验证：只有管理员、项目创建人、项目负责人或报告创建人可以删除
-            c.execute("SELECT creator, project_leader FROM projects WHERE id = ?", (project_id,))
+            c.execute("SELECT creator, project_leader FROM projects WHERE project_no = ?", (project_no,))
             project_result = c.fetchone()
             if not project_result:
                 raise HTTPException(status_code=404, detail="项目不存在")
@@ -425,10 +423,10 @@ class ReportService:
             c.execute("DELETE FROM report_files WHERE report_id = ?", (report_id,))
             
             # 从 reports 表中删除报告记录
-            c.execute("DELETE FROM reports WHERE report_no = ? AND project_id = ?", (report_no, project_id))
+            c.execute("DELETE FROM reports WHERE report_no = ? AND project_no = ?", (report_no, project_no))
             
             # 更新项目的 report_numbers 字段
-            c.execute("SELECT report_numbers FROM projects WHERE id = ?", (project_id,))
+            c.execute("SELECT report_numbers FROM projects WHERE project_no = ?", (project_no,))
             result = c.fetchone()
             
             if result and result[0]:
@@ -438,22 +436,23 @@ class ReportService:
                 if report_no in report_list:
                     report_list.remove(report_no)
                     new_report_numbers = ','.join(report_list) if report_list else ""
-                    c.execute("UPDATE projects SET report_numbers = ? WHERE id = ?", (new_report_numbers, project_id))
+                    c.execute("UPDATE projects SET report_numbers = ? WHERE project_no = ?", (new_report_numbers, project_no))
             
             db.commit()
             
-            return RedirectResponse(url=f"/project/{project_id}", status_code=303)
+            return RedirectResponse(url=f"/project/{project_no}", status_code=303)
             
         except Exception as e:
             db.rollback()
             raise HTTPException(status_code=500, detail=f"删除报告失败: {str(e)}")
-    async def delete_report_file(self, project_id, report_id, file_id, user, db):
+
+    async def delete_report_file(self, project_no, report_id, file_id, user, db):
         """删除报告文件"""
         try:
             c = db.cursor()
             
             # 检查项目状态
-            c.execute("SELECT status FROM projects WHERE id = ?", (project_id,))
+            c.execute("SELECT status FROM projects WHERE project_no = ?", (project_no,))
             result = c.fetchone()
             
             if not result:
@@ -464,17 +463,17 @@ class ReportService:
                 raise HTTPException(status_code=400, detail="只有进行中的项目可以删除文件")
             
             # 获取报告信息
-            c.execute("SELECT id, creator, project_id FROM reports WHERE id = ?", (report_id,))
+            c.execute("SELECT id, creator, project_no FROM reports WHERE id = ?", (report_id,))
             report_result = c.fetchone()
             
             if not report_result:
                 raise HTTPException(status_code=404, detail="报告不存在")
             
             report_creator = report_result[1]
-            report_project_id = report_result[2]
+            report_project_no = report_result[2]
             
             # 检查项目权限
-            c.execute("SELECT creator, project_leader FROM projects WHERE id = ?", (report_project_id,))
+            c.execute("SELECT creator, project_leader FROM projects WHERE project_no = ?", (report_project_no,))
             project_result = c.fetchone()
             
             if not project_result:
@@ -522,7 +521,7 @@ class ReportService:
             
             db.commit()
             
-            return RedirectResponse(url=f"/project/{project_id}", status_code=303)
+            return RedirectResponse(url=f"/project/{project_no}", status_code=303)
             
         except Exception as e:
             db.rollback()

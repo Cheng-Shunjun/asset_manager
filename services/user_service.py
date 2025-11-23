@@ -363,6 +363,7 @@ class UserService:
             reports.append(report_dict)
         
         return reports
+
     async def get_user_qualifications(self, username: str, db):
         """获取用户资质信息"""
         c = db.cursor()
@@ -389,8 +390,6 @@ class UserService:
             qual_dict = dict(zip([col[0] for col in c.description], row))
             qualifications.append(qual_dict)
         
-        #print(f"找到 {len(qualifications)} 条资质记录")
-        #print(qualifications)
         return qualifications
     
     async def get_user_basic_stats(self, user, db):
@@ -446,7 +445,6 @@ class UserService:
             print(f"Error in get_all_users: {e}")
             raise HTTPException(status_code=500, detail=f"获取用户列表失败: {str(e)}")
 
-    # 在 create_user 方法中确保状态字段被设置
     async def create_user(self, user_data: Dict, db):
         """创建新用户"""
         c = db.cursor()
@@ -489,7 +487,6 @@ class UserService:
         
         return {"message": "用户创建成功"}
 
-    # 在 update_user 方法中添加状态字段
     async def update_user(self, username: str, user_data: Dict, db):
         """更新用户信息"""
         c = db.cursor()
@@ -522,7 +519,6 @@ class UserService:
         
         return {"message": "用户信息更新成功"}
 
-    # 添加切换用户状态的方法
     async def toggle_user_status(self, username: str, db):
         """切换用户状态（在职/离职）"""
         c = db.cursor()
@@ -599,6 +595,7 @@ class UserService:
         db.commit()
         
         return {"message": "密码重置成功"}
+
     async def get_user_details(self, username: str, db):
         """获取用户详细信息"""
         try:
@@ -702,6 +699,28 @@ class UserService:
         
         return {"message": "资质删除成功"}
 
+    async def get_all_users_for_qualifications(self, db=None):
+        """获取所有用户用于资质选择（只返回在职用户）"""
+        try:
+            c = db.cursor()
+            c.execute("""
+                SELECT username, realname 
+                FROM users 
+                WHERE status = 'active' AND realname IS NOT NULL AND realname != ''
+                ORDER BY realname
+            """)
+            users = []
+            for row in c.fetchall():
+                user_dict = {
+                    'username': row[0],
+                    'realname': row[1]
+                }
+                users.append(user_dict)
+            return users
+        except Exception as e:
+            print(f"获取用户列表失败: {e}")
+            return []
+
     async def get_company_qualifications(self, category: str = None, db=None):
         """获取公司资质列表"""
         try:
@@ -750,6 +769,11 @@ class UserService:
             if c.fetchone():
                 raise HTTPException(status_code=400, detail="已存在相同名称的证书")
             
+            # 处理拥有人字段，如果为空则设置为"公司"
+            owner = qualification_data.get("owner", "").strip()
+            if not owner:
+                owner = "公司"
+            
             # 插入新资质
             c.execute("""
                 INSERT INTO company_qualifications 
@@ -758,7 +782,7 @@ class UserService:
             """, (
                 qualification_data.get("certificate_name"),
                 qualification_data.get("category"),
-                qualification_data.get("owner"),
+                owner,  # 使用处理后的拥有人
                 qualification_data.get("file_path"),
                 qualification_data.get("file_name"),
                 qualification_data.get("uploader_username")
@@ -788,16 +812,6 @@ class UserService:
             # 硬删除数据库记录
             c.execute("DELETE FROM company_qualifications WHERE id = ?", (qualification_id,))
             db.commit()
-            
-            # 删除物理文件
-            try:
-                import os
-                if file_path and os.path.exists(file_path):
-                    os.remove(file_path)
-                    print(f"已删除物理文件: {file_path}")
-            except Exception as file_error:
-                print(f"删除物理文件失败: {file_error}")
-                # 文件删除失败不影响数据库操作，继续执行
             
             return {"message": "公司资质删除成功"}
         except HTTPException:

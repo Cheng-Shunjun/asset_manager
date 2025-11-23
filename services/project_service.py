@@ -20,12 +20,12 @@ class ProjectService:
             username == project_leader
         )
     
-    def _check_project_permission(self, project_id, user, db):
+    def _check_project_permission_by_no(self, project_no, user, db):
         """检查用户是否有操作项目的权限：管理员、项目创建人或项目负责人"""
         c = db.cursor()
         
         # 获取项目信息
-        c.execute("SELECT creator, project_leader FROM projects WHERE id = ?", (project_id,))
+        c.execute("SELECT creator, project_leader FROM projects WHERE project_no = ?", (project_no,))
         project = c.fetchone()
         
         if not project:
@@ -164,7 +164,7 @@ class ProjectService:
             db.rollback()
             raise HTTPException(status_code=500, detail=f"创建项目失败: {str(e)}")
 
-    async def get_project_info(self, request, project_id, user, db):
+    async def get_project_info(self, request, project_no, user, db):
         c = db.cursor()
         c.execute("""
             SELECT 
@@ -172,8 +172,8 @@ class ProjectService:
                 market_leader, project_leader, progress, report_numbers, 
                 amount, is_paid, creator, creator_realname, start_date, end_date, 
                 status, contract_file, create_date
-            FROM projects WHERE id=?
-        """, (project_id,))
+            FROM projects WHERE project_no=?
+        """, (project_no,))
         
         project = c.fetchone()
         
@@ -204,7 +204,7 @@ class ProjectService:
             FROM contract_files 
             WHERE project_id = ? 
             ORDER BY upload_time DESC
-        """, (project_id,))
+        """, (project_dict["id"],))
         
         contract_files = []
         for row in c.fetchall():
@@ -223,7 +223,7 @@ class ProjectService:
             SELECT id, report_no, report_type, file_paths, creator, creator_realname, create_date, 
                 reviewer1, reviewer2, reviewer3, signer1, signer2
             FROM reports WHERE project_id = ? ORDER BY create_date DESC
-        """, (project_id,))
+        """, (project_dict["id"],))
 
         reports = []
         for row in c.fetchall():
@@ -295,24 +295,24 @@ class ProjectService:
             "project_operation_permission": project_operation_permission
         })
 
-    async def update_project_status(self, project_id, status, user, db):
+    async def update_project_status(self, project_no, status, user, db):
         """更新项目状态（带权限检查）"""
         # 检查权限
-        self._check_project_permission(project_id, user, db)
+        self._check_project_permission_by_no(project_no, user, db)
         
         c = db.cursor()
-        c.execute("UPDATE projects SET status = ? WHERE id = ?", (status, project_id))
+        c.execute("UPDATE projects SET status = ? WHERE project_no = ?", (status, project_no))
         db.commit()
-        return RedirectResponse(url=f"/project/{project_id}", status_code=303)
+        return RedirectResponse(url=f"/project/{project_no}", status_code=303)
 
-    async def update_project_progress(self, project_id, progress, user, db):
+    async def update_project_progress(self, project_no, progress, user, db):
         """更新项目进度（带权限检查）"""
         try:
             # 检查权限
-            self._check_project_permission(project_id, user, db)
+            self._check_project_permission_by_no(project_no, user, db)
             
             c = db.cursor()
-            c.execute("SELECT status FROM projects WHERE id = ?", (project_id,))
+            c.execute("SELECT status FROM projects WHERE project_no = ?", (project_no,))
             result = c.fetchone()
             
             if not result:
@@ -325,19 +325,19 @@ class ProjectService:
             if len(progress) > 50:
                 raise HTTPException(status_code=400, detail="进度描述不能超过50字")
             
-            c.execute("UPDATE projects SET progress = ? WHERE id = ?", (progress, project_id))
+            c.execute("UPDATE projects SET progress = ? WHERE project_no = ?", (progress, project_no))
             db.commit()
             
-            return RedirectResponse(url=f"/project/{project_id}", status_code=303)
+            return RedirectResponse(url=f"/project/{project_no}", status_code=303)
             
         except Exception as e:
             db.rollback()
             raise HTTPException(status_code=500, detail=f"更新进度失败: {str(e)}")
 
-    async def get_edit_project_page(self, request, project_id, user, db):
+    async def get_edit_project_page(self, request, project_no, user, db):
         """获取项目编辑页面"""
         # 检查权限
-        self._check_project_permission(project_id, user, db)
+        self._check_project_permission_by_no(project_no, user, db)
         
         c = db.cursor()
         c.execute("""
@@ -346,8 +346,8 @@ class ProjectService:
                 market_leader, project_leader, progress, report_numbers, 
                 amount, is_paid, creator, creator_realname, start_date, end_date, 
                 status, contract_file, create_date
-            FROM projects WHERE id=?
-        """, (project_id,))
+            FROM projects WHERE project_no=?
+        """, (project_no,))
         
         project = c.fetchone()
         
@@ -369,17 +369,17 @@ class ProjectService:
             "user": user
         })
 
-    async def update_project(self, project_id, name, project_type, client_name, market_leader,
+    async def update_project(self, project_no, name, project_type, client_name, market_leader,
                             project_leader, amount, is_paid, start_date, user, db):
         """更新项目信息"""
         try:
             # 检查权限
-            self._check_project_permission(project_id, user, db)
+            self._check_project_permission_by_no(project_no, user, db)
             
             c = db.cursor()
             
             # 验证项目是否存在
-            c.execute("SELECT status FROM projects WHERE id = ?", (project_id,))
+            c.execute("SELECT status FROM projects WHERE project_no = ?", (project_no,))
             result = c.fetchone()
             
             if not result:
@@ -391,34 +391,35 @@ class ProjectService:
                 SET name = ?, project_type = ?, client_name = ?, 
                     market_leader = ?, project_leader = ?, amount = ?, 
                     is_paid = ?, start_date = ?
-                WHERE id = ?
+                WHERE project_no = ?
             """, (
                 name, project_type, client_name, market_leader,
-                project_leader, amount, is_paid, start_date, project_id
+                project_leader, amount, is_paid, start_date, project_no
             ))
             
             db.commit()
             
-            return RedirectResponse(url=f"/project/{project_id}", status_code=303)
+            return RedirectResponse(url=f"/project/{project_no}", status_code=303)
             
         except Exception as e:
             db.rollback()
             raise HTTPException(status_code=500, detail=f"更新项目失败: {str(e)}")
 
-    async def add_contract_files(self, project_id, request, user, db):
+    async def add_contract_files(self, project_no, request, user, db):
         """添加合同文件"""
         try:
             # 检查权限
-            self._check_project_permission(project_id, user, db)
+            self._check_project_permission_by_no(project_no, user, db)
             
             c = db.cursor()
-            c.execute("SELECT status FROM projects WHERE id = ?", (project_id,))
+            c.execute("SELECT id, status FROM projects WHERE project_no = ?", (project_no,))
             result = c.fetchone()
             
             if not result:
                 raise HTTPException(status_code=404, detail="项目不存在")
             
-            status = result[0]
+            project_id = result[0]
+            status = result[1]
             if status in ['completed', 'cancelled']:
                 raise HTTPException(status_code=400, detail=f"项目状态为{status}，无法添加合同文件")
             
@@ -438,7 +439,7 @@ class ProjectService:
             for contract_file in contract_files:
                 if contract_file.filename:
                     contract_filename = secure_filename(contract_file.filename)
-                    contract_path = os.path.join('static/uploads/', contract_filename)
+                    contract_path = os.path.join('static/uploads/contact_file/project_no', contract_filename)
                     
                     with open(contract_path, "wb") as f:
                         content = await contract_file.read()
@@ -457,28 +458,29 @@ class ProjectService:
                     ))
             
             db.commit()
-            return RedirectResponse(url=f"/project/{project_id}", status_code=303)
+            return RedirectResponse(url=f"/project/{project_no}", status_code=303)
             
         except Exception as e:
             db.rollback()
             raise HTTPException(status_code=500, detail=f"添加合同文件失败: {str(e)}")
 
-    async def delete_contract_file(self, project_id, file_id, user, db):
+    async def delete_contract_file(self, project_no, file_id, user, db):
         """删除合同文件"""
         try:
             # 检查权限
-            self._check_project_permission(project_id, user, db)
+            self._check_project_permission_by_no(project_no, user, db)
             
             c = db.cursor()
             
-            # 检查项目状态
-            c.execute("SELECT status FROM projects WHERE id = ?", (project_id,))
-            result = c.fetchone()
+            # 获取项目ID
+            c.execute("SELECT id, status FROM projects WHERE project_no = ?", (project_no,))
+            project_result = c.fetchone()
             
-            if not result:
+            if not project_result:
                 raise HTTPException(status_code=404, detail="项目不存在")
             
-            status = result[0]
+            project_id = project_result[0]
+            status = project_result[1]
             if status != 'active':
                 raise HTTPException(status_code=400, detail="只有进行中的项目可以删除合同文件")
             
@@ -503,7 +505,7 @@ class ProjectService:
             c.execute("DELETE FROM contract_files WHERE id = ? AND project_id = ?", (file_id, project_id))
             
             db.commit()
-            return RedirectResponse(url=f"/project/{project_id}", status_code=303)
+            return RedirectResponse(url=f"/project/{project_no}", status_code=303)
             
         except Exception as e:
             db.rollback()

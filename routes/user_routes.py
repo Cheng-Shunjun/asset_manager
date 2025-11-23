@@ -535,10 +535,13 @@ async def company_qualifications(
         
         # 获取资质类别列表（用于筛选器）
         categories = await user_service.get_qualification_categories(db)
+
+        all_users = await user_service.get_all_users_for_qualifications(db)
         
         return templates.TemplateResponse("company_qualifications.html", {
             "request": request,
             "user": user,
+            "all_users": all_users,
             "qualifications": qualifications,
             "categories": categories,
             "current_category": category or "all"
@@ -547,6 +550,7 @@ async def company_qualifications(
         return templates.TemplateResponse("company_qualifications.html", {
             "request": request,
             "user": user,
+            "all_users": all_users,
             "qualifications": [],
             "categories": [],
             "current_category": category or "all",

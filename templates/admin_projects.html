@@ -385,7 +385,7 @@
               </thead>
               <tbody id="projectsTableBody">
                 {% for p in projects %}
-                <tr data-status="{{ p.status }}" onclick="window.location.href='/project/{{ p.id }}'">
+                <tr data-status="{{ p.status }}" onclick="window.location.href='/project/{{ p.project_no }}'">
                   <td>{{ p.project_no }}</td>
                   <td>{{ p.name }}</td>
                   <td>{{ p.project_type }}</td>

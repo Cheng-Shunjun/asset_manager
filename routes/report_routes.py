@@ -8,9 +8,9 @@ import sqlite3
 router = APIRouter()
 report_service = ReportService()
 
-@router.post("/project/{project_id}/update_report/{report_no}")
+@router.post("/project/{project_no}/update_report/{report_no}")
 async def update_report(
-    project_id: int,
+    project_no: str,
     report_no: str,
     reviewer1: str = Form(None),
     reviewer2: str = Form(None),
@@ -22,13 +22,13 @@ async def update_report(
     db: sqlite3.Connection = Depends(get_db)
 ):
     return await report_service.update_report(
-        project_id, report_no, reviewer1, reviewer2, reviewer3,
+        project_no, report_no, reviewer1, reviewer2, reviewer3,
         signer1, signer2, report_files, user, db
     )
 
-@router.post("/project/{project_id}/generate_report_no")
+@router.post("/project/{project_no}/generate_report_no")
 async def generate_report_no(
-    project_id: int,
+    project_no: str,
     report_type: str = Form(...),
     is_filing: str = Form(None),
     reviewer1: str = Form(...),
@@ -40,25 +40,25 @@ async def generate_report_no(
     db: sqlite3.Connection = Depends(get_db)
 ):
     return await report_service.generate_report_no(
-        project_id, report_type, is_filing, reviewer1, reviewer2,
+        project_no, report_type, is_filing, reviewer1, reviewer2,
         reviewer3, signer1, signer2, user, db
     )
 
-@router.post("/project/{project_id}/delete_report/{report_no}")
+@router.post("/project/{project_no}/delete_report/{report_no}")
 async def delete_report(
-    project_id: int,
+    project_no: str,
     report_no: str,
     user: dict = Depends(login_required),
     db: sqlite3.Connection = Depends(get_db)
 ):
-    return await report_service.delete_report(project_id, report_no, user, db)
+    return await report_service.delete_report(project_no, report_no, user, db)
 
-@router.post("/project/{project_id}/delete_report_file/{report_id}/{file_id}")
+@router.post("/project/{project_no}/delete_report_file/{report_id}/{file_id}")
 async def delete_report_file(
-    project_id: int,
+    project_no: str,
     report_id: int,
     file_id: int,
     user: dict = Depends(login_required),
     db: sqlite3.Connection = Depends(get_db)
 ):
-    return await report_service.delete_report_file(project_id, report_id, file_id, user, db)
+    return await report_service.delete_report_file(project_no, report_id, file_id, user, db)

@@ -401,7 +401,7 @@
                             <tbody id="projectsTableBody">
                                 {% for project in dashboard_data.user_projects %}
                                 <tr data-status="{{ project.status }}"
-                                    onclick="window.location.href='/project/{{ project.id }}'">
+                                    onclick="window.location.href='/project/{{ project.project_no }}'">
                                     <td>{{ project.project_no }}</td>
                                     <td>{{ project.name }}</td>
                                     <td>{{ project.project_type }}</td>
