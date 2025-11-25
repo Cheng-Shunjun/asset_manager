@@ -439,7 +439,12 @@ class ProjectService:
             for contract_file in contract_files:
                 if contract_file.filename:
                     contract_filename = secure_filename(contract_file.filename)
-                    contract_path = os.path.join('static/uploads/contact_file/project_no', contract_filename)
+                    
+                    # 创建项目专用的上传目录
+                    contract_dir = os.path.join('static/uploads/contract_file', project_no)
+                    os.makedirs(contract_dir, exist_ok=True)  # 创建目录，如果不存在的话
+                    
+                    contract_path = os.path.join(contract_dir, contract_filename)
                     
                     with open(contract_path, "wb") as f:
                         content = await contract_file.read()

@@ -9,42 +9,43 @@ class ReportService:
     def __check_report_permission(self, user, project_creator, project_leader, report_creator):
         return (user.get("user_type") == "admin" or user.get("username") == report_creator)
 
-    async def update_report(self, project_no, report_no, reviewer1, reviewer2, reviewer3,
+    async def update_report(self, project_no, report_id, reviewer1, reviewer2, reviewer3,
                       signer1, signer2, report_files, user, db):
         try:
             c = db.cursor()
             # 使用 project_no 查询项目状态
-            c.execute("SELECT status FROM projects WHERE project_no = ?", (project_no,))
+            c.execute("SELECT id, status FROM projects WHERE project_no = ?", (project_no,))
             result = c.fetchone()
             
             if not result:
                 raise HTTPException(status_code=404, detail="项目不存在")
             
-            status = result[0]
+            project_id = result[0]
+            status = result[1]
             if status in ['completed', 'paused', 'cancelled']:
                 raise HTTPException(status_code=400, detail=f"项目状态为{status}，无法更新报告")
             
             # 获取报告信息，包括创建人和报告类型
             c.execute("""
-                SELECT id, file_paths, reviewer1, reviewer2, reviewer3, signer1, signer2, 
+                SELECT id, report_no, file_paths, reviewer1, reviewer2, reviewer3, signer1, signer2, 
                     creator, report_type 
                 FROM reports 
-                WHERE report_no = ? AND project_no = ?
-            """, (report_no, project_no))
+                WHERE id = ? AND project_id = ?
+            """, (report_id, project_id))
             result = c.fetchone()
             
             if not result:
                 raise HTTPException(status_code=404, detail="报告不存在")
             
-            report_id = result[0]
-            existing_files = result[1] if result[1] else ""
-            existing_reviewer1 = result[2]
-            existing_reviewer2 = result[3]
-            existing_reviewer3 = result[4]
-            existing_signer1 = result[5]
-            existing_signer2 = result[6]
-            report_creator = result[7]
-            report_type = result[8]
+            report_no = result[1]  # 获取报告号
+            existing_files = result[2] if result[2] else ""
+            existing_reviewer1 = result[3]
+            existing_reviewer2 = result[4]
+            existing_reviewer3 = result[5]
+            existing_signer1 = result[6]
+            existing_signer2 = result[7]
+            report_creator = result[8]
+            report_type = result[9]
             
             # 权限验证：只有管理员、项目创建人、项目负责人或报告创建人可以编辑
             c.execute("SELECT creator, project_leader FROM projects WHERE project_no = ?", (project_no,))
@@ -63,7 +64,7 @@ class ReportService:
                 if report_file.filename:
                     report_filename = secure_filename(report_file.filename)
                     # 修改文件路径，使用 project_no 而不是 project_id
-                    report_path = os.path.join('static/uploads/reports', project_no, report_filename)
+                    report_path = os.path.join('static/uploads/reports/', report_no, report_filename)
                     os.makedirs(os.path.dirname(report_path), exist_ok=True)
                     
                     with open(report_path, "wb") as f:
@@ -107,18 +108,20 @@ class ReportService:
             if len(reviewers) != len(set(reviewers)):
                 raise HTTPException(status_code=400, detail="复核人不能重复，请选择3个不同的复核人")
             
-            # 签字人验证
-            signers = [final_signer1, final_signer2]
-            if not all(signers):
-                raise HTTPException(status_code=400, detail="必须设置2个签字人，不能有空缺")
             
-            if len(signers) != len(set(signers)):
-                raise HTTPException(status_code=400, detail="签字人不能重复，请选择2个不同的签字人")
             
             # 新增：签字人资质验证
             signature_required_types = ["房地产估价报告", "资产评估报告", "土地报告"]
             
             if report_type in signature_required_types:
+                # 签字人验证
+                signers = [final_signer1, final_signer2]
+                if not all(signers):
+                    raise HTTPException(status_code=400, detail="必须设置2个签字人，不能有空缺")
+                
+                if len(signers) != len(set(signers)):
+                    raise HTTPException(status_code=400, detail="签字人不能重复，请选择2个不同的签字人")
+                
                 qualification_map = {
                     "资产评估报告": "资产评估师",
                     "房地产估价报告": "房地产估价师", 
@@ -164,11 +167,11 @@ class ReportService:
                 UPDATE reports 
                 SET reviewer1 = ?, reviewer2 = ?, reviewer3 = ?, 
                     signer1 = ?, signer2 = ?, file_paths = ?
-                WHERE report_no = ? AND project_no = ?
+                WHERE id = ? AND project_id = ?
             """, (
                 final_reviewer1, final_reviewer2, final_reviewer3,
                 final_signer1, final_signer2, all_files,
-                report_no, project_no
+                report_id, project_id
             ))
             
             db.commit()
@@ -181,7 +184,7 @@ class ReportService:
             raise HTTPException(status_code=500, detail=f"更新报告失败: {str(e)}")
 
     async def generate_report_no(self, project_no, report_type, is_filing, reviewer1, reviewer2,
-                       reviewer3, signer1, signer2, user, db):
+                        reviewer3, signer1, signer2, user, db):
         try:
             c = db.cursor()
             # 使用 project_no 查询项目状态
@@ -259,7 +262,6 @@ class ReportService:
             
             now = datetime.now()
             current_year = now.year
-            current_month = now.strftime("%m")
             
             report_type_prefixes = {
                 "房地产咨询报告": "房咨",
@@ -281,31 +283,37 @@ class ReportService:
             report_prefix = report_type_prefixes[report_type]
             year_pattern = f"[{current_year}]字第"
             
+            # 修改：按年度查询同类型报告
             if report_type in filing_required_types and is_filing == "是":
-                pattern = f"%{report_prefix}{year_pattern}A{current_month}%"
+                pattern = f"%{report_prefix}{year_pattern}A%号"
             else:
-                pattern = f"%{report_prefix}{year_pattern}{current_month}%"
+                pattern = f"%{report_prefix}{year_pattern}%号"
             
             c.execute("""
                 SELECT report_no FROM reports 
-                WHERE report_no LIKE ? AND project_no = ?
-            """, (pattern, project_no))
+                WHERE report_no LIKE ? AND project_id = ?
+            """, (pattern, project_id))
             
             existing_reports = c.fetchall()
             
             existing_numbers = []
             for report in existing_reports:
                 report_no = report[0]
+                
+                # 提取序号部分
                 if report_type in filing_required_types and is_filing == "是":
-                    prefix_len = len(f"川鼎{report_prefix}{year_pattern}A{current_month}")
-                    number_part = report_no[prefix_len:-1]
+                    # 格式：川鼎房估[2025]字第A001号
+                    prefix_len = len(f"川鼎{report_prefix}{year_pattern}A")
+                    number_part = report_no[prefix_len:-1]  # 去掉最后的"号"
                 else:
-                    prefix_len = len(f"川鼎{report_prefix}{year_pattern}{current_month}")
-                    number_part = report_no[prefix_len:-1]
+                    # 格式：川鼎房估[2025]字第001号
+                    prefix_len = len(f"川鼎{report_prefix}{year_pattern}")
+                    number_part = report_no[prefix_len:-1]  # 去掉最后的"号"
                 
                 if number_part.isdigit():
                     existing_numbers.append(int(number_part))
             
+            # 找到下一个可用的序号
             next_number = 1
             while next_number in existing_numbers:
                 next_number += 1
@@ -316,9 +324,9 @@ class ReportService:
             middle = f"[{current_year}]字第"
             
             if report_type in filing_required_types and is_filing == "是":
-                suffix = f"A{current_month}{sequence_no}号"
+                suffix = f"A{sequence_no}号"
             else:
-                suffix = f"{current_month}{sequence_no}号"
+                suffix = f"{sequence_no}号"
             
             report_no = f"{prefix}{report_type_prefixes[report_type]}{middle}{suffix}"
             
@@ -331,11 +339,11 @@ class ReportService:
             
             c.execute("""
                 INSERT INTO reports (
-                    report_no, project_no, project_id, report_type, file_paths, creator, creator_realname, create_date,
+                    report_no, project_id, report_type, file_paths, creator, creator_realname, create_date,
                     reviewer1, reviewer2, reviewer3, signer1, signer2
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
-                report_no, project_no, project_id, report_type, "", user["username"], creator_realname, create_date,
+                report_no, project_id, report_type, "", user["username"], creator_realname, create_date,
                 reviewer1, reviewer2, reviewer3, signer1, signer2
             ))
             
@@ -358,30 +366,31 @@ class ReportService:
             db.rollback()
             raise HTTPException(status_code=500, detail=f"生成报告号失败: {str(e)}")
 
-    async def delete_report(self, project_no, report_no, user, db):
+    async def delete_report(self, project_no, report_id, user, db):
         try:
             c = db.cursor()
             
-            c.execute("SELECT status FROM projects WHERE project_no = ?", (project_no,))
+            c.execute("SELECT id, status FROM projects WHERE project_no = ?", (project_no,))
             result = c.fetchone()
             
             if not result:
                 raise HTTPException(status_code=404, detail="项目不存在")
             
-            status = result[0]
+            project_id = result[0]
+            status = result[1]
             if status != 'active':
                 raise HTTPException(status_code=400, detail="只有进行中的项目可以删除报告")
             
-            # 获取报告信息，包括创建人
-            c.execute("SELECT id, file_paths, creator FROM reports WHERE report_no = ? AND project_no = ?", (report_no, project_no))
+            # 获取报告信息，包括创建人和报告号
+            c.execute("SELECT id, report_no, file_paths, creator FROM reports WHERE id = ? AND project_id = ?", (report_id, project_id))
             result = c.fetchone()
             
             if not result:
                 raise HTTPException(status_code=404, detail="报告不存在")
             
-            report_id = result[0]
-            file_paths = result[1]
-            report_creator = result[2]
+            report_no = result[1]  # 获取报告号
+            file_paths = result[2]
+            report_creator = result[3]
             
             # 权限验证：只有管理员、项目创建人、项目负责人或报告创建人可以删除
             c.execute("SELECT creator, project_leader FROM projects WHERE project_no = ?", (project_no,))
@@ -423,7 +432,7 @@ class ReportService:
             c.execute("DELETE FROM report_files WHERE report_id = ?", (report_id,))
             
             # 从 reports 表中删除报告记录
-            c.execute("DELETE FROM reports WHERE report_no = ? AND project_no = ?", (report_no, project_no))
+            c.execute("DELETE FROM reports WHERE id = ? AND project_id = ?", (report_id, project_id))
             
             # 更新项目的 report_numbers 字段
             c.execute("SELECT report_numbers FROM projects WHERE project_no = ?", (project_no,))
@@ -463,17 +472,17 @@ class ReportService:
                 raise HTTPException(status_code=400, detail="只有进行中的项目可以删除文件")
             
             # 获取报告信息
-            c.execute("SELECT id, creator, project_no FROM reports WHERE id = ?", (report_id,))
+            c.execute("SELECT id, creator, report_no FROM reports WHERE id = ?", (report_id,))
             report_result = c.fetchone()
             
             if not report_result:
                 raise HTTPException(status_code=404, detail="报告不存在")
             
             report_creator = report_result[1]
-            report_project_no = report_result[2]
+            report_no = report_result[2]
             
             # 检查项目权限
-            c.execute("SELECT creator, project_leader FROM projects WHERE project_no = ?", (report_project_no,))
+            c.execute("SELECT creator, project_leader FROM projects WHERE project_no = ?", (project_no,))
             project_result = c.fetchone()
             
             if not project_result:
