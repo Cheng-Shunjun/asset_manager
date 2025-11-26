@@ -348,27 +348,6 @@ async def reset_user_password_route(
     except Exception as e:
         return JSONResponse({"success": False, "message": str(e)}, status_code=500)
 
-# 在 user_routes.py 中添加切换用户状态的路由
-@router.post("/user_manager/toggle_status/{username}")
-async def toggle_user_status_route(
-    request: Request,
-    username: str,
-    user: dict = Depends(login_required),
-    db: sqlite3.Connection = Depends(get_db)
-):
-    """切换用户状态"""
-    # 检查用户权限
-    if user.get("user_type") != "admin":
-        return JSONResponse({"success": False, "message": "权限不足"}, status_code=403)
-    
-    try:
-        result = await user_service.toggle_user_status(username, db)
-        return JSONResponse({"success": True, "message": result["message"], "new_status": result["new_status"]})
-    except HTTPException as e:
-        return JSONResponse({"success": False, "message": e.detail}, status_code=e.status_code)
-    except Exception as e:
-        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
-
 @router.get("/user_manager/get_user/{username}")
 async def get_user(
     request: Request,

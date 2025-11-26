@@ -101,11 +101,13 @@
 
     table.table tbody tr {
       transition: background-color 0.2s ease;
+      cursor: pointer;
     }
 
     table.table tbody tr:hover {
       background-color: #f0f8ff;
       box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.1);
+      transform: translateY(-1px);
     }
 
     .user-type-badge {
@@ -169,17 +171,6 @@
       transform: translateY(-1px);
     }
 
-    /* 操作按钮样式 */
-    .action-buttons {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .btn-sm {
-      padding: 0.25rem 0.5rem;
-      font-size: 0.875rem;
-    }
-
     /* 响应式调整 */
     @media (max-width: 768px) {
       .sidebar {
@@ -204,13 +195,9 @@
         margin-top: 0.5rem;
         text-align: center;
       }
-
-      .action-buttons {
-        flex-direction: column;
-      }
     }
 
-    /* 在 user_manager.html 的 CSS 部分添加状态样式 */
+    /* 状态样式 */
     .status-badge {
       font-size: 0.75rem;
       padding: 0.35em 0.65em;
@@ -226,115 +213,6 @@
       color: white;
     }
 
-    /* 在 user_manager.html 的 CSS 部分添加以下样式 */
-
-    /* 模态框样式 */
-    .modal-header {
-      background: linear-gradient(135deg, var(--primary-color), #1a6fd8);
-      color: white;
-      border-bottom: none;
-    }
-
-    .modal-title {
-      font-weight: 600;
-    }
-
-    .required-field::after {
-      content: " *";
-      color: #dc3545;
-    }
-
-    /* 表单样式 */
-    .form-label {
-      font-weight: 600;
-      color: #495057;
-      margin-bottom: 0.5rem;
-    }
-
-    .form-control,
-    .form-select {
-      border: 1px solid #e9ecef;
-      border-radius: 6px;
-      padding: 0.75rem;
-      transition: all 0.3s ease;
-    }
-
-    .form-control:focus,
-    .form-select:focus {
-      border-color: var(--primary-color);
-      box-shadow: 0 0 0 0.2rem rgba(44, 128, 255, 0.25);
-    }
-
-    .form-text {
-      font-size: 0.8rem;
-      color: #6c757d;
-      margin-top: 0.25rem;
-    }
-
-    /* 按钮样式 */
-    .btn-primary {
-      background: linear-gradient(135deg, var(--primary-color), #1a6fd8);
-      border: none;
-      border-radius: 6px;
-      padding: 0.5rem 1.5rem;
-      font-weight: 500;
-      transition: all 0.3s ease;
-    }
-
-    .btn-primary:hover {
-      transform: translateY(-1px);
-      box-shadow: var(--card-shadow);
-    }
-
-    .btn-secondary {
-      border-radius: 6px;
-      padding: 0.5rem 1.5rem;
-      font-weight: 500;
-    }
-
-    /* 添加联系方式样式 */
-    .contact-info {
-      font-size: 0.85rem;
-    }
-
-    .contact-info small {
-      font-size: 0.75rem;
-    }
-
-    /* 调整表格列宽 */
-    .table th:nth-child(6),
-    /* 学历列 */
-    .table td:nth-child(6) {
-      min-width: 80px;
-      max-width: 100px;
-    }
-
-    .table th:nth-child(9),
-    /* 联系方式列 */
-    .table td:nth-child(9) {
-      min-width: 120px;
-      max-width: 150px;
-    }
-
-    .table th:nth-child(10),
-    /* 操作列 */
-    .table td:nth-child(10) {
-      min-width: 200px;
-      max-width: 250px;
-    }
-
-    /* 确保表格容器有足够的宽度 */
-    .table-container {
-      width: 100%;
-      overflow-x: auto;
-    }
-
-    .table {
-      min-width: 1400px;
-      /* 增加最小宽度以适应新列 */
-      table-layout: auto;
-    }
-
     /* 资质信息样式 */
     .qualification-badge {
       font-size: 0.7rem;
@@ -348,17 +226,16 @@
 
     /* 调整表格列宽 */
     .table th:nth-child(8),
-    /* 资质信息列 */
     .table td:nth-child(8) {
       min-width: 150px;
       max-width: 200px;
     }
 
-    .table th:nth-child(9),
-    /* 操作列 */
-    .table td:nth-child(9) {
-      min-width: 200px;
-      max-width: 250px;
+    /* 点击提示样式 */
+    .click-hint {
+      color: #6c757d;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
     }
   </style>
 </head>
@@ -404,7 +281,6 @@
         <div class="table-container">
           <div class="table-header">
             <h5 class="mb-0"><span class="fallback-icon">👥</span>用户列表</h5>
-            <!-- 在 user_manager.html 的筛选控件部分更新 -->
             <div class="filter-controls">
               <div class="btn-group" role="group">
                 <input type="radio" class="btn-check" name="userTypeFilter" id="allUsers" autocomplete="off" checked>
@@ -427,8 +303,6 @@
 
           {% if users %}
           <div class="table-container">
-            <!-- 在 user_manager.html 的表格部分更新 -->
-            <!-- 更新表格头部 -->
             <table class="table table-hover bg-white rounded shadow-sm">
               <thead class="table-primary">
                 <tr>
@@ -439,14 +313,13 @@
                   <th>入职日期</th>
                   <th>职位</th>
                   <th>部门</th>
-                  <th>资质信息</th> <!-- 新增列 -->
-                  <th>操作</th>
+                  <th>资质信息</th>
                 </tr>
               </thead>
               <tbody id="usersTableBody">
                 {% for user in users %}
                 <tr data-user-type="{{ user.user_type }}" data-user-status="{{ user.status }}"
-                  onclick="viewUserDetail('{{ user.username }}')" style="cursor: pointer;">
+                  onclick="viewUserDetail('{{ user.username }}')">
                   <td>
                     <strong>{{ user.username }}</strong>
                   </td>
@@ -506,26 +379,13 @@
                       {% endif %}
                     </div>
                   </td>
-                  <td>
-                    <div class="action-buttons">
-                      <button class="btn btn-sm btn-outline-warning" onclick="toggleUserStatus('{{ user.username }}')">
-                        {% if user.status == 'active' %}
-                        <span class="fallback-icon">🚪</span>设为离职
-                        {% else %}
-                        <span class="fallback-icon">✅</span>设为在职
-                        {% endif %}
-                      </button>
-                      {% if user.username != current_user %}
-                      <button class="btn btn-sm btn-outline-danger" onclick="deleteUser('{{ user.username }}')">
-                        <span class="fallback-icon">🗑️</span>删除
-                      </button>
-                      {% endif %}
-                    </div>
-                  </td>
                 </tr>
                 {% endfor %}
               </tbody>
             </table>
+            <div class="click-hint">
+              <span class="fallback-icon">💡</span>点击任意行查看用户详情并进行操作
+            </div>
           </div>
           {% else %}
           <div class="alert alert-info text-center">
@@ -544,7 +404,7 @@
       </div>
     </div>
   </div>
-  <!-- 在 user_manager.html 的 </body> 标签前添加添加用户模态框 -->
+
   <!-- 添加用户模态框 -->
   <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -664,215 +524,18 @@
     </div>
   </div>
 
-  <!-- 在添加用户模态框后面添加编辑用户模态框 -->
-  <!-- 编辑用户模态框 -->
-  <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="editUserModalLabel">
-            <span class="fallback-icon">✏️</span>编辑用户信息
-          </h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <form id="editUserForm" onsubmit="submitEditUserForm(event)">
-          <div class="modal-body">
-            <input type="hidden" id="edit_username" name="username">
-
-            <div class="row">
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label class="form-label">用户名</label>
-                  <input type="text" class="form-control" id="edit_username_display" readonly>
-                  <div class="form-text">用户名不可修改</div>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label for="edit_user_type" class="form-label required-field">用户类型</label>
-                  <select class="form-select" id="edit_user_type" name="user_type" required>
-                    <option value="">请选择用户类型</option>
-                    <option value="user">普通用户</option>
-                    <option value="admin">管理员</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div class="row">
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label for="edit_realname" class="form-label">真实姓名</label>
-                  <input type="text" class="form-control" id="edit_realname" name="realname">
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label for="edit_status" class="form-label">用户状态</label>
-                  <select class="form-select" id="edit_status" name="status">
-                    <option value="active">在职</option>
-                    <option value="inactive">离职</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div class="row">
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label for="edit_phone" class="form-label">手机号码</label>
-                  <input type="tel" class="form-control" id="edit_phone" name="phone">
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label for="edit_email" class="form-label">邮箱</label>
-                  <input type="email" class="form-control" id="edit_email" name="email">
-                </div>
-              </div>
-            </div>
-
-            <div class="row">
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label for="edit_hire_date" class="form-label">入职日期</label>
-                  <input type="date" class="form-control" id="edit_hire_date" name="hire_date">
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label for="edit_education" class="form-label">学历</label>
-                  <select class="form-select" id="edit_education" name="education">
-                    <option value="">请选择学历</option>
-                    <option value="专科">专科</option>
-                    <option value="本科">本科</option>
-                    <option value="硕士">硕士</option>
-                    <option value="博士">博士</option>
-                    <option value="其他">其他</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div class="row">
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label for="edit_position" class="form-label">职位</label>
-                  <input type="text" class="form-control" id="edit_position" name="position">
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label for="edit_department" class="form-label">部门</label>
-                  <input type="text" class="form-control" id="edit_department" name="department">
-                </div>
-              </div>
-            </div>
-
-            <div class="mt-3 p-3 bg-light rounded">
-              <h6><span class="fallback-icon">🔐</span>密码管理</h6>
-              <button type="button" class="btn btn-outline-warning btn-sm" onclick="resetPasswordFromEdit()">
-                <span class="fallback-icon">🔄</span>重置密码
-              </button>
-              <div class="form-text">重置密码后，用户需要使用新密码登录</div>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-            <button type="submit" class="btn btn-primary" id="editUserSubmitBtn">
-              <span class="fallback-icon">💾</span>保存修改
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <!-- 在 user_manager.html 的 JavaScript 部分更新函数 -->
 
   <script>
-    // 删除用户函数
-    function deleteUser(username) {
-      if (confirm('确定要删除用户 "' + username + '" 吗？此操作不可恢复！')) {
-        fetch('/user_manager/delete/' + username, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          }
-        })
-          .then(response => response.json())
-          .then(data => {
-            if (data.success) {
-              alert(data.message);
-              location.reload();
-            } else {
-              alert('删除失败: ' + data.message);
-            }
-          })
-          .catch(error => {
-            alert('删除失败: ' + error);
-          });
-      }
+    // 查看用户详情
+    function viewUserDetail(username) {
+      window.location.href = `/admin/user_profile/${username}`;
     }
 
-    // 修复添加用户函数 - 使用纯 JavaScript 方式
+    // 添加用户函数
     function addUser() {
-      // 使用 Bootstrap 5 的纯 JavaScript 方式打开模态框
       const addUserModal = new bootstrap.Modal(document.getElementById('addUserModal'));
       addUserModal.show();
-    }
-
-    // 重置密码函数
-    function resetPassword(username) {
-      const newPassword = prompt('请输入新密码（至少8位）:');
-      if (newPassword && newPassword.length >= 8) {
-        fetch('/user_manager/reset_password/' + username, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: 'new_password=' + encodeURIComponent(newPassword)
-        })
-          .then(response => response.json())
-          .then(data => {
-            if (data.success) {
-              alert(data.message);
-            } else {
-              alert('密码重置失败: ' + data.message);
-            }
-          })
-          .catch(error => {
-            alert('密码重置失败: ' + error);
-          });
-      } else if (newPassword) {
-        alert('密码长度至少8位');
-      }
-    }
-
-    // 切换用户状态函数
-    function toggleUserStatus(username) {
-      const action = confirm(`确定要切换用户 "${username}" 的状态吗？`);
-      if (action) {
-        fetch('/user_manager/toggle_status/' + username, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          }
-        })
-          .then(response => response.json())
-          .then(data => {
-            if (data.success) {
-              alert(data.message);
-              location.reload();
-            } else {
-              alert('状态切换失败: ' + data.message);
-            }
-          })
-          .catch(error => {
-            alert('状态切换失败: ' + error);
-          });
-      }
     }
 
     // 用户筛选功能
@@ -984,16 +647,6 @@
       const today = new Date().toISOString().split('T')[0];
       document.getElementById('hire_date').value = today;
     });
-
-    function resetPasswordFromEdit() {
-      const username = document.getElementById('edit_username').value;
-      if (username) {
-        resetPassword(username);
-      }
-    }
-    function viewUserDetail(username) {
-      window.location.href = `/admin/user_profile/${username}`;
-    }
   </script>
 </body>
 

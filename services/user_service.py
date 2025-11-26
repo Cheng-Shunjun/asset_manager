@@ -19,7 +19,7 @@ class UserService:
             # 修改查询，使用 datetime 函数转换时区
             c.execute("""
                 SELECT username, user_type, realname, email, phone, department, 
-                    position, education, hire_date,
+                    position, education, hire_date, status,
                     datetime(create_time, 'localtime') as create_time,
                     datetime(update_time, 'localtime') as update_time
                 FROM users 
