@@ -158,7 +158,7 @@ class ProjectService:
             ))
             db.commit()
 
-            return RedirectResponse(url="/admin", status_code=303)
+            return RedirectResponse(url="/user_dashboard", status_code=303)
 
         except Exception as e:
             db.rollback()

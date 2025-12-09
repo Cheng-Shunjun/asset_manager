@@ -519,27 +519,6 @@ class UserService:
         
         return {"message": "用户信息更新成功"}
 
-    async def toggle_user_status(self, username: str, db):
-        """切换用户状态（在职/离职）"""
-        c = db.cursor()
-        
-        # 检查用户是否存在
-        c.execute("SELECT username, status FROM users WHERE username = ?", (username,))
-        user = c.fetchone()
-        if not user:
-            raise HTTPException(status_code=404, detail="用户不存在")
-        
-        current_status = user[1] if user[1] else "active"
-        new_status = "inactive" if current_status == "active" else "active"
-        
-        # 更新状态
-        c.execute("UPDATE users SET status = ?, update_time = CURRENT_TIMESTAMP WHERE username = ?", 
-                (new_status, username))
-        db.commit()
-        
-        status_text = "在职" if new_status == "active" else "离职"
-        return {"message": f"用户状态已更新为{status_text}", "new_status": new_status}
-
     async def delete_user(self, username: str, current_username: str, db):
         """删除用户"""
         c = db.cursor()
