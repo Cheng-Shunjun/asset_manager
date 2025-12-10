@@ -53,10 +53,9 @@ def auto_import_qualifications(db_path='db.sqlite3'):
                 # 插入数据库
                 c.execute("""
                     INSERT INTO company_qualifications 
-                    (certificate_name, category, owner, file_path, file_name, uploader_username)
-                    VALUES (?, ?, ?, ?, ?, ?)
+                    (category, owner, file_path, file_name, uploader_username)
+                    VALUES (?, ?, ?, ?, ?)
                 """, (
-                    certificate_info['certificate_name'],
                     certificate_info['category'],
                     certificate_info['owner'],
                     file_path,
@@ -64,7 +63,7 @@ def auto_import_qualifications(db_path='db.sqlite3'):
                     'admin'
                 ))
                 
-                print(f"✓ 导入: {certificate_info['certificate_name']} ({certificate_info['category']})")
+                print(f"✓ 导入: ({certificate_info['category']} {filename})")
                 imported_count += 1
             else:
                 print(f"✗ 无法解析文件名: {filename}")
@@ -90,7 +89,6 @@ def parse_certificate_info(filename):
     # 首先检查是否包含"营业执照"
     if '营业执照' in filename:
         return {
-            'certificate_name': '公司营业执照',
             'category': '营业执照',
             'owner': '公司法人'
         }
@@ -113,14 +111,12 @@ def parse_certificate_info(filename):
         if match:
             name = match.group(2) if pattern.startswith('^(.+)_') else match.group(2)
             return {
-                'certificate_name': f'{category}证书 - {name}',
                 'category': category,
                 'owner': name
             }
     
     # 如果无法匹配任何模式，使用默认处理
     return {
-        'certificate_name': f'资质证书 - {name_without_ext}',
         'category': '其他',
         'owner': '公司'
     }

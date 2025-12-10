@@ -707,7 +707,7 @@ class UserService:
             
             if category and category != 'all':
                 c.execute("""
-                    SELECT id, certificate_name, category, owner, file_path, file_name,
+                    SELECT id, category, owner, file_path, file_name,
                         datetime(update_time, 'localtime') as update_time,
                         uploader_username, status
                     FROM company_qualifications 
@@ -716,7 +716,7 @@ class UserService:
                 """, (category,))
             else:
                 c.execute("""
-                    SELECT id, certificate_name, category, owner, file_path, file_name,
+                    SELECT id, category, owner, file_path, file_name,
                         datetime(update_time, 'localtime') as update_time,
                         uploader_username, status
                     FROM company_qualifications 
@@ -742,8 +742,8 @@ class UserService:
             # 检查是否已存在相同名称的证书
             c.execute("""
                 SELECT id FROM company_qualifications 
-                WHERE certificate_name = ? AND status = 'active'
-            """, (qualification_data.get("certificate_name"),))
+                WHERE file_name = ? AND status = 'active'
+            """, (qualification_data.get("file_name"),))
             
             if c.fetchone():
                 raise HTTPException(status_code=400, detail="已存在相同名称的证书")
@@ -756,10 +756,9 @@ class UserService:
             # 插入新资质
             c.execute("""
                 INSERT INTO company_qualifications 
-                (certificate_name, category, owner, file_path, file_name, uploader_username)
-                VALUES (?, ?, ?, ?, ?, ?)
+                (category, owner, file_path, file_name, uploader_username)
+                VALUES (?, ?, ?, ?, ?)
             """, (
-                qualification_data.get("certificate_name"),
                 qualification_data.get("category"),
                 owner,  # 使用处理后的拥有人
                 qualification_data.get("file_path"),

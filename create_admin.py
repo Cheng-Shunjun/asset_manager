@@ -131,7 +131,6 @@ def init_database():
     # 公司资质表
     c.execute('''CREATE TABLE IF NOT EXISTS company_qualifications (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        certificate_name TEXT NOT NULL,
         category TEXT NOT NULL,
         owner TEXT,
         file_path TEXT NOT NULL,

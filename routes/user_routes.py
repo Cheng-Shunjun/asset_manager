@@ -547,7 +547,7 @@ async def download_company_qualification(
     try:
         c = db.cursor()
         c.execute("""
-            SELECT file_path, file_name, certificate_name 
+            SELECT file_path, file_name 
             FROM company_qualifications 
             WHERE id = ? AND status = 'active'
         """, (qualification_id,))
@@ -558,7 +558,6 @@ async def download_company_qualification(
         
         file_path = result[0]
         file_name = result[1]
-        certificate_name = result[2]
         
         # 检查文件是否存在
         import os
@@ -581,7 +580,6 @@ async def download_company_qualification(
 @router.post("/admin/company_qualifications/add")
 async def admin_add_company_qualification(
     request: Request,
-    certificate_name: str = Form(...),
     category: str = Form(...),
     owner: str = Form(None),
     certificate_file: UploadFile = File(...),
@@ -601,7 +599,7 @@ async def admin_add_company_qualification(
         
         # 生成文件路径
         file_extension = certificate_file.filename.split('.')[-1]
-        safe_filename = f"{certificate_name.replace(' ', '_')}.{file_extension}"
+        safe_filename = f"{certificate_file.filename.replace(' ', '_')}.{file_extension}"
         file_path = f"{upload_dir}/{safe_filename}"
         
         # 保存文件
@@ -610,7 +608,6 @@ async def admin_add_company_qualification(
             buffer.write(content)
         
         qualification_data = {
-            "certificate_name": certificate_name,
             "category": category,
             "owner": owner,
             "file_path": file_path,

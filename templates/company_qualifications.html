@@ -359,7 +359,7 @@
                                                 {% elif qual.category == '资产评估师' %}💰
                                                 {% else %}📋{% endif %}
                                             </span>
-                                            {{ qual.certificate_name }}
+                                            {{ qual.file_name }}
                                         </td>
                                         <td>
                                             <span class="badge-category">{{ qual.category }}</span>
@@ -406,11 +406,6 @@
                 </div>
                 <div class="modal-body">
                     <form id="addQualificationForm" enctype="multipart/form-data">
-                        <div class="mb-3">
-                            <label for="addCertificateName" class="form-label">证书名称</label>
-                            <input type="text" class="form-control" id="addCertificateName" name="certificate_name"
-                                required>
-                        </div>
                         <div class="mb-3">
                             <label for="addCategory" class="form-label">类别</label>
                             <select class="form-select" id="addCategory" name="category" required>
@@ -598,15 +593,8 @@
                 return;
             }
 
-            // 使用证书名称作为文件名
-            const certificateName = document.getElementById('addCertificateName').value;
-            if (!certificateName) {
-                alert('请输入证书名称');
-                return;
-            }
-
-            // 添加文件名到表单数据
-            formData.append('file_name', certificateName + '.' + certificateFile.name.split('.').pop());
+            // 使用原始文件名作为file_name
+            formData.append('file_name', certificateFile.name);
 
             fetch('/admin/company_qualifications/add', {
                 method: 'POST',
