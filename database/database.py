@@ -142,6 +142,22 @@ class Database:
             FOREIGN KEY (project_id) REFERENCES projects (id)
         )
         """)
+        # 修改 report_templates 表结构，去除 template_name 字段：
+
+        c.execute("""
+        CREATE TABLE IF NOT EXISTS report_templates (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            category TEXT NOT NULL,                -- 类别: asset, real_estate, land, other
+            owner TEXT,                            -- 维护人
+            file_path TEXT NOT NULL,               -- 文件路径
+            file_name TEXT NOT NULL,               -- 原文件名（同时作为模板名称）
+            uploader_username TEXT NOT NULL,       -- 上传者用户名
+            uploader_realname TEXT NOT NULL,       -- 上传者真实姓名
+            upload_time TEXT DEFAULT CURRENT_TIMESTAMP,  -- 上传时间
+            file_size INTEGER,                     -- 文件大小（字节）
+            status TEXT DEFAULT 'active'           -- 状态: active, inactive
+        )
+        """)
         conn.commit()
     
     @contextmanager

@@ -641,3 +641,175 @@ async def admin_delete_company_qualification(
         return JSONResponse({"success": False, "message": e.detail}, status_code=e.status_code)
     except Exception as e:
         return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+
+# 在 user_routes.py 中添加以下代码，可以放在公司资质路由之后：
+
+@router.get("/report_templates", response_class=HTMLResponse)
+async def report_templates(
+    request: Request,
+    category: str = None,
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    """报告模板页面"""
+    try:
+        # 获取报告模板列表
+        templates_list = await user_service.get_report_templates(category, db)
+        
+        # 获取所有用户列表（用于选择维护人）
+        all_users = await user_service.get_all_users_for_qualifications(db)
+        print(all_users)
+
+        return templates.TemplateResponse("report_templates.html", {
+            "request": request,
+            "user": user,
+            "all_users": all_users,
+            "templates": templates_list,
+            "current_category": category or "all"
+        })
+    except Exception as e:
+        print(e)
+        return templates.TemplateResponse("report_templates.html", {
+            "request": request,
+            "user": user,
+            "all_users": [],
+            "templates": [],
+            "current_category": category or "all",
+            "error": str(e)
+        })
+
+@router.get("/report_templates/download/{template_id}")
+async def download_report_template(
+    request: Request,
+    template_id: int,
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    """下载报告模板文件"""
+    try:
+        c = db.cursor()
+        c.execute("""
+            SELECT file_path, file_name 
+            FROM report_templates 
+            WHERE id = ? AND status = 'active'
+        """, (template_id,))
+        
+        result = c.fetchone()
+        if not result:
+            raise HTTPException(status_code=404, detail="模板文件不存在")
+        
+        file_path = result[0]
+        file_name = result[1]
+        
+        # 检查文件是否存在
+        import os
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail="文件不存在")
+        
+        # 返回文件流
+        from fastapi.responses import FileResponse
+        return FileResponse(
+            path=file_path,
+            filename=file_name,
+            media_type='application/octet-stream'
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"下载文件失败: {str(e)}")
+
+@router.post("/admin/report_templates/add")
+async def admin_add_report_template(
+    request: Request,
+    category: str = Form(...),
+    owner: str = Form(None),
+    template_file: UploadFile = File(...),
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    """管理员添加报告模板"""
+    if user.get("user_type") != "admin":
+        return JSONResponse({"success": False, "message": "权限不足"}, status_code=403)
+    
+    try:
+        # 创建上传目录
+        import os
+        upload_dir = "static/uploads/report_templates"
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        # 生成安全文件名
+        import time
+        safe_filename = f"{int(time.time())}_{template_file.filename.replace(' ', '_')}"
+        file_path = f"{upload_dir}/{safe_filename}"
+        
+        # 保存文件
+        with open(file_path, "wb") as buffer:
+            content = await template_file.read()
+            buffer.write(content)
+        
+        # 获取文件大小
+        file_size = os.path.getsize(file_path)
+        
+        # 插入数据库
+        c = db.cursor()
+        c.execute("""
+            INSERT INTO report_templates 
+            (category, owner, file_path, file_name, 
+             uploader_username, uploader_realname, file_size)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (
+            category,
+            owner,
+            file_path,
+            template_file.filename,  # 使用原始文件名
+            user["username"],
+            user.get("realname", user["username"]),
+            file_size
+        ))
+        db.commit()
+        
+        return JSONResponse({"success": True, "message": "报告模板添加成功"})
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+
+@router.post("/admin/report_templates/delete/{template_id}")
+async def admin_delete_report_template(
+    request: Request,
+    template_id: int,
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    """管理员删除报告模板"""
+    if user.get("user_type") != "admin":
+        return JSONResponse({"success": False, "message": "权限不足"}, status_code=403)
+    
+    try:
+        c = db.cursor()
+        
+        # 检查模板是否存在
+        c.execute("SELECT file_name, file_path FROM report_templates WHERE id = ?", (template_id,))
+        template = c.fetchone()
+        if not template:
+            return JSONResponse({"success": False, "message": "模板不存在"}, status_code=404)
+        
+        file_name = template[0]
+        file_path = template[1]
+        
+        # 硬删除：先删除物理文件，再删除数据库记录
+        import os
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except Exception as file_error:
+                print(f"删除文件失败: {str(file_error)}")
+                # 可以选择继续删除数据库记录，或者返回错误信息
+                # return JSONResponse({"success": False, "message": f"删除文件失败: {str(file_error)}"}, status_code=500)
+        
+        # 删除数据库记录（硬删除）
+        c.execute("DELETE FROM report_templates WHERE id = ?", (template_id,))
+        db.commit()
+        
+        return JSONResponse({"success": True, "message": f"报告模板 '{file_name}' 已删除"})
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)}, status_code=500)

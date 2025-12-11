@@ -807,5 +807,29 @@ class UserService:
         except Exception as e:
             print(f"获取资质类别失败: {e}")
             return []
+    
+    async def get_report_templates(self, category: str = None, db: sqlite3.Connection = None):
+        """获取报告模板列表"""
+        try:
+            c = db.cursor()
+            
+            query = "SELECT id, category, owner, file_path, file_name, uploader_username, uploader_realname, upload_time, file_size FROM report_templates WHERE status = 'active'"
+            params = []
+            
+            if category and category != 'all':
+                query += " AND category = ?"
+                params.append(category)
+            
+            query += " ORDER BY upload_time DESC"
+            c.execute(query, params)
+            
+            templates = []
+            for row in c.fetchall():
+                templates.append(dict(row))
+            
+            return templates
+        except Exception as e:
+            print(f"获取报告模板失败: {str(e)}")
+            raise
 
 user_service = UserService()
