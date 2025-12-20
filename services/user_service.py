@@ -364,6 +364,148 @@ class UserService:
         
         return reports
 
+    async def get_user_projects_paginated(self, username: str, page: int = 1, limit: int = 20, 
+                                        search: str = None, status: str = None, db=None):
+        """分页获取用户参与的项目"""
+        try:
+            c = db.cursor()
+            
+            # 计算偏移量
+            offset = (page - 1) * limit
+            
+            # 构建基础查询 - 用户参与的所有项目
+            base_query = """
+                SELECT DISTINCT p.*
+                FROM projects p
+                LEFT JOIN reports r ON p.id = r.project_id
+                WHERE (p.project_leader = ? OR p.market_leader = ? OR p.creator = ?
+                    OR r.reviewer1 = ? OR r.reviewer2 = ? OR r.reviewer3 = ?
+                    OR r.signer1 = ? OR r.signer2 = ?)
+            """
+            
+            # 构建计数查询
+            count_query = """
+                SELECT COUNT(DISTINCT p.id)
+                FROM projects p
+                LEFT JOIN reports r ON p.id = r.project_id
+                WHERE (p.project_leader = ? OR p.market_leader = ? OR p.creator = ?
+                    OR r.reviewer1 = ? OR r.reviewer2 = ? OR r.reviewer3 = ?
+                    OR r.signer1 = ? OR r.signer2 = ?)
+            """
+            
+            # 查询参数
+            params = [username] * 8  # 8个位置参数
+            
+            # 添加搜索条件
+            if search and search.strip():
+                search_term = f"%{search.strip()}%"
+                base_query += " AND (p.name LIKE ? OR p.project_no LIKE ? OR p.client_name LIKE ?)"
+                count_query += " AND (p.name LIKE ? OR p.project_no LIKE ? OR p.client_name LIKE ?)"
+                params.extend([search_term, search_term, search_term])
+            
+            # 添加状态筛选条件
+            if status and status != 'all':
+                base_query += " AND p.status = ?"
+                count_query += " AND p.status = ?"
+                params.append(status)
+            
+            # 添加排序和分页
+            base_query += " ORDER BY p.create_date DESC LIMIT ? OFFSET ?"
+            
+            # 复制参数用于计数查询
+            count_params = params.copy()
+            
+            # 添加分页参数到数据查询
+            params.extend([limit, offset])
+            
+            # 执行计数查询
+            c.execute(count_query, count_params)
+            total_count = c.fetchone()[0]
+            
+            # 执行数据查询
+            c.execute(base_query, params)
+            rows = c.fetchall()
+            
+            if not rows:
+                return {
+                    "projects": [],
+                    "total_count": 0,
+                    "total_pages": 0,
+                    "current_page": page,
+                    "page_size": limit
+                }
+            
+            # 获取列名
+            column_names = [col[0] for col in c.description]
+            
+            # 收集所有需要查询的用户名
+            usernames_to_query = set()
+            projects = []
+            
+            for row in rows:
+                project_dict = dict(zip(column_names, row))
+                
+                if project_dict.get("project_leader"):
+                    usernames_to_query.add(project_dict["project_leader"])
+                if project_dict.get("market_leader"):
+                    usernames_to_query.add(project_dict["market_leader"])
+                
+                projects.append(project_dict)
+            
+            # 批量查询用户真实姓名
+            user_realnames = {}
+            if usernames_to_query:
+                c2 = db.cursor()
+                placeholders = ','.join('?' * len(usernames_to_query))
+                c2.execute(f"SELECT username, realname FROM users WHERE username IN ({placeholders})", 
+                        list(usernames_to_query))
+                for row in c2.fetchall():
+                    user_realnames[row[0]] = row[1]
+                c2.close()
+            
+            # 处理每个项目，添加真实姓名
+            for project in projects:
+                if project.get("project_leader"):
+                    project["project_leader_realname"] = user_realnames.get(
+                        project["project_leader"], project["project_leader"]
+                    )
+                else:
+                    project["project_leader_realname"] = ""
+                
+                if project.get("market_leader"):
+                    project["market_leader_realname"] = user_realnames.get(
+                        project["market_leader"], project["market_leader"]
+                    )
+                else:
+                    project["market_leader_realname"] = ""
+                
+                # 确保所有必要的字段都有默认值
+                project.setdefault("project_no", "")
+                project.setdefault("name", "")
+                project.setdefault("project_type", "")
+                project.setdefault("client_name", "")
+                project.setdefault("progress", "")
+                project.setdefault("report_numbers", "")
+                project.setdefault("amount", 0)
+                project.setdefault("is_paid", "")
+                project.setdefault("start_date", "")
+                project.setdefault("status", "active")
+            
+            # 计算总页数
+            total_pages = (total_count + limit - 1) // limit  # 向上取整
+            
+            return {
+                "projects": projects,
+                "total_count": total_count,
+                "total_pages": total_pages,
+                "current_page": page,
+                "page_size": limit
+            }
+            
+        except Exception as e:
+            print(f"分页获取用户项目失败: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"获取项目列表失败: {str(e)}")
+
     async def get_user_qualifications(self, username: str, db):
         """获取用户资质信息"""
         c = db.cursor()
@@ -830,6 +972,30 @@ class UserService:
             return templates
         except Exception as e:
             print(f"获取报告模板失败: {str(e)}")
+            raise
+    # 在现有服务方法后面添加评估准则相关方法
+    async def get_evaluation_standards(self, category: str = None, db: sqlite3.Connection = None):
+        """获取评估准则列表"""
+        try:
+            c = db.cursor()
+            
+            query = "SELECT id, category, owner, file_path, file_name, uploader_username, uploader_realname, upload_time, file_size FROM evaluation_standards WHERE status = 'active'"
+            params = []
+            
+            if category and category != 'all':
+                query += " AND category = ?"
+                params.append(category)
+            
+            query += " ORDER BY upload_time DESC"
+            c.execute(query, params)
+            
+            standards = []
+            for row in c.fetchall():
+                standards.append(dict(row))
+            
+            return standards
+        except Exception as e:
+            print(f"获取评估准则失败: {str(e)}")
             raise
 
 user_service = UserService()

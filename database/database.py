@@ -158,6 +158,23 @@ class Database:
             status TEXT DEFAULT 'active'           -- 状态: active, inactive
         )
         """)
+
+        # 评估准则表
+        c.execute("""
+        CREATE TABLE IF NOT EXISTS evaluation_standards (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            category TEXT NOT NULL,                -- 类别: national, industry, internal, other
+            owner TEXT,                            -- 维护人
+            file_path TEXT NOT NULL,               -- 文件路径
+            file_name TEXT NOT NULL,               -- 原文件名
+            uploader_username TEXT NOT NULL,       -- 上传者用户名
+            uploader_realname TEXT NOT NULL,       -- 上传者真实姓名
+            upload_time TEXT DEFAULT CURRENT_TIMESTAMP,  -- 上传时间
+            file_size INTEGER,                     -- 文件大小（字节）
+            status TEXT DEFAULT 'active'           -- 状态: active, inactive
+        )
+        """)
+        
         conn.commit()
     
     @contextmanager

@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>报告模板 - 资产管理系统</title>
+    <title>评估准则 - 资产管理系统</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.0/font/bootstrap-icons.min.css">
@@ -183,17 +183,17 @@
             font-weight: 500;
         }
 
-        .badge-asset {
+        .badge-national {
             background: linear-gradient(135deg, #28a745, #1e7e34);
             color: white;
         }
 
-        .badge-real-estate {
+        .badge-industry {
             background: linear-gradient(135deg, #ffc107, #d39e00);
             color: #212529;
         }
 
-        .badge-land {
+        .badge-internal {
             background: linear-gradient(135deg, #17a2b8, #138496);
             color: white;
         }
@@ -322,10 +322,10 @@
                     <a class="nav-link" href="/company_qualifications">
                         <span class="fallback-icon">📜</span>公司资质
                     </a>
-                    <a class="nav-link active" href="/report_templates">
+                    <a class="nav-link" href="/report_templates">
                         <span class="fallback-icon">📑</span>报告模板
                     </a>
-                    <a class="nav-link" href="/evaluation_standards">
+                    <a class="nav-link active" href="/evaluation_standards">
                         <span class="fallback-icon">📐</span>评估准则
                     </a>
                     <a class="nav-link" href="/create_project">
@@ -336,34 +336,34 @@
 
             <!-- 主内容区 -->
             <div class="col-md-9 col-lg-10 main-content">
-                <h3 class="page-title">报告模板</h3>
+                <h3 class="page-title">评估准则</h3>
 
                 <!-- 筛选器卡片 -->
                 <div class="card">
                     <div class="card-header">
-                        <span><span class="fallback-icon">🔍</span>模板筛选</span>
+                        <span><span class="fallback-icon">🔍</span>准则筛选</span>
                     </div>
                     <div class="card-body">
                         <div class="filter-section">
                             <div class="d-flex flex-wrap align-items-center">
-                                <span class="filter-label">模板类别:</span>
+                                <span class="filter-label">准则类别:</span>
                                 <span class="filter-badge active" data-category="all">全部</span>
-                                <span class="filter-badge" data-category="asset">资产</span>
-                                <span class="filter-badge" data-category="real_estate">房地产</span>
-                                <span class="filter-badge" data-category="land">土地</span>
+                                <span class="filter-badge" data-category="national">国家标准</span>
+                                <span class="filter-badge" data-category="industry">行业标准</span>
+                                <span class="filter-badge" data-category="internal">内部准则</span>
                                 <span class="filter-badge" data-category="other">其他</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- 模板列表卡片 -->
+                <!-- 准则列表卡片 -->
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <span><span class="fallback-icon">📋</span>报告模板列表</span>
+                        <span><span class="fallback-icon">📋</span>评估准则列表</span>
                         {% if user.user_type == 'admin' %}
                         <button class="add-btn" onclick="showAddModal()">
-                            <span class="fallback-icon">➕</span>添加模板
+                            <span class="fallback-icon">➕</span>添加准则
                         </button>
                         {% endif %}
                     </div>
@@ -372,47 +372,47 @@
                             <table class="table table-hover">
                                 <thead>
                                     <tr>
-                                        <th width="20%">模板名称</th>
+                                        <th width="20%">文件名称</th>
                                         <th width="15%">类别</th>
                                         <th width="15%">维护人</th>
                                         <th width="15%">上传时间</th>
                                         <th width="20%">操作</th>
                                     </tr>
                                 </thead>
-                                <tbody id="templatesTable">
-                                    {% for template in templates %}
-                                    <tr data-category="{{ template.category }}">
+                                <tbody id="standardsTable">
+                                    {% for standard in standards %}
+                                    <tr data-category="{{ standard.category }}">
                                         <td class="filename-cell">
                                             <span class="fallback-icon">
-                                                {% if template.category == 'asset' %}💰
-                                                {% elif template.category == 'real_estate' %}🏠
-                                                {% elif template.category == 'land' %}🌱
+                                                {% if standard.category == 'national' %}🇨🇳
+                                                {% elif standard.category == 'industry' %}🏢
+                                                {% elif standard.category == 'internal' %}🏠
                                                 {% else %}📋{% endif %}
                                             </span>
-                                            {{ template.file_name }}
+                                            {{ standard.file_name }}
                                         </td>
                                         <td>
-                                            {% if template.category == 'asset' %}
-                                            <span class="badge-category badge-asset">资产</span>
-                                            {% elif template.category == 'real_estate' %}
-                                            <span class="badge-category badge-real-estate">房地产</span>
-                                            {% elif template.category == 'land' %}
-                                            <span class="badge-category badge-land">土地</span>
+                                            {% if standard.category == 'national' %}
+                                            <span class="badge-category badge-national">国家标准</span>
+                                            {% elif standard.category == 'industry' %}
+                                            <span class="badge-category badge-industry">行业标准</span>
+                                            {% elif standard.category == 'internal' %}
+                                            <span class="badge-category badge-internal">内部准则</span>
                                             {% else %}
                                             <span class="badge-category badge-other">其他</span>
                                             {% endif %}
                                         </td>
-                                        <td>{{ template.owner or '系统' }}</td>
-                                        <td>{{ template.upload_time }}</td>
+                                        <td>{{ standard.owner or '系统' }}</td>
+                                        <td>{{ standard.upload_time }}</td>
                                         <td>
-                                            <a href="/report_templates/download/{{ template.id }}"
+                                            <a href="/evaluation_standards/download/{{ standard.id }}"
                                                 class="download-btn" target="_blank">
                                                 <span class="fallback-icon">⬇️</span>下载
                                             </a>
                                             <!-- 只有管理员才能看到删除按钮 -->
                                             {% if user.user_type == 'admin' %}
                                             <button class="btn btn-sm btn-outline-danger ms-1"
-                                                onclick="deleteTemplate({{ template.id }}, '{{ template.file_name }}')">
+                                                onclick="deleteStandard({{ standard.id }}, '{{ standard.file_name }}')">
                                                 <span class="fallback-icon">🗑️</span>
                                             </button>
                                             {% endif %}
@@ -426,7 +426,7 @@
                         <!-- 空状态提示 -->
                         <div id="noResults" class="text-center text-muted py-4 d-none">
                             <span class="fallback-icon">🔍</span>
-                            <p class="mb-0">没有找到符合条件的报告模板</p>
+                            <p class="mb-0">没有找到符合条件的评估准则</p>
                         </div>
                     </div>
                 </div>
@@ -434,29 +434,29 @@
         </div>
     </div>
 
-    <!-- 添加模板模态框 -->
-    <div class="modal fade" id="addTemplateModal" tabindex="-1">
+    <!-- 添加准则模态框 -->
+    <div class="modal fade" id="addStandardModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">添加报告模板</h5>
+                    <h5 class="modal-title">添加评估准则</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="addTemplateForm" enctype="multipart/form-data">
+                    <form id="addStandardForm" enctype="multipart/form-data">
                         <div class="mb-3">
-                            <label for="templateCategory" class="form-label">类别</label>
-                            <select class="form-select" id="templateCategory" name="category" required>
+                            <label for="standardCategory" class="form-label">类别</label>
+                            <select class="form-select" id="standardCategory" name="category" required>
                                 <option value="">请选择类别</option>
-                                <option value="asset">资产</option>
-                                <option value="real_estate">房地产</option>
-                                <option value="land">土地</option>
+                                <option value="national">国家标准</option>
+                                <option value="industry">行业标准</option>
+                                <option value="internal">内部准则</option>
                                 <option value="other">其他</option>
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label for="templateOwner" class="form-label">维护人</label>
-                            <select class="form-select" id="templateOwner" name="owner">
+                            <label for="standardOwner" class="form-label">维护人</label>
+                            <select class="form-select" id="standardOwner" name="owner">
                                 <option value="">系统</option>
                                 {% for user in all_users %}
                                 <option value="{{ user.realname }}">{{ user.realname }}</option>
@@ -464,16 +464,16 @@
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">模板文件</label>
+                            <label class="form-label">准则文件</label>
                             <div class="file-upload-area" id="fileUploadArea"
-                                onclick="document.getElementById('templateFile').click()">
+                                onclick="document.getElementById('standardFile').click()">
                                 <div class="text-muted">
                                     <span class="fallback-icon">📎</span>
                                     <div>点击选择文件或拖拽文件到这里</div>
                                     <small>支持 Word、Excel、PDF等格式</small>
                                 </div>
                             </div>
-                            <input type="file" class="form-control d-none" id="templateFile" name="template_file"
+                            <input type="file" class="form-control d-none" id="standardFile" name="standard_file"
                                 accept=".doc,.docx,.xls,.xlsx,.pdf" required onchange="handleFileSelect(this)">
                             <div class="file-preview" id="filePreview">
                                 <span class="fallback-icon">📄</span>
@@ -486,7 +486,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                    <button type="button" class="btn btn-primary" onclick="addTemplate()">添加</button>
+                    <button type="button" class="btn btn-primary" onclick="addStandard()">添加</button>
                 </div>
             </div>
         </div>
@@ -497,7 +497,7 @@
         // 筛选功能
         document.addEventListener('DOMContentLoaded', function () {
             const filterBadges = document.querySelectorAll('.filter-badge');
-            const tableRows = document.querySelectorAll('#templatesTable tr');
+            const tableRows = document.querySelectorAll('#standardsTable tr');
             const noResults = document.getElementById('noResults');
 
             // 初始化筛选
@@ -548,7 +548,7 @@
         }
 
         function clearFile() {
-            document.getElementById('templateFile').value = '';
+            document.getElementById('standardFile').value = '';
             document.getElementById('filePreview').style.display = 'none';
         }
 
@@ -586,15 +586,15 @@
             function handleDrop(e) {
                 const dt = e.dataTransfer;
                 const files = dt.files;
-                document.getElementById('templateFile').files = files;
-                handleFileSelect(document.getElementById('templateFile'));
+                document.getElementById('standardFile').files = files;
+                handleFileSelect(document.getElementById('standardFile'));
             }
         });
 
-        // 删除模板
-        function deleteTemplate(id, fileName) {
-            if (confirm(`确定要删除报告模板 "${fileName}" 吗？`)) {
-                fetch(`/admin/report_templates/delete/${id}`, {
+        // 删除准则
+        function deleteStandard(id, fileName) {
+            if (confirm(`确定要删除评估准则 "${fileName}" 吗？`)) {
+                fetch(`/admin/evaluation_standards/delete/${id}`, {
                     method: 'POST'
                 })
                     .then(response => response.json())
@@ -615,30 +615,30 @@
 
         // 显示添加模态框
         function showAddModal() {
-            document.getElementById('addTemplateForm').reset();
+            document.getElementById('addStandardForm').reset();
             document.getElementById('filePreview').style.display = 'none';
-            const modal = new bootstrap.Modal(document.getElementById('addTemplateModal'));
+            const modal = new bootstrap.Modal(document.getElementById('addStandardModal'));
             modal.show();
         }
 
-        // 添加模板
-        function addTemplate() {
-            const formData = new FormData(document.getElementById('addTemplateForm'));
-            const templateFile = document.getElementById('templateFile').files[0];
+        // 添加准则
+        function addStandard() {
+            const formData = new FormData(document.getElementById('addStandardForm'));
+            const standardFile = document.getElementById('standardFile').files[0];
 
-            if (!templateFile) {
-                alert('请选择模板文件');
+            if (!standardFile) {
+                alert('请选择准则文件');
                 return;
             }
 
             // 验证类别
-            const category = document.getElementById('templateCategory').value;
+            const category = document.getElementById('standardCategory').value;
             if (!category) {
-                alert('请选择模板类别');
+                alert('请选择准则类别');
                 return;
             }
 
-            fetch('/admin/report_templates/add', {
+            fetch('/admin/evaluation_standards/add', {
                 method: 'POST',
                 body: formData
             })

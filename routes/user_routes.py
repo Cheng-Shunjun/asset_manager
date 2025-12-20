@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Depends, Form, HTTPException
+from fastapi import APIRouter, Request, Query, Depends, Form, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from database.database import db_manager, get_db
@@ -813,3 +813,200 @@ async def admin_delete_report_template(
         return JSONResponse({"success": True, "message": f"报告模板 '{file_name}' 已删除"})
     except Exception as e:
         return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+
+@router.get("/evaluation_standards", response_class=HTMLResponse)
+async def evaluation_standards(
+    request: Request,
+    category: str = None,
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    """评估准则页面"""
+    try:
+        # 获取评估准则列表
+        standards_list = await user_service.get_evaluation_standards(category, db)
+        
+        # 获取所有用户列表（用于选择维护人）
+        all_users = await user_service.get_all_users_for_qualifications(db)
+
+        return templates.TemplateResponse("evaluation_standards.html", {
+            "request": request,
+            "user": user,
+            "all_users": all_users,
+            "standards": standards_list,
+            "current_category": category or "all"
+        })
+    except Exception as e:
+        return templates.TemplateResponse("evaluation_standards.html", {
+            "request": request,
+            "user": user,
+            "all_users": [],
+            "standards": [],
+            "current_category": category or "all",
+            "error": str(e)
+        })
+
+@router.get("/evaluation_standards/download/{standard_id}")
+async def download_evaluation_standard(
+    request: Request,
+    standard_id: int,
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    """下载评估准则文件"""
+    try:
+        c = db.cursor()
+        c.execute("""
+            SELECT file_path, file_name 
+            FROM evaluation_standards 
+            WHERE id = ? AND status = 'active'
+        """, (standard_id,))
+        
+        result = c.fetchone()
+        if not result:
+            raise HTTPException(status_code=404, detail="准则文件不存在")
+        
+        file_path = result[0]
+        file_name = result[1]
+        
+        # 检查文件是否存在
+        import os
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail="文件不存在")
+        
+        # 返回文件流
+        from fastapi.responses import FileResponse
+        return FileResponse(
+            path=file_path,
+            filename=file_name,
+            media_type='application/octet-stream'
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"下载文件失败: {str(e)}")
+
+@router.post("/admin/evaluation_standards/add")
+async def admin_add_evaluation_standard(
+    request: Request,
+    category: str = Form(...),
+    owner: str = Form(None),
+    standard_file: UploadFile = File(...),
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    """管理员添加评估准则"""
+    if user.get("user_type") != "admin":
+        return JSONResponse({"success": False, "message": "权限不足"}, status_code=403)
+    
+    try:
+        # 创建上传目录
+        import os
+        upload_dir = "static/uploads/evaluation_standards"
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        # 生成安全文件名
+        import time
+        safe_filename = f"{int(time.time())}_{standard_file.filename.replace(' ', '_')}"
+        file_path = f"{upload_dir}/{safe_filename}"
+        
+        # 保存文件
+        with open(file_path, "wb") as buffer:
+            content = await standard_file.read()
+            buffer.write(content)
+        
+        # 获取文件大小
+        file_size = os.path.getsize(file_path)
+        
+        # 插入数据库
+        c = db.cursor()
+        c.execute("""
+            INSERT INTO evaluation_standards 
+            (category, owner, file_path, file_name, 
+             uploader_username, uploader_realname, file_size)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (
+            category,
+            owner,
+            file_path,
+            standard_file.filename,  # 使用原始文件名
+            user["username"],
+            user.get("realname", user["username"]),
+            file_size
+        ))
+        db.commit()
+        
+        return JSONResponse({"success": True, "message": "评估准则添加成功"})
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+
+@router.post("/admin/evaluation_standards/delete/{standard_id}")
+async def admin_delete_evaluation_standard(
+    request: Request,
+    standard_id: int,
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    """管理员删除评估准则"""
+    if user.get("user_type") != "admin":
+        return JSONResponse({"success": False, "message": "权限不足"}, status_code=403)
+    
+    try:
+        c = db.cursor()
+        
+        # 检查准则是否存在
+        c.execute("SELECT file_name, file_path FROM evaluation_standards WHERE id = ?", (standard_id,))
+        standard = c.fetchone()
+        if not standard:
+            return JSONResponse({"success": False, "message": "准则不存在"}, status_code=404)
+        
+        file_name = standard[0]
+        file_path = standard[1]
+        
+        # 硬删除：先删除物理文件，再删除数据库记录
+        import os
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except Exception as file_error:
+                print(f"删除文件失败: {str(file_error)}")
+        
+        # 删除数据库记录（硬删除）
+        c.execute("DELETE FROM evaluation_standards WHERE id = ?", (standard_id,))
+        db.commit()
+        
+        return JSONResponse({"success": True, "message": f"评估准则 '{file_name}' 已删除"})
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+
+@router.get("/user_dashboard/projects")
+async def get_user_projects_paginated(
+    request: Request,
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    search: str = Query(None),
+    status: str = Query("all"),
+    user: dict = Depends(login_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    """获取用户项目的分页数据"""
+    try:
+        result = await user_service.get_user_projects_paginated(
+            username=user["username"],
+            page=page,
+            limit=limit,
+            search=search,
+            status=status,
+            db=db
+        )
+        
+        return JSONResponse({
+            "success": True,
+            "data": result
+        })
+    except Exception as e:
+        return JSONResponse({
+            "success": False,
+            "message": f"获取项目列表失败: {str(e)}"
+        }, status_code=500)
