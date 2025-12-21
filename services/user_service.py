@@ -365,8 +365,8 @@ class UserService:
         return reports
 
     async def get_user_projects_paginated(self, username: str, page: int = 1, limit: int = 20, 
-                                        search: str = None, status: str = None, db=None):
-        """分页获取用户参与的项目"""
+                                    search: str = None, status: str = None, db=None):
+        """分页获取用户参与的项目（支持后端搜索）"""
         try:
             c = db.cursor()
             
@@ -396,11 +396,11 @@ class UserService:
             # 查询参数
             params = [username] * 8  # 8个位置参数
             
-            # 添加搜索条件
+            # 添加搜索条件（后端实现搜索）
             if search and search.strip():
                 search_term = f"%{search.strip()}%"
-                base_query += " AND (p.name LIKE ? OR p.project_no LIKE ? OR p.client_name LIKE ?)"
-                count_query += " AND (p.name LIKE ? OR p.project_no LIKE ? OR p.client_name LIKE ?)"
+                base_query += " AND (p.project_no LIKE ? OR p.name LIKE ? OR p.client_name LIKE ?)"
+                count_query += " AND (p.project_no LIKE ? OR p.name LIKE ? OR p.client_name LIKE ?)"
                 params.extend([search_term, search_term, search_term])
             
             # 添加状态筛选条件

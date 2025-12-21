@@ -1,4 +1,4 @@
-from fastapi import HTTPException, UploadFile, File, Form
+from fastapi import HTTPException, Request, UploadFile, File, Form
 from fastapi.responses import RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from datetime import datetime
@@ -42,62 +42,89 @@ class ProjectService:
         
         return True
 
-    async def get_admin_page(self, request, user, db):
-        c = db.cursor()
-        c.execute("SELECT * FROM projects ORDER BY start_date DESC")
-        projects = c.fetchall()
-
-        projects_list = []
-        years = set()
-
-        for p in projects:
-            project_dict = {
-                "id": p["id"],
-                "project_no": p["project_no"],
-                "name": p["name"],
-                "project_type": p["project_type"],
-                "client_name": p["client_name"],
-                "market_leader": p["market_leader"],
-                "project_leader": p["project_leader"],
-                "progress": p["progress"],
-                "report_numbers": p["report_numbers"],
-                "amount": p["amount"],
-                "is_paid": p["is_paid"],
-                "creator": p["creator"],
-                "creator_realname": p["creator_realname"],
-                "start_date": p["start_date"],
-                "end_date": p["end_date"],
-                "status": p["status"],
-                "create_date": p["create_date"]
-            }
+    # 在 project_service.py 中修改 get_admin_page 方法
+    async def get_admin_page(self, request: Request, user: dict, db):
+        """获取管理员页面（初始加载）"""
+        try:
+            # 获取所有项目（初始加载使用）
+            c = db.cursor()
+            c.execute("SELECT * FROM projects ORDER BY create_date DESC")
+            rows = c.fetchall()
             
-            # 将负责人用户名转换为真实姓名
-            if project_dict["market_leader"]:
-                c.execute("SELECT realname FROM users WHERE username = ?", (project_dict["market_leader"],))
-                market_leader_result = c.fetchone()
-                project_dict["market_leader_realname"] = market_leader_result[0] if market_leader_result else project_dict["market_leader"]
-            else:
-                project_dict["market_leader_realname"] = ""
+            projects = []
+            if rows:
+                column_names = [col[0] for col in c.description]
+                
+                # 收集所有需要查询的用户名
+                usernames_to_query = set()
+                for row in rows:
+                    project_dict = dict(zip(column_names, row))
+                    
+                    if project_dict.get("project_leader"):
+                        usernames_to_query.add(project_dict["project_leader"])
+                    if project_dict.get("market_leader"):
+                        usernames_to_query.add(project_dict["market_leader"])
+                    
+                    projects.append(project_dict)
+                
+                # 批量查询用户真实姓名
+                user_realnames = {}
+                if usernames_to_query:
+                    c2 = db.cursor()
+                    placeholders = ','.join('?' * len(usernames_to_query))
+                    c2.execute(f"SELECT username, realname FROM users WHERE username IN ({placeholders})", list(usernames_to_query))
+                    for row in c2.fetchall():
+                        user_realnames[row[0]] = row[1]
+                    c2.close()
+                
+                # 处理每个项目，添加真实姓名
+                for project in projects:
+                    if project.get("project_leader"):
+                        project["project_leader_realname"] = user_realnames.get(project["project_leader"], project["project_leader"])
+                    else:
+                        project["project_leader_realname"] = ""
+                    
+                    if project.get("market_leader"):
+                        project["market_leader_realname"] = user_realnames.get(project["market_leader"], project["market_leader"])
+                    else:
+                        project["market_leader_realname"] = ""
             
-            if project_dict["project_leader"]:
-                c.execute("SELECT realname FROM users WHERE username = ?", (project_dict["project_leader"],))
-                project_leader_result = c.fetchone()
-                project_dict["project_leader_realname"] = project_leader_result[0] if project_leader_result else project_dict["project_leader"]
-            else:
-                project_dict["project_leader_realname"] = ""
+            # 获取所有项目的年份列表
+            c.execute("""
+                SELECT DISTINCT strftime('%Y', start_date) as year 
+                FROM projects 
+                WHERE start_date IS NOT NULL AND start_date != ''
+                ORDER BY year DESC
+            """)
+            years = [row[0] for row in c.fetchall()]
             
-            projects_list.append(project_dict)
-            if p["start_date"]:
-                years.add(int(p["start_date"][:4]))
-
-        years_sorted = sorted(years, reverse=True)
-
-        return templates.TemplateResponse("admin_projects.html", {
-            "request": request,
-            "projects": projects_list,
-            "years": years_sorted,
-            "user": user
-        })
+            # 计算分页相关信息
+            total_count = len(projects)
+            current_page = 1
+            page_size = 20
+            total_pages = max(1, (total_count + page_size - 1) // page_size)
+            
+            # 计算显示范围
+            start_item = ((current_page - 1) * page_size) + 1
+            end_item = min(current_page * page_size, total_count)
+            
+            return templates.TemplateResponse("admin_projects.html", {
+                "request": request,
+                "user": user,
+                "projects": projects,
+                "years": years,
+                "total_count": total_count,
+                "total_pages": total_pages,
+                "current_page": current_page,
+                "page_size": page_size,
+                "current_search": None,
+                "current_status": "all",
+                "current_year": None,
+                "start_item": start_item,
+                "end_item": end_item
+            })
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"获取管理页面失败: {str(e)}")
 
     async def get_create_project_page(self, request, user, db):
         c = db.cursor()
@@ -515,3 +542,136 @@ class ProjectService:
         except Exception as e:
             db.rollback()
             raise HTTPException(status_code=500, detail=f"删除合同文件失败: {str(e)}")
+        
+    async def get_admin_projects_paginated(self, page: int = 1, limit: int = 20, 
+                                     search: str = None, status: str = None, 
+                                     year: str = None, db=None):
+        """分页获取所有项目（管理员使用）"""
+        try:
+            c = db.cursor()
+            
+            # 计算偏移量
+            offset = (page - 1) * limit
+            
+            # 构建基础查询
+            base_query = """
+                SELECT p.* 
+                FROM projects p
+                WHERE 1=1
+            """
+            
+            # 构建计数查询
+            count_query = """
+                SELECT COUNT(*) 
+                FROM projects p
+                WHERE 1=1
+            """
+            
+            # 查询参数
+            params = []
+            count_params = []
+            
+            # 添加搜索条件
+            if search and search.strip():
+                search_term = f"%{search.strip()}%"
+                base_query += " AND (p.project_no LIKE ? OR p.name LIKE ? OR p.client_name LIKE ?)"
+                count_query += " AND (p.project_no LIKE ? OR p.name LIKE ? OR p.client_name LIKE ?)"
+                params.extend([search_term, search_term, search_term])
+                count_params.extend([search_term, search_term, search_term])
+            
+            # 添加状态筛选条件
+            if status and status != 'all':
+                base_query += " AND p.status = ?"
+                count_query += " AND p.status = ?"
+                params.append(status)
+                count_params.append(status)
+            
+            # 添加年份筛选条件
+            if year and year.strip():
+                base_query += " AND strftime('%Y', p.start_date) = ?"
+                count_query += " AND strftime('%Y', p.start_date) = ?"
+                params.append(year)
+                count_params.append(year)
+            
+            # 添加排序和分页
+            base_query += " ORDER BY p.create_date DESC LIMIT ? OFFSET ?"
+            params.extend([limit, offset])
+            
+            # 执行计数查询
+            c.execute(count_query, count_params)
+            total_count = c.fetchone()[0]
+            
+            # 执行数据查询
+            c.execute(base_query, params)
+            rows = c.fetchall()
+            
+            # 获取列名
+            column_names = [col[0] for col in c.description] if rows else []
+            
+            # 收集所有需要查询的用户名
+            usernames_to_query = set()
+            projects = []
+            
+            for row in rows:
+                project_dict = dict(zip(column_names, row))
+                
+                if project_dict.get("project_leader"):
+                    usernames_to_query.add(project_dict["project_leader"])
+                if project_dict.get("market_leader"):
+                    usernames_to_query.add(project_dict["market_leader"])
+                
+                projects.append(project_dict)
+            
+            # 批量查询用户真实姓名
+            user_realnames = {}
+            if usernames_to_query:
+                c2 = db.cursor()
+                placeholders = ','.join('?' * len(usernames_to_query))
+                c2.execute(f"SELECT username, realname FROM users WHERE username IN ({placeholders})", 
+                        list(usernames_to_query))
+                for row in c2.fetchall():
+                    user_realnames[row[0]] = row[1]
+                c2.close()
+            
+            # 处理每个项目，添加真实姓名
+            for project in projects:
+                if project.get("project_leader"):
+                    project["project_leader_realname"] = user_realnames.get(
+                        project["project_leader"], project["project_leader"]
+                    )
+                else:
+                    project["project_leader_realname"] = ""
+                
+                if project.get("market_leader"):
+                    project["market_leader_realname"] = user_realnames.get(
+                        project["market_leader"], project["market_leader"]
+                    )
+                else:
+                    project["market_leader_realname"] = ""
+                
+                # 确保所有必要的字段都有默认值
+                project.setdefault("project_no", "")
+                project.setdefault("name", "")
+                project.setdefault("project_type", "")
+                project.setdefault("client_name", "")
+                project.setdefault("progress", "")
+                project.setdefault("report_numbers", "")
+                project.setdefault("amount", 0)
+                project.setdefault("is_paid", "")
+                project.setdefault("start_date", "")
+                project.setdefault("status", "active")
+            
+            # 计算总页数
+            total_pages = max(1, (total_count + limit - 1) // limit)  # 向上取整
+            
+            return {
+                "projects": projects,
+                "total_count": total_count,
+                "total_pages": total_pages,
+                "current_page": page,
+                "page_size": limit
+            }
+            
+        except Exception as e:
+            print(f"分页获取管理员项目失败: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"获取项目列表失败: {str(e)}")

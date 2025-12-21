@@ -149,7 +149,7 @@
       padding: 8px 12px;
     }
 
-    .table-container {
+    .table-container-inner {
       width: 100%;
       overflow-x: auto;
     }
@@ -268,6 +268,54 @@
       transform: translateY(-1px);
     }
 
+    /* 分页样式 */
+    .pagination-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid #e9ecef;
+    }
+    
+    .pagination-info {
+      color: #6c757d;
+      font-size: 0.9rem;
+      margin-right: 1rem;
+    }
+    
+    .pagination .page-item.active .page-link {
+      background-color: var(--primary-color);
+      border-color: var(--primary-color);
+    }
+    
+    .pagination .page-link {
+      color: var(--primary-color);
+    }
+    
+    .pagination .page-link:hover {
+      background-color: #e9ecef;
+    }
+    
+    .loading-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      display: none;
+    }
+    
+    .loading-spinner {
+      width: 3rem;
+      height: 3rem;
+    }
+
     /* 响应式调整 */
     @media (max-width: 768px) {
       .sidebar {
@@ -288,9 +336,22 @@
         width: 100%;
       }
       
+      .filter-controls .input-group {
+        width: 100% !important;
+      }
+      
       .navbar-nav .nav-link.user-center {
         margin-top: 0.5rem;
         text-align: center;
+      }
+      
+      .pagination-container {
+        flex-direction: column;
+        gap: 1rem;
+      }
+      
+      .pagination-info {
+        margin-right: 0;
       }
     }
   </style>
@@ -338,133 +399,191 @@
           <div class="table-header">
             <h5 class="mb-0"><span class="fallback-icon">📋</span>项目列表</h5>
             <div class="filter-controls">
+              <!-- 搜索框 -->
+              <div class="search-box">
+                <div class="input-group" style="width: 300px;">
+                  <span class="input-group-text bg-white border-end-0">
+                    <span class="fallback-icon">🔍</span>
+                  </span>
+                  <input type="text" class="form-control border-start-0" id="projectSearch"
+                    placeholder="搜索项目名称、序号或甲方..." onkeyup="handleSearch()">
+                  <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()"
+                    id="clearSearchBtn" style="display: none;">
+                    <span class="fallback-icon">✕</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- 年份筛选器 -->
               {% if years %}
               <div class="year-filter-container">
                 <select id="yearFilter" class="form-select">
                   <option value="">全部年份</option>
                   {% for year in years %}
-                  <option value="{{ year }}">{{ year }}</option>
+                  <option value="{{ year }}" {% if current_year == year %}selected{% endif %}>{{ year }}</option>
                   {% endfor %}
                 </select>
               </div>
               {% endif %}
+              
               <div class="btn-group" role="group">
-                <input type="radio" class="btn-check" name="statusFilter" id="allProjects" autocomplete="off" checked>
+                <input type="radio" class="btn-check" name="statusFilter" id="allProjects" 
+                  autocomplete="off" value="all" {% if current_status == 'all' %}checked{% endif %}>
                 <label class="btn btn-outline-primary" for="allProjects">全部项目</label>
                 
-                <input type="radio" class="btn-check" name="statusFilter" id="activeProjects" autocomplete="off">
+                <input type="radio" class="btn-check" name="statusFilter" id="activeProjects" 
+                  autocomplete="off" value="active" {% if current_status == 'active' %}checked{% endif %}>
                 <label class="btn btn-outline-primary" for="activeProjects">进行中</label>
                 
-                <input type="radio" class="btn-check" name="statusFilter" id="completedProjects" autocomplete="off">
+                <input type="radio" class="btn-check" name="statusFilter" id="completedProjects" 
+                  autocomplete="off" value="completed" {% if current_status == 'completed' %}checked{% endif %}>
                 <label class="btn btn-outline-primary" for="completedProjects">已完成</label>
                 
-                <input type="radio" class="btn-check" name="statusFilter" id="cancelledProjects" autocomplete="off">
+                <input type="radio" class="btn-check" name="statusFilter" id="cancelledProjects" 
+                  autocomplete="off" value="cancelled" {% if current_status == 'cancelled' %}checked{% endif %}>
                 <label class="btn btn-outline-primary" for="cancelledProjects">已取消</label>
+              </div>
+              
+              <!-- 每页显示数量选择 -->
+              <div class="input-group" style="width: 120px;">
+                <select class="form-select" id="pageSizeSelect">
+                  <option value="10" {% if page_size == 10 %}selected{% endif %}>10条/页</option>
+                  <option value="20" {% if page_size == 20 or not page_size %}selected{% endif %}>20条/页</option>
+                  <option value="50" {% if page_size == 50 %}selected{% endif %}>50条/页</option>
+                  <option value="100" {% if page_size == 100 %}selected{% endif %}>100条/页</option>
+                </select>
               </div>
             </div>
           </div>
 
-          {% if projects %}
-          <div class="table-container">
-            <table class="table table-hover bg-white rounded shadow-sm">
-              <thead class="table-primary">
-                <tr>
-                  <th>项目序号</th>
-                  <th>项目名称</th>
-                  <th>项目类型</th>
-                  <th>甲方名称</th>
-                  <th>市场部负责人</th>
-                  <th>项目负责人</th>
-                  <th>项目进度</th>
-                  <th>报告号</th>
-                  <th>合同金额</th>
-                  <th>已收费</th>
-                  <th>开始日期</th>
-                  <th>状态</th>
-                </tr>
-              </thead>
-              <tbody id="projectsTableBody">
-                {% for p in projects %}
-                <tr data-status="{{ p.status }}" onclick="window.location.href='/project/{{ p.project_no }}'">
-                  <td>{{ p.project_no }}</td>
-                  <td>{{ p.name }}</td>
-                  <td>{{ p.project_type }}</td>
-                  <td>{{ p.client_name }}</td>
-                  <td>
-                    {% if p.market_leader_realname %}
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
-                      class="bi bi-person-fill me-1" viewBox="0 0 16 16">
-                      <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3Zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-                    </svg>
-                    {{ p.market_leader_realname }}
-                    {% else %}
-                    <span class="text-muted">未设置</span>
-                    {% endif %}
-                  </td>
-                  <td>
-                    {% if p.project_leader_realname %}
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
-                      class="bi bi-person-fill me-1" viewBox="0 0 16 16">
-                      <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3Zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-                    </svg>
-                    {{ p.project_leader_realname }}
-                    {% else %}
-                    <span class="text-muted">未设置</span>
-                    {% endif %}
-                  </td>
-                  <td>{{ p.progress }}</td>
-                  <td>
-                    {% if p.report_numbers %}
-                      {% set reports = p.report_numbers.split(',') %}
-                      <div style="max-height: 120px; overflow-y: auto; font-size: 0.85rem;">
-                        {% for report in reports %}
-                          {% if report.strip() %}
-                          <div class="mb-1">{{ loop.index }}. {{ report.strip() }}</div>
-                          {% endif %}
-                        {% endfor %}
+          <!-- 添加加载指示器 -->
+          <div class="position-relative">
+            <div class="loading-overlay" id="loadingOverlay">
+              <div class="spinner-border text-primary loading-spinner" role="status">
+                <span class="visually-hidden">加载中...</span>
+              </div>
+            </div>
+            
+            <div class="table-container-inner">
+              <table class="table table-hover bg-white rounded shadow-sm">
+                <thead class="table-primary">
+                  <tr>
+                    <th>项目序号</th>
+                    <th>项目名称</th>
+                    <th>项目类型</th>
+                    <th>甲方名称</th>
+                    <th>市场部负责人</th>
+                    <th>项目负责人</th>
+                    <th>项目进度</th>
+                    <th>报告号</th>
+                    <th>合同金额</th>
+                    <th>已收费</th>
+                    <th>开始日期</th>
+                    <th>状态</th>
+                  </tr>
+                </thead>
+                <tbody id="projectsTableBody">
+                  {% if projects %}
+                    {% for p in projects %}
+                    <tr data-status="{{ p.status }}" onclick="window.location.href='/project/{{ p.project_no }}'">
+                      <td>{{ p.project_no }}</td>
+                      <td>{{ p.name }}</td>
+                      <td>{{ p.project_type }}</td>
+                      <td>{{ p.client_name }}</td>
+                      <td>
+                        {% if p.market_leader_realname %}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                          class="bi bi-person-fill me-1" viewBox="0 0 16 16">
+                          <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3Zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+                        </svg>
+                        {{ p.market_leader_realname }}
+                        {% else %}
+                        <span class="text-muted">未设置</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if p.project_leader_realname %}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                          class="bi bi-person-fill me-1" viewBox="0 0 16 16">
+                          <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3Zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+                        </svg>
+                        {{ p.project_leader_realname }}
+                        {% else %}
+                        <span class="text-muted">未设置</span>
+                        {% endif %}
+                      </td>
+                      <td>{{ p.progress }}</td>
+                      <td>
+                        {% if p.report_numbers %}
+                          {% set reports = p.report_numbers.split(',') %}
+                          <div style="max-height: 120px; overflow-y: auto; font-size: 0.85rem;">
+                            {% for report in reports %}
+                              {% if report.strip() %}
+                              <div class="mb-1">{{ loop.index }}. {{ report.strip() }}</div>
+                              {% endif %}
+                            {% endfor %}
+                          </div>
+                        {% else %}
+                          <span class="text-muted">无报告</span>
+                        {% endif %}
+                      </td>
+                      <td class="amount-cell">
+                        {% if p.amount %}
+                        {% set amount = p.amount %}
+                        {% if amount >= 10000 %}
+                        {{ "%.2f"|format(amount / 10000) }}万
+                        {% else %}
+                        {{ "%.0f"|format(amount) }}元
+                        {% endif %}
+                        {% else %}
+                        0元
+                        {% endif %}
+                      </td>
+                      <td>{{ p.is_paid }}</td>
+                      <td>{{ p.start_date }}</td>
+                      <td>
+                        {% if p.status == 'active' %}
+                        <span class="badge status-badge status-active">进行中</span>
+                        {% elif p.status == 'completed' %}
+                        <span class="badge status-badge status-completed">已完成</span>
+                        {% elif p.status == 'paused' %}
+                        <span class="badge status-badge status-paused">已暂停</span>
+                        {% elif p.status == 'cancelled' %}
+                        <span class="badge status-badge status-cancelled">已取消</span>
+                        {% else %}
+                        <span class="badge status-badge status-active">进行中</span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  {% else %}
+                  <tr id="noResultsRow">
+                    <td colspan="12" class="text-center py-4 text-muted">
+                      <div class="mb-2">
+                        <span class="fallback-icon" style="font-size: 24px;">📝</span>
                       </div>
-                    {% else %}
-                      <span class="text-muted">无报告</span>
-                    {% endif %}
-                  </td>
-                  <td class="amount-cell">
-                    {% if p.amount %}
-                    {% set amount = p.amount %}
-                    {% if amount >= 10000 %}
-                    {{ "%.2f"|format(amount / 10000) }}万
-                    {% else %}
-                    {{ "%.0f"|format(amount) }}元
-                    {% endif %}
-                    {% else %}
-                    0元
-                    {% endif %}
-                  </td>
-                  <td>{{ p.is_paid }}</td>
-                  <td>{{ p.start_date }}</td>
-                  <td>
-                    {% if p.status == 'active' %}
-                    <span class="badge status-badge status-active">进行中</span>
-                    {% elif p.status == 'completed' %}
-                    <span class="badge status-badge status-completed">已完成</span>
-                    {% elif p.status == 'paused' %}
-                    <span class="badge status-badge status-paused">已暂停</span>
-                    {% elif p.status == 'cancelled' %}
-                    <span class="badge status-badge status-cancelled">已取消</span>
-                    {% else %}
-                    <span class="badge status-badge status-active">进行中</span>
-                    {% endif %}
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
+                      <p class="mb-1">暂无项目</p>
+                      <small>当前系统中还没有任何项目。<a href="/create_project" class="alert-link">点击这里创建第一个项目</a></small>
+                    </td>
+                  </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
           </div>
-          {% else %}
-          <div class="alert alert-info text-center">
-            <h5><span class="fallback-icon">📝</span>暂无项目</h5>
-            <p class="mb-0">当前系统中还没有任何项目。<a href="/create_project" class="alert-link">点击这里创建第一个项目</a>。</p>
+          
+          <!-- 分页控件 -->
+          <div class="pagination-container">
+            <!-- 修改分页信息显示部分 -->
+            <div class="pagination-info" id="paginationInfo">
+              第 {{ start_item }}-{{ end_item }} 条，共 {{ total_count }} 条
+            </div>
+            <nav aria-label="项目分页">
+              <ul class="pagination" id="pagination">
+                <!-- 分页按钮将通过JavaScript动态生成 -->
+              </ul>
+            </nav>
           </div>
-          {% endif %}
         </div>
       </div>
     </div>
@@ -472,88 +591,355 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    // 页面加载时对项目进行排序（进行中的项目在前）
+    // 全局变量
+    let currentPage = {{ current_page or 1 }};
+    let pageSize = {{ page_size or 20 }};
+    let totalCount = {{ total_count or 0 }};
+    let totalPages = {{ total_pages or 1 }};
+    let currentSearch = '{{ current_search or "" }}';
+    let currentStatus = '{{ current_status or "all" }}';
+    let currentYear = '{{ current_year or "" }}';
+    let searchTimeout;
+
+    // 页面加载完成后初始化
     document.addEventListener('DOMContentLoaded', function () {
-      sortProjectsByStatus();
-    });
-
-    function sortProjectsByStatus() {
-      const tbody = document.getElementById('projectsTableBody');
-      if (!tbody) return;
+      // 初始化搜索框
+      const searchInput = document.getElementById('projectSearch');
+      const clearBtn = document.getElementById('clearSearchBtn');
       
-      const rows = Array.from(tbody.querySelectorAll('tr'));
-
-      // 定义状态优先级
-      const statusPriority = {
-        'active': 1,
-        'completed': 2,
-        'cancelled': 3
-      };
-
-      // 按状态排序
-      rows.sort((a, b) => {
-        const statusA = a.getAttribute('data-status');
-        const statusB = b.getAttribute('data-status');
-        const priorityA = statusPriority[statusA] || 5;
-        const priorityB = statusPriority[statusB] || 5;
-
-        return priorityA - priorityB;
-      });
-
-      // 清空tbody并重新添加排序后的行
-      tbody.innerHTML = '';
-      rows.forEach(row => tbody.appendChild(row));
-    }
-
-    // 年份筛选功能
-    document.getElementById('yearFilter')?.addEventListener('change', function () {
-      const selectedYear = this.value;
-      const rows = document.querySelectorAll('#projectsTableBody tr');
-
-      rows.forEach(row => {
-        const startDateCell = row.cells[10]; // 开始日期在第11列 (索引10)
-        const startDate = startDateCell.textContent.trim();
-        const startYear = startDate.substring(0, 4);
-
-        // 如果选择的年份与开始年份匹配，则显示该行
-        if (!selectedYear || startYear === selectedYear) {
-          row.style.display = '';
-        } else {
-          row.style.display = 'none';
-        }
-      });
+      if (searchInput && currentSearch) {
+        searchInput.value = currentSearch;
+        clearBtn.style.display = 'block';
+      }
+      
+      // 初始化事件监听
+      initializeEventListeners();
+      
+      // 渲染分页控件
+      renderPagination();
     });
 
-    // 项目状态筛选
-    document.addEventListener('DOMContentLoaded', function() {
+    // 初始化事件监听器
+    function initializeEventListeners() {
+      // 状态筛选器事件
       const statusFilters = document.querySelectorAll('input[name="statusFilter"]');
-      const projectRows = document.querySelectorAll('#projectsTableBody tr');
-      
       statusFilters.forEach(filter => {
-        filter.addEventListener('change', function() {
-          const filterValue = this.id;
-          
-          projectRows.forEach(row => {
-            const status = row.getAttribute('data-status');
-            
-            switch(filterValue) {
-              case 'allProjects':
-                row.style.display = '';
-                break;
-              case 'activeProjects':
-                row.style.display = status === 'active' ? '' : 'none';
-                break;
-              case 'completedProjects':
-                row.style.display = status === 'completed' ? '' : 'none';
-                break;
-              case 'cancelledProjects':
-                row.style.display = status === 'cancelled' ? '' : 'none';
-                break;
-            }
-          });
+        filter.addEventListener('change', function () {
+          currentStatus = this.value;
+          currentPage = 1; // 重置到第一页
+          loadProjects();
         });
       });
-    });
+
+      // 年份筛选器事件
+      const yearFilter = document.getElementById('yearFilter');
+      if (yearFilter) {
+        yearFilter.addEventListener('change', function () {
+          currentYear = this.value;
+          currentPage = 1; // 重置到第一页
+          loadProjects();
+        });
+      }
+
+      // 每页显示数量选择
+      document.getElementById('pageSizeSelect').addEventListener('change', function() {
+        pageSize = parseInt(this.value);
+        currentPage = 1; // 重置到第一页
+        loadProjects();
+      });
+    }
+
+    // 处理搜索输入（防抖）
+    function handleSearch() {
+      const searchInput = document.getElementById('projectSearch');
+      const clearBtn = document.getElementById('clearSearchBtn');
+      
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(function() {
+        currentSearch = searchInput.value.trim();
+        currentPage = 1; // 搜索时重置到第一页
+        loadProjects();
+        
+        // 显示/隐藏清除按钮
+        clearBtn.style.display = currentSearch ? 'block' : 'none';
+      }, 500); // 500ms延迟
+    }
+
+    // 清除搜索
+    function clearSearch() {
+      document.getElementById('projectSearch').value = '';
+      document.getElementById('clearSearchBtn').style.display = 'none';
+      currentSearch = '';
+      currentPage = 1;
+      loadProjects();
+    }
+
+    // 加载项目数据
+    async function loadProjects() {
+      showLoading(true);
+      
+      try {
+        // 构建查询参数
+        const params = new URLSearchParams({
+          page: currentPage,
+          limit: pageSize
+        });
+        
+        if (currentSearch) {
+          params.append('search', currentSearch);
+        }
+        
+        if (currentStatus !== 'all') {
+          params.append('status', currentStatus);
+        }
+        
+        if (currentYear) {
+          params.append('year', currentYear);
+        }
+        
+        // 发送请求到后端API
+        const response = await fetch(`/admin_projects/api?${params.toString()}`);
+        const result = await response.json();
+        
+        if (result.success) {
+          const data = result.data;
+          totalCount = data.total_count;
+          totalPages = data.total_pages;
+          
+          // 渲染项目表格
+          renderProjectsTable(data.projects);
+          
+          // 更新分页信息
+          updatePaginationInfo(data);
+          
+          // 渲染分页控件
+          renderPagination();
+        } else {
+          showError('加载项目失败: ' + result.message);
+        }
+      } catch (error) {
+        console.error('加载项目失败:', error);
+        showError('网络错误，请稍后重试');
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    // 渲染项目表格
+    function renderProjectsTable(projects) {
+      const tbody = document.getElementById('projectsTableBody');
+      
+      if (projects.length === 0) {
+        tbody.innerHTML = `
+          <tr id="noResultsRow">
+            <td colspan="12" class="text-center py-4 text-muted">
+              <div class="mb-2">
+                <span class="fallback-icon" style="font-size: 24px;">🔍</span>
+              </div>
+              <p class="mb-1">未找到匹配的项目</p>
+              <small>请尝试其他搜索关键词或筛选条件</small>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+      let html = '';
+      
+      projects.forEach(project => {
+        // 格式化金额
+        let amountDisplay = '0元';
+        if (project.amount) {
+          const amount = parseFloat(project.amount);
+          if (amount >= 10000) {
+            amountDisplay = `${(amount / 10000).toFixed(2)}万`;
+          } else {
+            amountDisplay = `${Math.round(amount)}元`;
+          }
+        }
+        
+        // 处理报告号
+        let reportNumbersHtml = '<span class="text-muted">无报告</span>';
+        if (project.report_numbers) {
+          const reports = project.report_numbers.split(',');
+          reportNumbersHtml = reports
+            .filter(report => report.trim())
+            .map((report, index) => `<div class="mb-1">${index + 1}. ${report.trim()}</div>`)
+            .join('');
+        }
+        
+        // 状态徽章
+        let statusBadge = '';
+        switch (project.status) {
+          case 'active':
+            statusBadge = '<span class="badge status-badge status-active">进行中</span>';
+            break;
+          case 'completed':
+            statusBadge = '<span class="badge status-badge status-completed">已完成</span>';
+            break;
+          case 'paused':
+            statusBadge = '<span class="badge status-badge status-paused">已暂停</span>';
+            break;
+          case 'cancelled':
+            statusBadge = '<span class="badge status-badge status-cancelled">已取消</span>';
+            break;
+          default:
+            statusBadge = '<span class="badge status-badge status-active">进行中</span>';
+        }
+        
+        // 人员显示
+        const marketLeaderHtml = project.market_leader_realname ? 
+          `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-person-fill me-1" viewBox="0 0 16 16">
+              <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3Zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
+            </svg>${project.market_leader_realname}` :
+          '<span class="text-muted">未设置</span>';
+          
+        const projectLeaderHtml = project.project_leader_realname ? 
+          `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-person-fill me-1" viewBox="0 0 16 16">
+              <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3Zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
+            </svg>${project.project_leader_realname}` :
+          '<span class="text-muted">未设置</span>';
+        
+        html += `
+          <tr data-status="${project.status}" onclick="window.location.href='/project/${project.project_no}'">
+            <td>${project.project_no || ''}</td>
+            <td>${project.name || ''}</td>
+            <td>${project.project_type || ''}</td>
+            <td>${project.client_name || ''}</td>
+            <td>${marketLeaderHtml}</td>
+            <td>${projectLeaderHtml}</td>
+            <td>${project.progress || ''}</td>
+            <td>
+              <div style="max-height: 120px; overflow-y: auto; font-size: 0.85rem;">
+                ${reportNumbersHtml}
+              </div>
+            </td>
+            <td class="amount-cell">${amountDisplay}</td>
+            <td>${project.is_paid || ''}</td>
+            <td>${project.start_date || ''}</td>
+            <td>${statusBadge}</td>
+          </tr>
+        `;
+      });
+      
+      tbody.innerHTML = html;
+    }
+
+    // 更新分页信息
+    function updatePaginationInfo(data) {
+      const start = ((data.current_page - 1) * data.page_size) + 1;
+      const end = Math.min(start + data.page_size - 1, data.total_count);
+      
+      document.getElementById('paginationInfo').textContent = 
+        `第 ${start}-${end} 条，共 ${data.total_count} 条`;
+    }
+
+    // 渲染分页控件
+    function renderPagination() {
+      const pagination = document.getElementById('pagination');
+      
+      if (totalPages <= 1) {
+        pagination.innerHTML = '';
+        return;
+      }
+      
+      let html = '';
+      
+      // 上一页按钮
+      html += `
+        <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+          <button class="page-link" ${currentPage === 1 ? 'disabled' : ''} onclick="goToPage(${currentPage - 1})">
+            <span class="fallback-icon">←</span> 上一页
+          </button>
+        </li>
+      `;
+      
+      // 页码按钮
+      const maxVisiblePages = 5;
+      let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+      let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+      
+      if (endPage - startPage + 1 < maxVisiblePages) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+      }
+      
+      // 第一页
+      if (startPage > 1) {
+        html += `
+          <li class="page-item">
+            <button class="page-link" onclick="goToPage(1)">1</button>
+          </li>
+          ${startPage > 2 ? '<li class="page-item disabled"><span class="page-link">...</span></li>' : ''}
+        `;
+      }
+      
+      // 中间页码
+      for (let i = startPage; i <= endPage; i++) {
+        html += `
+          <li class="page-item ${i === currentPage ? 'active' : ''}">
+            <button class="page-link" onclick="goToPage(${i})">${i}</button>
+          </li>
+        `;
+      }
+      
+      // 最后一页
+      if (endPage < totalPages) {
+        html += `
+          ${endPage < totalPages - 1 ? '<li class="page-item disabled"><span class="page-link">...</span></li>' : ''}
+          <li class="page-item">
+            <button class="page-link" onclick="goToPage(${totalPages})">${totalPages}</button>
+          </li>
+        `;
+      }
+      
+      // 下一页按钮
+      html += `
+        <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+          <button class="page-link" ${currentPage === totalPages ? 'disabled' : ''} onclick="goToPage(${currentPage + 1})">
+            下一页 <span class="fallback-icon">→</span>
+          </button>
+        </li>
+      `;
+      
+      pagination.innerHTML = html;
+    }
+
+    // 跳转到指定页
+    function goToPage(page) {
+      if (page < 1 || page > totalPages || page === currentPage) return;
+      
+      currentPage = page;
+      loadProjects();
+      
+      // 滚动到表格顶部
+      document.querySelector('.table-container').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // 显示/隐藏加载指示器
+    function showLoading(show) {
+      const overlay = document.getElementById('loadingOverlay');
+      overlay.style.display = show ? 'flex' : 'none';
+    }
+
+    // 显示错误信息
+    function showError(message) {
+      // 使用Bootstrap的Toast或Alert显示错误信息
+      const alertDiv = document.createElement('div');
+      alertDiv.className = 'alert alert-danger alert-dismissible fade show position-fixed top-0 end-0 m-3';
+      alertDiv.style.zIndex = '9999';
+      alertDiv.innerHTML = `
+        <strong>错误!</strong> ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      `;
+      document.body.appendChild(alertDiv);
+      
+      // 3秒后自动移除
+      setTimeout(() => {
+        if (alertDiv.parentNode) {
+          alertDiv.remove();
+        }
+      }, 3000);
+    }
   </script>
 </body>
 </html>

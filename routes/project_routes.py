@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Form, Depends, HTTPException, File, UploadFile
+from fastapi import APIRouter, Request, Query, Form, Depends, HTTPException, File, UploadFile
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from database.database import db_manager, get_db
@@ -22,11 +22,96 @@ def admin_required(user: dict = Depends(login_required)):
 @router.get("/admin_projects", response_class=HTMLResponse)
 async def admin(
     request: Request,
+    page: int = Query(1, ge=1),  # 添加分页参数
+    limit: int = Query(20, ge=1, le=100),  # 添加每页数量参数
+    search: str = Query(None),  # 添加搜索参数
+    status: str = Query("all"),  # 添加状态筛选参数
+    year: str = Query(None),  # 添加年份筛选参数
     user: dict = Depends(admin_required),  # 使用管理员权限检查
     db: sqlite3.Connection = Depends(get_db)
 ):
-    """管理员后台页面 - 仅管理员可访问"""
-    return await project_service.get_admin_page(request, user, db)
+    """管理员后台页面 - 支持分页和搜索"""
+    try:
+        # 如果有搜索、筛选或分页参数，使用新的分页查询
+        if search or status != "all" or year or page > 1 or limit != 20:
+            # 获取分页的项目数据
+            project_data = await project_service.get_admin_projects_paginated(
+                page=page,
+                limit=limit,
+                search=search,
+                status=status,
+                year=year,
+                db=db
+            )
+            
+            # 获取所有项目的年份列表（用于年份筛选器）
+            c = db.cursor()
+            c.execute("""
+                SELECT DISTINCT strftime('%Y', start_date) as year 
+                FROM projects 
+                WHERE start_date IS NOT NULL AND start_date != ''
+                ORDER BY year DESC
+            """)
+            years = [row[0] for row in c.fetchall()]
+            
+            # 计算显示范围
+            start_item = ((project_data["current_page"] - 1) * project_data["page_size"]) + 1
+            end_item = min(project_data["current_page"] * project_data["page_size"], project_data["total_count"])
+            
+            return templates.TemplateResponse("admin_projects.html", {
+                "request": request,
+                "user": user,
+                "projects": project_data["projects"],
+                "years": years,
+                "total_count": project_data["total_count"],
+                "total_pages": project_data["total_pages"],
+                "current_page": project_data["current_page"],
+                "page_size": project_data["page_size"],
+                "current_search": search,
+                "current_status": status,
+                "current_year": year,
+                "start_item": start_item,
+                "end_item": end_item
+            })
+        else:
+            # 如果没有搜索参数，使用传统的获取方式
+            return await project_service.get_admin_page(request, user, db)
+    except Exception as e:
+        print(f"分页查询失败，使用旧方式: {e}")
+        # 如果分页查询失败，回退到旧的方式
+        return await project_service.get_admin_page(request, user, db)
+
+@router.get("/admin_projects/api")
+async def get_admin_projects_api(
+    request: Request,
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    search: str = Query(None),
+    status: str = Query("all"),
+    year: str = Query(None),
+    user: dict = Depends(admin_required),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    """管理员项目分页数据API"""
+    try:
+        project_data = await project_service.get_admin_projects_paginated(
+            page=page,
+            limit=limit,
+            search=search,
+            status=status,
+            year=year,
+            db=db
+        )
+        
+        return {
+            "success": True,
+            "data": project_data
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"获取项目列表失败: {str(e)}"
+        }
 
 @router.get("/create_project")
 async def create_project_page(

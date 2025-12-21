@@ -603,7 +603,7 @@
                     params.append('status', currentStatus);
                 }
                 
-                // 发送请求
+                // 发送请求到后端API
                 const response = await fetch(`/user_dashboard/projects?${params.toString()}`);
                 const result = await response.json();
                 
