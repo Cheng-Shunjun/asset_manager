@@ -66,7 +66,7 @@ async def user_profile(
 ):
     """用户个人信息页面"""
     try:
-        print(f"用户个人信息页面，用户名: {user['username']}")
+        #print(f"用户个人信息页面，用户名: {user['username']}")
         
         # 使用 user_service 获取用户个人信息
         user_profile = await user_service.get_user_profile(user["username"], db)
@@ -540,10 +540,11 @@ async def company_qualifications(
 async def download_company_qualification(
     request: Request,
     qualification_id: int,
+    preview: bool = Query(False, description="是否为预览模式"),
     user: dict = Depends(login_required),
     db: sqlite3.Connection = Depends(get_db)
 ):
-    """下载公司资质文件"""
+    """下载或预览公司资质文件"""
     try:
         c = db.cursor()
         c.execute("""
@@ -562,20 +563,53 @@ async def download_company_qualification(
         # 检查文件是否存在
         import os
         if not os.path.exists(file_path):
-            raise HTTPException(status_code=404, detail="文件不存在")
+            # 尝试在静态目录下查找
+            static_path = os.path.join("static", "uploads", "company_qualifications", os.path.basename(file_path))
+            if os.path.exists(static_path):
+                file_path = static_path
+            else:
+                raise HTTPException(status_code=404, detail="文件不存在")
         
-        # 返回文件流
+        # 获取文件扩展名
+        ext = os.path.splitext(file_name)[1].lower()
+        
+        # 设置响应头
         from fastapi.responses import FileResponse
-        return FileResponse(
+        
+        # 方法：不设置文件名，让浏览器根据URL决定
+        # 只设置预览或下载模式
+        if preview:
+            content_disposition = 'inline'
+        else:
+            content_disposition = 'attachment'
+        
+        # 设置媒体类型
+        media_types = {
+            '.pdf': 'application/pdf',
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.png': 'image/png',
+            '.gif': 'image/gif',
+            '.bmp': 'image/bmp'
+        }
+        
+        media_type = media_types.get(ext, 'application/octet-stream')
+        
+        # 返回文件响应，不设置filename参数
+        response = FileResponse(
             path=file_path,
-            filename=file_name,
-            media_type='application/octet-stream'
+            media_type=media_type
         )
+        
+        # 只设置基本的Content-Disposition
+        response.headers['Content-Disposition'] = content_disposition
+        
+        return response
         
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"下载文件失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"处理文件失败: {str(e)}")
 
 @router.post("/admin/company_qualifications/add")
 async def admin_add_company_qualification(
@@ -658,7 +692,6 @@ async def report_templates(
         
         # 获取所有用户列表（用于选择维护人）
         all_users = await user_service.get_all_users_for_qualifications(db)
-        print(all_users)
 
         return templates.TemplateResponse("report_templates.html", {
             "request": request,

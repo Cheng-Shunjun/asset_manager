@@ -258,6 +258,28 @@
                 margin-bottom: 0.5rem;
             }
         }
+
+        .preview-btn {
+            background: linear-gradient(135deg, var(--info-color), #138496);
+            border: none;
+            border-radius: 6px;
+            padding: 0.4rem 0.8rem;
+            color: white;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.9rem;
+            margin-right: 0.5rem;
+        }
+
+        .preview-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--card-shadow);
+            color: white;
+            cursor: pointer;
+        }
     </style>
 </head>
 
@@ -373,6 +395,11 @@
                                         <td>{{ qual.owner or '公司' }}</td>
                                         <td>{{ qual.update_time }}</td>
                                         <td>
+                                            <!-- 预览按钮 -->
+                                            <button class="preview-btn"
+                                                onclick="previewQualification({{ qual.id }}, '{{ qual.file_name }}')">
+                                                <span class="fallback-icon">👁️</span>预览
+                                            </button>
                                             <a href="/company_qualifications/download/{{ qual.id }}"
                                                 class="download-btn" target="_blank">
                                                 <span class="fallback-icon">⬇️</span>下载
@@ -455,6 +482,59 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
                     <button type="button" class="btn btn-primary" onclick="addQualification()">添加</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- 修改预览模态框部分 -->
+    <div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="previewTitle">文件预览</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- 图片预览容器 -->
+                    <div id="imagePreview" class="d-none text-center">
+                        <img id="previewImage" src="" alt="图片预览" class="img-fluid"
+                            style="max-height: 70vh; object-fit: contain;">
+                    </div>
+
+                    <!-- PDF预览容器 -->
+                    <div id="pdfPreview" class="d-none" style="height: 70vh;">
+                        <iframe id="pdfFrame" src="" width="100%" height="100%" style="border: none;"></iframe>
+                    </div>
+
+                    <!-- Word文档预览提示 -->
+                    <div id="wordPreview" class="d-none text-center p-5">
+                        <div class="mb-3">
+                            <span class="fallback-icon" style="font-size: 4rem;">📄</span>
+                        </div>
+                        <h5>Word文档预览</h5>
+                        <p class="text-muted">Word文档需要下载后在本地查看</p>
+                        <button class="btn btn-primary mt-3" onclick="downloadCurrentFile()">
+                            <span class="fallback-icon">⬇️</span>下载文档
+                        </button>
+                    </div>
+
+                    <!-- 不支持的文件类型提示 -->
+                    <div id="unsupportedPreview" class="d-none text-center p-5">
+                        <div class="mb-3">
+                            <span class="fallback-icon" style="font-size: 4rem;">❓</span>
+                        </div>
+                        <h5>不支持的文件类型</h5>
+                        <p class="text-muted">该文件类型不支持在线预览，请下载后查看</p>
+                        <button class="btn btn-primary mt-3" onclick="downloadCurrentFile()">
+                            <span class="fallback-icon">⬇️</span>下载文件
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" onclick="downloadCurrentFile()">
+                        <span class="fallback-icon">⬇️</span>下载文件
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
                 </div>
             </div>
         </div>
@@ -559,9 +639,76 @@
             }
         });
 
-        // 删除资质
-        function deleteQualification(id, certificateName) {
-            if (confirm(`确定要删除资质证书 "${certificateName}" 吗？`)) {
+        // 全局变量存储当前预览的文件信息
+        let currentPreviewFile = null;
+
+        // 在company_qualifications.html中修改previewQualification函数
+        function previewQualification(qualificationId, fileName) {
+            // 注意：这里应该传递文件名，但实际下载时可能不需要
+            // 只需要资质ID即可
+
+            const extension = fileName.split('.').pop().toLowerCase();
+            const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp'];
+            const pdfExtensions = ['pdf'];
+
+            if (imageExtensions.includes(extension)) {
+                // 图片：在模态框中预览
+                const imageUrl = `/company_qualifications/download/${qualificationId}?preview=true`;
+                document.getElementById('previewImage').src = imageUrl;
+                document.getElementById('imagePreview').classList.remove('d-none');
+                document.getElementById('pdfPreview').classList.add('d-none');
+                document.getElementById('wordPreview').classList.add('d-none');
+                document.getElementById('unsupportedPreview').classList.add('d-none');
+
+                // 设置标题
+                document.getElementById('previewTitle').textContent = `预览: ${fileName}`;
+
+                // 显示模态框
+                const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+                modal.show();
+            } else if (pdfExtensions.includes(extension)) {
+                // PDF：在新标签页中预览
+                const pdfUrl = `/company_qualifications/download/${qualificationId}?preview=true`;
+                window.open(pdfUrl, '_blank');
+            } else {
+                // 其他文件：显示提示
+                document.getElementById('imagePreview').classList.add('d-none');
+                document.getElementById('pdfPreview').classList.add('d-none');
+                document.getElementById('unsupportedPreview').classList.remove('d-none');
+                document.getElementById('wordPreview').classList.add('d-none');
+
+                // 设置标题
+                document.getElementById('previewTitle').textContent = `预览: ${fileName}`;
+
+                // 显示模态框
+                const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+                modal.show();
+            }
+        }
+
+        // 下载当前预览的文件
+        function downloadCurrentFile() {
+            if (currentPreviewFile && currentPreviewFile.id) {
+                // 关闭模态框
+                const modal = bootstrap.Modal.getInstance(document.getElementById('previewModal'));
+                if (modal) modal.hide();
+
+                // 使用已有的下载路由
+                const downloadUrl = `/company_qualifications/download/${currentPreviewFile.id}`;
+                window.open(downloadUrl, '_blank');
+            }
+        }
+
+        // 修改已有的删除函数
+        function deleteQualification(id, fileName) {
+            if (confirm(`确定要删除资质证书 "${fileName}" 吗？`)) {
+                // 如果当前正在预览这个文件，先关闭预览
+                if (currentPreviewFile && currentPreviewFile.id === id) {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('previewModal'));
+                    if (modal) modal.hide();
+                }
+
+                // 继续原有的删除逻辑
                 fetch(`/admin/company_qualifications/delete/${id}`, {
                     method: 'POST'
                 })
