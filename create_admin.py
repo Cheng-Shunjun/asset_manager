@@ -2,6 +2,7 @@ import os
 import sqlite3
 from datetime import datetime
 from auto_import_qualifications import auto_import_qualifications
+from utils.security import hash_password
 
 DB_FILE = "db.sqlite3"
 
@@ -142,7 +143,7 @@ def init_database():
 
     # ========= 插入管理员用户 =========
     admin_user = (
-        "zhangwen", "张文", "admin", "123456",
+        "zhangwen", "张文", "admin", hash_password("123456"),
         "13800138000", "zhangwen@company.com", "2020-03-15",
         "硕士", "总经理助理", "管理层", "2020-03-15 09:00:00", "2025-01-01 10:00:00"
     )
@@ -157,16 +158,16 @@ def init_database():
     # ========= 插入测试用户 =========
     test_users = [
         # (username, realname, user_type, password, phone, email, hire_date, education, position, department)
-        ("zhangsan", "张三", "user", "123456", "13900139001", "zhangsan@company.com", "2021-05-10", "本科", "技术总监", "技术部"),
-        ("lisi", "李四", "user", "123456", "13900139002", "lisi@company.com", "2021-08-20", "硕士", "资产评估师", "评估部"),
-        ("wangwu", "王五", "user", "123456", "13900139003", "wangwu@company.com", "2022-01-15", "本科", "房地产估价师", "评估部"),
-        ("zhaoliu", "赵六", "user", "123456", "13900139004", "zhaoliu@company.com", "2022-03-22", "博士", "土地估价师", "评估部"),
-        ("sunqi", "孙七", "user", "123456", "13900139005", "sunqi@company.com", "2022-06-30", "本科", "评估助理", "评估部"),
-        ("zhouba", "周八", "user", "123456", "13900139006", "zhouba@company.com", "2023-02-14", "硕士", "评估助理", "评估部"),
-        ("wujiu", "吴九", "user", "123456", "13900139007", "wujiu@company.com", "2023-07-01", "本科", "行政", "行政部"),
-        ("zhengshi", "郑十", "user", "123456", "13900139008", "zhengshi@company.com", "2024-01-08", "大专", "财务", "财务部"),
-        ("liushi", "刘石", "user", "123456", "13900139009", "liushi@company.com", "2023-09-10", "硕士", "总经理助理", "管理层"),
-        ("chenyi", "陈一", "user", "123456", "13900139010", "chenyi@company.com", "2024-03-01", "本科", "市场专员", "市场部")
+        ("zhangsan", "张三", "user", hash_password("123456"), "13900139001", "zhangsan@company.com", "2021-05-10", "本科", "技术总监", "技术部"),
+        ("lisi", "李四", "user", hash_password("123456"), "13900139002", "lisi@company.com", "2021-08-20", "硕士", "资产评估师", "评估部"),
+        ("wangwu", "王五", "user", hash_password("123456"), "13900139003", "wangwu@company.com", "2022-01-15", "本科", "房地产估价师", "评估部"),
+        ("zhaoliu", "赵六", "user", hash_password("123456"), "13900139004", "zhaoliu@company.com", "2022-03-22", "博士", "土地估价师", "评估部"),
+        ("sunqi", "孙七", "user", hash_password("123456"), "13900139005", "sunqi@company.com", "2022-06-30", "本科", "评估助理", "评估部"),
+        ("zhouba", "周八", "user", hash_password("123456"), "13900139006", "zhouba@company.com", "2023-02-14", "硕士", "评估助理", "评估部"),
+        ("wujiu", "吴九", "user", hash_password("123456"), "13900139007", "wujiu@company.com", "2023-07-01", "本科", "行政", "行政部"),
+        ("zhengshi", "郑十", "user", hash_password("123456"), "13900139008", "zhengshi@company.com", "2024-01-08", "大专", "财务", "财务部"),
+        ("liushi", "刘石", "user", hash_password("123456"), "13900139009", "liushi@company.com", "2023-09-10", "硕士", "总经理助理", "管理层"),
+        ("chenyi", "陈一", "user", hash_password("123456"), "13900139010", "chenyi@company.com", "2024-03-01", "本科", "市场专员", "市场部")
     ]
 
     c.executemany("""

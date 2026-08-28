@@ -10,11 +10,11 @@ templates = Jinja2Templates(directory="templates")
 
 @router.get("/", response_class=HTMLResponse)
 async def login_page(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse(request, "login.html")
 
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse(request, "login.html")
 
 @router.post("/login")
 async def login(
@@ -31,8 +31,7 @@ async def login(
         response.set_cookie(key="session_id", value=session_id, httponly=True)
         return response
     else:
-        return templates.TemplateResponse("login.html", {
-            "request": request, 
+        return templates.TemplateResponse(request, "login.html", {
             "error": "用户名或密码错误"
         })
 

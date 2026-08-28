@@ -58,8 +58,7 @@ async def admin(
             start_item = ((project_data["current_page"] - 1) * project_data["page_size"]) + 1
             end_item = min(project_data["current_page"] * project_data["page_size"], project_data["total_count"])
             
-            return templates.TemplateResponse("admin_projects.html", {
-                "request": request,
+            return templates.TemplateResponse(request, "admin_projects.html", {
                 "user": user,
                 "projects": project_data["projects"],
                 "years": years,

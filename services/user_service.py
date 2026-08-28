@@ -3,8 +3,8 @@ from fastapi.templating import Jinja2Templates
 from datetime import datetime, timedelta
 import sqlite3
 from typing import Dict, List
-from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
+from utils.security import hash_password, verify_password
 
 templates = Jinja2Templates(directory="templates")
 
@@ -82,17 +82,16 @@ class UserService:
             raise HTTPException(status_code=404, detail="用户不存在")
         
         current_password_hash = result[0]
-        # 这里应该添加密码验证逻辑，比如使用密码哈希比较
-        # 假设有一个函数 verify_password(plain_password, hashed_password)
-        
+        current_password = password_data.get("current_password")
+        if not current_password or not verify_password(current_password, current_password_hash):
+            raise HTTPException(status_code=400, detail="当前密码错误")
+
         # 更新密码
         new_password = password_data.get("new_password")
         if not new_password:
             raise HTTPException(status_code=400, detail="新密码不能为空")
-        
-        # 这里应该对新密码进行哈希处理
-        # new_password_hash = hash_password(new_password)
-        new_password_hash = new_password  # 暂时直接存储，实际应用中应该使用哈希
+
+        new_password_hash = hash_password(new_password)
         
         c.execute("UPDATE users SET password = ? WHERE username = ?", (new_password_hash, username))
         db.commit()
@@ -608,6 +607,9 @@ class UserService:
         # 设置默认状态
         if "status" not in user_data or not user_data["status"]:
             user_data["status"] = "active"
+
+        # 密码必须哈希后存储
+        user_data["password"] = hash_password(user_data["password"])
         
         # 准备插入数据
         insert_fields = required_fields + optional_fields
@@ -710,9 +712,9 @@ class UserService:
         if not c.fetchone():
             raise HTTPException(status_code=404, detail="用户不存在")
         
-        # 更新密码（实际应用中应该使用密码哈希）
-        c.execute("UPDATE users SET password = ?, update_time = CURRENT_TIMESTAMP WHERE username = ?", 
-                (new_password, username))
+        # 更新密码(哈希后存储)
+        c.execute("UPDATE users SET password = ?, update_time = CURRENT_TIMESTAMP WHERE username = ?",
+                (hash_password(new_password), username))
         db.commit()
         
         return {"message": "密码重置成功"}

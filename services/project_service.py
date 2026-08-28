@@ -108,8 +108,7 @@ class ProjectService:
             start_item = ((current_page - 1) * page_size) + 1
             end_item = min(current_page * page_size, total_count)
             
-            return templates.TemplateResponse("admin_projects.html", {
-                "request": request,
+            return templates.TemplateResponse(request, "admin_projects.html", {
                 "user": user,
                 "projects": projects,
                 "years": years,
@@ -132,8 +131,7 @@ class ProjectService:
         users_data = c.fetchall()
         users = [{"username": row[0], "realname": row[1] or row[0]} for row in users_data]
         
-        return templates.TemplateResponse("create_project.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "create_project.html", {
             "username": user["username"],
             "user": user,  # 传递完整的用户对象
             "users": users
@@ -312,8 +310,7 @@ class ProjectService:
         project_leader = project_dict["project_leader"]
         project_operation_permission = self._get_project_permission(user, project_creator, project_leader)
         
-        return templates.TemplateResponse("project_info.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "project_info.html", {
             "project": project_dict,
             "contract_files": contract_files,  # 新增合同文件数据
             "reports": reports,
@@ -389,8 +386,7 @@ class ProjectService:
         users_data = c.fetchall()
         users = [{"username": row[0], "realname": row[1] or row[0]} for row in users_data]
         
-        return templates.TemplateResponse("edit_project.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "edit_project.html", {
             "project": project_dict,
             "users": users,
             "user": user

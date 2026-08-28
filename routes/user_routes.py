@@ -20,8 +20,7 @@ async def user_dashboard(
 ):
     """用户首页 - Dashboard"""
     data = await user_service.get_user_dashboard_data(request, user, db)
-    return templates.TemplateResponse("user_dashboard.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "user_dashboard.html", {
         "user": user,
         "dashboard_data": data
     })
@@ -35,8 +34,7 @@ async def user_projects(
 ):
     """用户项目页面"""
     projects = await user_service.get_user_projects_data(request, user, type, db)
-    return templates.TemplateResponse("user_projects.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "user_projects.html", {
         "user": user,
         "projects": projects,
         "project_type": type
@@ -51,8 +49,7 @@ async def user_reports(
 ):
     """用户报告页面"""
     reports = await user_service.get_user_reports_data(request, user, type, db)
-    return templates.TemplateResponse("user_reports.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "user_reports.html", {
         "user": user,
         "reports": reports,
         "report_type": type
@@ -79,8 +76,7 @@ async def user_profile(
 
         today = datetime.now().strftime("%Y-%m-%d")
 
-        return templates.TemplateResponse("user_profile.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "user_profile.html", {
             "user": user,
             "user_profile": user_profile,
             "user_qualifications": user_qualifications,  # 添加资质信息
@@ -93,8 +89,7 @@ async def user_profile(
         import traceback
         print(f"完整错误: {traceback.format_exc()}")
         
-        return templates.TemplateResponse("user_profile.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "user_profile.html", {
             "user": user,
             "user_profile": {},
             "user_qualifications": [],  # 空列表
@@ -201,15 +196,13 @@ async def user_manager(
         for user_item in users:
             user_item["qualifications"] = await user_service.get_user_qualifications(user_item["username"], db)
         
-        return templates.TemplateResponse("user_manager.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "user_manager.html", {
             "user": user,
             "users": users,
             "current_user": user["username"]
         })
     except Exception as e:
-        return templates.TemplateResponse("user_manager.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "user_manager.html", {
             "user": user,
             "users": [],
             "current_user": user["username"],
@@ -392,8 +385,7 @@ async def admin_user_profile(
         
         today = datetime.now().strftime("%Y-%m-%d")
 
-        return templates.TemplateResponse("admin_user_profile.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "admin_user_profile.html", {
             "current_user": user,  # 当前登录的管理员
             "user_profile": user_profile,
             "user_qualifications": user_qualifications,
@@ -517,8 +509,7 @@ async def company_qualifications(
 
         all_users = await user_service.get_all_users_for_qualifications(db)
         
-        return templates.TemplateResponse("company_qualifications.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "company_qualifications.html", {
             "user": user,
             "all_users": all_users,
             "qualifications": qualifications,
@@ -526,8 +517,7 @@ async def company_qualifications(
             "current_category": category or "all"
         })
     except Exception as e:
-        return templates.TemplateResponse("company_qualifications.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "company_qualifications.html", {
             "user": user,
             "all_users": all_users,
             "qualifications": [],
@@ -693,8 +683,7 @@ async def report_templates(
         # 获取所有用户列表（用于选择维护人）
         all_users = await user_service.get_all_users_for_qualifications(db)
 
-        return templates.TemplateResponse("report_templates.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "report_templates.html", {
             "user": user,
             "all_users": all_users,
             "templates": templates_list,
@@ -702,8 +691,7 @@ async def report_templates(
         })
     except Exception as e:
         print(e)
-        return templates.TemplateResponse("report_templates.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "report_templates.html", {
             "user": user,
             "all_users": [],
             "templates": [],
@@ -862,16 +850,14 @@ async def evaluation_standards(
         # 获取所有用户列表（用于选择维护人）
         all_users = await user_service.get_all_users_for_qualifications(db)
 
-        return templates.TemplateResponse("evaluation_standards.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "evaluation_standards.html", {
             "user": user,
             "all_users": all_users,
             "standards": standards_list,
             "current_category": category or "all"
         })
     except Exception as e:
-        return templates.TemplateResponse("evaluation_standards.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "evaluation_standards.html", {
             "user": user,
             "all_users": [],
             "standards": [],
